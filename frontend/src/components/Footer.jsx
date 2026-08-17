@@ -28,6 +28,16 @@ function Footer() {
                   Home
                 </Link>
               </li>
+              <li>
+                <Link to="/about" className="hover:text-white">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link to="/build" className="hover:text-white">
+                  Build
+                </Link>
+              </li>
 
               <li>
                 <Link to="/login" className="hover:text-white">
