@@ -40,13 +40,13 @@ function Footer() {
               </li>
 
               <li>
-                <Link to="/login" className="hover:text-white">
+                <Link to="/auth" className="hover:text-white">
                   Login
                 </Link>
               </li>
 
               <li>
-                <Link to="/signup" className="hover:text-white">
+                <Link to="/auth" className="hover:text-white">
                   Sign Up
                 </Link>
               </li>
