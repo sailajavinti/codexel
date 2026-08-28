@@ -113,7 +113,7 @@ function AboutContent() {
 
         </div>
 
-        {/* ================= WHY CODEXEL ================= */}
+        {/* ================ why codexel ================= */}
 
         <div className="mt-16">
 
@@ -279,7 +279,6 @@ function AboutContent() {
                 We continuously explore new technologies and ideas to simplify
                 modern web development.
               </p>
-
             </motion.div>
 
             {/* Simplicity */}
