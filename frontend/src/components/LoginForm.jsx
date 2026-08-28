@@ -13,43 +13,35 @@ function LoginForm({ setIsLogin }) {
 
   return (
     <div>
-
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-slate-800">
           Welcome Back 👋
         </h2>
-
         <p className="text-gray-500 mt-2">
           Sign in to continue building amazing websites.
         </p>
       </div>
-
       <form className="space-y-5">
 
         {/* Email */}
 
         <div className="relative">
-
           <FaEnvelope
             className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
           />
-
           <input
             type="email"
             placeholder="Email Address"
             className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-12 pr-4 outline-none transition-all duration-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
           />
-
         </div>
 
         {/* Password */}
 
         <div className="relative">
-
           <FaLock
             className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
           />
-
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
