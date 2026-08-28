@@ -44,7 +44,6 @@ function AboutContent() {
 
         </motion.div>
 
-        {/* ================= MISSION & VISION ================= */}
 
         <div className="grid md:grid-cols-2 gap-6 mt-16">
 
