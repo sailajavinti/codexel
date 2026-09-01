@@ -24,27 +24,78 @@ function SignupForm({ setIsLogin }) {
 
   const [agreeTerms, setAgreeTerms] = useState(false);
 
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+
+  // Email validation
+
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // Form validation
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Name
+
+    if (!name.trim()) {
+      newErrors.name = "Full name is required";
+    } else if (name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    }
+
+    // Email
+
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    // Password
+
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password =
+        "Password must be at least 6 characters";
+    }
+
+    // Confirm Password
+
+    if (!confirmPassword) {
+      newErrors.confirmPassword =
+        "Please confirm your password";
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword =
+        "Passwords do not match";
+    }
+
+    // Terms
+
+    if (!agreeTerms) {
+      newErrors.terms =
+        "Please agree to the Terms & Conditions";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
 
-    // Check password match
+    // Stop if validation fails
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    // Check terms
-
-    if (!agreeTerms) {
-      setError("Please agree to the Terms & Conditions");
+    if (!validateForm()) {
       return;
     }
 
@@ -52,8 +103,8 @@ function SignupForm({ setIsLogin }) {
 
     try {
       const data = await signupUser({
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim(),
         password,
       });
 
@@ -113,123 +164,272 @@ function SignupForm({ setIsLogin }) {
 
         {/* Full Name */}
 
-        <div className="relative">
+        <div>
 
-          <FaUser
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+          <div className="relative">
 
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-          />
+            <FaUser
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                errors.name
+                  ? "text-red-400"
+                  : "text-gray-400"
+              }`}
+            />
+
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+
+                if (errors.name) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    name: "",
+                  }));
+                }
+
+                setError("");
+              }}
+              className={`w-full rounded-xl border py-3 pl-12 pr-4 outline-none transition focus:ring-4 ${
+                errors.name
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                  : "border-gray-300 focus:border-blue-600 focus:ring-blue-100"
+              }`}
+            />
+
+          </div>
+
+          {errors.name && (
+            <p className="mt-1.5 text-sm text-red-500">
+              {errors.name}
+            </p>
+          )}
 
         </div>
 
         {/* Email */}
 
-        <div className="relative">
+        <div>
 
-          <FaEnvelope
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+          <div className="relative">
 
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-          />
+            <FaEnvelope
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                errors.email
+                  ? "text-red-400"
+                  : "text-gray-400"
+              }`}
+            />
+
+            <input
+              type="email"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+
+                if (errors.email) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    email: "",
+                  }));
+                }
+
+                setError("");
+              }}
+              className={`w-full rounded-xl border py-3 pl-12 pr-4 outline-none transition focus:ring-4 ${
+                errors.email
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                  : "border-gray-300 focus:border-blue-600 focus:ring-blue-100"
+              }`}
+            />
+
+          </div>
+
+          {errors.email && (
+            <p className="mt-1.5 text-sm text-red-500">
+              {errors.email}
+            </p>
+          )}
 
         </div>
 
         {/* Password */}
 
-        <div className="relative">
+        <div>
 
-          <FaLock
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+          <div className="relative">
 
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-12 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-          />
+            <FaLock
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                errors.password
+                  ? "text-red-400"
+                  : "text-gray-400"
+              }`}
+            />
 
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
-          >
-            {showPassword ? <FaEyeSlash /> : <FaEye />}
-          </button>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+
+                if (errors.password) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    password: "",
+                  }));
+                }
+
+                setError("");
+              }}
+              className={`w-full rounded-xl border py-3 pl-12 pr-12 outline-none transition focus:ring-4 ${
+                errors.password
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                  : "border-gray-300 focus:border-blue-600 focus:ring-blue-100"
+              }`}
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowPassword(!showPassword)
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
+            >
+              {showPassword ? (
+                <FaEyeSlash />
+              ) : (
+                <FaEye />
+              )}
+            </button>
+
+          </div>
+
+          {errors.password && (
+            <p className="mt-1.5 text-sm text-red-500">
+              {errors.password}
+            </p>
+          )}
 
         </div>
 
         {/* Confirm Password */}
 
-        <div className="relative">
+        <div>
 
-          <FaLock
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+          <div className="relative">
 
-          <input
-            type={showConfirm ? "text" : "password"}
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-12 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-          />
+            <FaLock
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                errors.confirmPassword
+                  ? "text-red-400"
+                  : "text-gray-400"
+              }`}
+            />
 
-          <button
-            type="button"
-            onClick={() => setShowConfirm(!showConfirm)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
-          >
-            {showConfirm ? <FaEyeSlash /> : <FaEye />}
-          </button>
+            <input
+              type={showConfirm ? "text" : "password"}
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+
+                if (errors.confirmPassword) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    confirmPassword: "",
+                  }));
+                }
+
+                setError("");
+              }}
+              className={`w-full rounded-xl border py-3 pl-12 pr-12 outline-none transition focus:ring-4 ${
+                errors.confirmPassword
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                  : "border-gray-300 focus:border-blue-600 focus:ring-blue-100"
+              }`}
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowConfirm(!showConfirm)
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
+            >
+              {showConfirm ? (
+                <FaEyeSlash />
+              ) : (
+                <FaEye />
+              )}
+            </button>
+
+          </div>
+
+          {errors.confirmPassword && (
+            <p className="mt-1.5 text-sm text-red-500">
+              {errors.confirmPassword}
+            </p>
+          )}
 
         </div>
 
         {/* Terms */}
 
-        <label className="flex items-start gap-3 text-sm text-gray-600">
+        <div>
 
-          <input
-            type="checkbox"
-            checked={agreeTerms}
-            onChange={(e) => setAgreeTerms(e.target.checked)}
-            className="mt-1 accent-blue-600"
-          />
+          <label className="flex items-start gap-3 text-sm text-gray-600">
 
-          <span>
-            I agree to the{" "}
-            <button
-              type="button"
-              className="text-blue-600 hover:underline"
-            >
-              Terms & Conditions
-            </button>{" "}
-            and{" "}
-            <button
-              type="button"
-              className="text-blue-600 hover:underline"
-            >
-              Privacy Policy
-            </button>
-          </span>
+            <input
+              type="checkbox"
+              checked={agreeTerms}
+              onChange={(e) => {
+                setAgreeTerms(e.target.checked);
 
-        </label>
+                if (errors.terms) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    terms: "",
+                  }));
+                }
 
-        {/* Error */}
+                setError("");
+              }}
+              className="mt-1 accent-blue-600"
+            />
+
+            <span>
+              I agree to the{" "}
+              <button
+                type="button"
+                className="text-blue-600 hover:underline"
+              >
+                Terms & Conditions
+              </button>{" "}
+              and{" "}
+              <button
+                type="button"
+                className="text-blue-600 hover:underline"
+              >
+                Privacy Policy
+              </button>
+            </span>
+
+          </label>
+
+          {errors.terms && (
+            <p className="mt-1.5 text-sm text-red-500">
+              {errors.terms}
+            </p>
+          )}
+
+        </div>
+
+        {/* Server Error */}
 
         {error && (
           <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -244,7 +444,9 @@ function SignupForm({ setIsLogin }) {
           disabled={loading}
           className="w-full rounded-xl bg-blue-600 py-3 text-white font-semibold shadow-lg shadow-blue-200 transition hover:bg-blue-700 hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? "Creating Account..." : "Create Account"}
+          {loading
+            ? "Creating Account..."
+            : "Create Account"}
         </button>
 
       </form>

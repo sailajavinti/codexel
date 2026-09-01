@@ -18,33 +18,70 @@ function LoginForm({ setIsLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  // Email validation
+
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // Validate form
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!password) {
+      newErrors.password = "Password is required";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
+
+    // Stop if validation fails
+
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
       const data = await loginUser({
-        email,
+        email: email.trim(),
         password,
       });
 
       // Store JWT
+
       localStorage.setItem("token", data.token);
 
       // Store user information
+
       localStorage.setItem(
         "user",
         JSON.stringify(data.user)
       );
 
       // Move to Build page
+
       navigate("/build");
 
     } catch (error) {
@@ -84,49 +121,115 @@ function LoginForm({ setIsLogin }) {
 
         {/* Email */}
 
-        <div className="relative">
+        <div>
 
-          <FaEnvelope
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+          <div className="relative">
 
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-12 pr-4 outline-none transition-all duration-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-          />
+            <FaEnvelope
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                errors.email
+                  ? "text-red-400"
+                  : "text-gray-400"
+              }`}
+            />
+
+            <input
+              type="email"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+
+                // Clear email error while typing
+
+                if (errors.email) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    email: "",
+                  }));
+                }
+
+                setError("");
+              }}
+              className={`w-full rounded-xl border bg-white py-3 pl-12 pr-4 outline-none transition-all duration-200 focus:ring-4 ${
+                errors.email
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                  : "border-gray-300 focus:border-blue-600 focus:ring-blue-100"
+              }`}
+            />
+
+          </div>
+
+          {errors.email && (
+            <p className="mt-1.5 text-sm text-red-500">
+              {errors.email}
+            </p>
+          )}
 
         </div>
 
         {/* Password */}
 
-        <div className="relative">
+        <div>
 
-          <FaLock
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+          <div className="relative">
 
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-12 pr-12 outline-none transition-all duration-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-          />
+            <FaLock
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                errors.password
+                  ? "text-red-400"
+                  : "text-gray-400"
+              }`}
+            />
 
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
-          >
-            {showPassword ? <FaEyeSlash /> : <FaEye />}
-          </button>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+
+                if (errors.password) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    password: "",
+                  }));
+                }
+
+                setError("");
+              }}
+              className={`w-full rounded-xl border bg-white py-3 pl-12 pr-12 outline-none transition-all duration-200 focus:ring-4 ${
+                errors.password
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                  : "border-gray-300 focus:border-blue-600 focus:ring-blue-100"
+              }`}
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowPassword(!showPassword)
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
+            >
+              {showPassword ? (
+                <FaEyeSlash />
+              ) : (
+                <FaEye />
+              )}
+            </button>
+
+          </div>
+
+          {errors.password && (
+            <p className="mt-1.5 text-sm text-red-500">
+              {errors.password}
+            </p>
+          )}
 
         </div>
 
-        {/* Error */}
+        {/* Server Error */}
 
         {error && (
           <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">

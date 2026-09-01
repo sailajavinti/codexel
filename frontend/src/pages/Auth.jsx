@@ -1,11 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import LoginForm from "../components/LoginForm";
 import SignupForm from "../components/SignupForm";
+import { getCurrentUser } from "../services/authService";
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const data = await getCurrentUser();
+
+        console.log("Current user:", data);
+      } catch (error) {
+        console.log("Authentication failed:", error);
+      }
+    };
+
+    checkUser();
+  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-100 via-white to-blue-100 flex items-center justify-center px-6 py-10">
