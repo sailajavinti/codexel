@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import {
   FaEnvelope,
   FaLock,
@@ -8,43 +10,109 @@ import {
   FaGithub,
 } from "react-icons/fa";
 
+import { loginUser } from "../services/authService";
+
 function LoginForm({ setIsLogin }) {
   const [showPassword, setShowPassword] = useState(false);
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const data = await loginUser({
+        email,
+        password,
+      });
+
+      // Store JWT
+      localStorage.setItem("token", data.token);
+
+      // Store user information
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
+
+      // Move to Build page
+      navigate("/build");
+
+    } catch (error) {
+
+      if (error.response) {
+        setError(
+          error.response.data.message || "Login failed"
+        );
+      } else {
+        setError(
+          "Unable to connect to the server"
+        );
+      }
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
+
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-slate-800">
           Welcome Back 👋
         </h2>
+
         <p className="text-gray-500 mt-2">
           Sign in to continue building amazing websites.
         </p>
       </div>
-      <form className="space-y-5">
+
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5"
+      >
 
         {/* Email */}
 
         <div className="relative">
+
           <FaEnvelope
             className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
           />
+
           <input
             type="email"
             placeholder="Email Address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-12 pr-4 outline-none transition-all duration-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
           />
+
         </div>
 
         {/* Password */}
 
         <div className="relative">
+
           <FaLock
             className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
           />
+
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-12 pr-12 outline-none transition-all duration-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
           />
 
@@ -57,6 +125,14 @@ function LoginForm({ setIsLogin }) {
           </button>
 
         </div>
+
+        {/* Error */}
+
+        {error && (
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
 
         {/* Remember */}
 
@@ -86,9 +162,10 @@ function LoginForm({ setIsLogin }) {
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-blue-600 py-3 text-white font-semibold shadow-lg shadow-blue-200 transition hover:bg-blue-700 hover:shadow-blue-300"
+          disabled={loading}
+          className="w-full rounded-xl bg-blue-600 py-3 text-white font-semibold shadow-lg shadow-blue-200 transition hover:bg-blue-700 hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
 
       </form>
@@ -112,6 +189,7 @@ function LoginForm({ setIsLogin }) {
       <div className="grid grid-cols-2 gap-4">
 
         <button
+          type="button"
           className="flex items-center justify-center gap-3 rounded-xl border border-gray-300 py-3 transition hover:bg-gray-100"
         >
           <FaGoogle className="text-red-500" />
@@ -119,6 +197,7 @@ function LoginForm({ setIsLogin }) {
         </button>
 
         <button
+          type="button"
           className="flex items-center justify-center gap-3 rounded-xl border border-gray-300 py-3 transition hover:bg-gray-100"
         >
           <FaGithub />
@@ -134,6 +213,7 @@ function LoginForm({ setIsLogin }) {
         Don't have an account?{" "}
 
         <button
+          type="button"
           onClick={() => setIsLogin(false)}
           className="font-semibold text-blue-600 hover:underline"
         >

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import {
   FaUser,
   FaEnvelope,
@@ -9,9 +11,83 @@ import {
   FaGithub,
 } from "react-icons/fa";
 
+import { signupUser } from "../services/authService";
+
 function SignupForm({ setIsLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [agreeTerms, setAgreeTerms] = useState(false);
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setError("");
+
+    // Check password match
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    // Check terms
+
+    if (!agreeTerms) {
+      setError("Please agree to the Terms & Conditions");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await signupUser({
+        name,
+        email,
+        password,
+      });
+
+      // Store JWT
+
+      localStorage.setItem("token", data.token);
+
+      // Store user information
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
+
+      // Move to Build page
+
+      navigate("/build");
+
+    } catch (error) {
+
+      if (error.response) {
+        setError(
+          error.response.data.message || "Signup failed"
+        );
+      } else {
+        setError(
+          "Unable to connect to the server"
+        );
+      }
+
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -30,7 +106,10 @@ function SignupForm({ setIsLogin }) {
 
       </div>
 
-      <form className="space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5"
+      >
 
         {/* Full Name */}
 
@@ -43,6 +122,8 @@ function SignupForm({ setIsLogin }) {
           <input
             type="text"
             placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
           />
 
@@ -59,6 +140,8 @@ function SignupForm({ setIsLogin }) {
           <input
             type="email"
             placeholder="Email Address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
           />
 
@@ -75,6 +158,8 @@ function SignupForm({ setIsLogin }) {
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-12 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
           />
 
@@ -99,6 +184,8 @@ function SignupForm({ setIsLogin }) {
           <input
             type={showConfirm ? "text" : "password"}
             placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-12 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
           />
 
@@ -118,6 +205,8 @@ function SignupForm({ setIsLogin }) {
 
           <input
             type="checkbox"
+            checked={agreeTerms}
+            onChange={(e) => setAgreeTerms(e.target.checked)}
             className="mt-1 accent-blue-600"
           />
 
@@ -140,13 +229,22 @@ function SignupForm({ setIsLogin }) {
 
         </label>
 
+        {/* Error */}
+
+        {error && (
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+
         {/* Signup Button */}
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-blue-600 py-3 text-white font-semibold shadow-lg shadow-blue-200 transition hover:bg-blue-700 hover:shadow-blue-300"
+          disabled={loading}
+          className="w-full rounded-xl bg-blue-600 py-3 text-white font-semibold shadow-lg shadow-blue-200 transition hover:bg-blue-700 hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          Create Account
+          {loading ? "Creating Account..." : "Create Account"}
         </button>
 
       </form>
@@ -170,6 +268,7 @@ function SignupForm({ setIsLogin }) {
       <div className="grid grid-cols-2 gap-4">
 
         <button
+          type="button"
           className="flex items-center justify-center gap-3 rounded-xl border border-gray-300 py-3 transition hover:bg-gray-100"
         >
           <FaGoogle className="text-red-500" />
@@ -177,6 +276,7 @@ function SignupForm({ setIsLogin }) {
         </button>
 
         <button
+          type="button"
           className="flex items-center justify-center gap-3 rounded-xl border border-gray-300 py-3 transition hover:bg-gray-100"
         >
           <FaGithub />
@@ -192,6 +292,7 @@ function SignupForm({ setIsLogin }) {
         Already have an account?{" "}
 
         <button
+          type="button"
           onClick={() => setIsLogin(true)}
           className="font-semibold text-blue-600 hover:underline"
         >
