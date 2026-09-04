@@ -4,7 +4,7 @@ import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
 import Build from "./pages/build/Build";
-
+import ForgotPassword from "./pages/ForgotPassword";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
@@ -29,6 +29,8 @@ function AppLayout() {
         <Route path="/build" element={<Build />} />
 
         <Route path="/auth" element={<Auth />} />
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
       </Routes>
 

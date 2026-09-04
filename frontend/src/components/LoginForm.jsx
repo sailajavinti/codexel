@@ -210,7 +210,8 @@ function LoginForm({ setIsLogin }) {
 
           <button
             type="button"
-            className="text-blue-600 hover:underline transition focus:outline-none"
+            onClick={() => navigate("/forgot-password")}
+            className="text-blue-600 hover:underline"
           >
             Forgot Password?
           </button>
