@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,29 +43,63 @@ function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:block">
-          <ul className="flex items-center gap-8 text-gray-700 font-medium">
+          <ul className="flex items-center gap-8 font-medium">
             <li>
-              <Link to="/" className="transition hover:text-blue-600">
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) =>
+                  `transition ${
+                    isActive
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-700 hover:text-blue-600"
+                  }`
+                }
+              >
                 Home
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link to="/about" className="transition hover:text-blue-600">
+              <NavLink
+                to="/about"
+                className={({ isActive }) =>
+                  `transition ${
+                    isActive
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-700 hover:text-blue-600"
+                  }`
+                }
+              >
                 About
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link to="/build" className="transition hover:text-blue-600">
+              <NavLink
+                to="/build"
+                className={({ isActive }) =>
+                  `transition ${
+                    isActive
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-700 hover:text-blue-600"
+                  }`
+                }
+              >
                 Build
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link
+              <NavLink
                 to="/auth"
-                className="rounded-xl bg-blue-600 px-6 py-2.5 text-white transition hover:bg-blue-700"
+                className={({ isActive }) =>
+                  `rounded-xl px-6 py-2.5 text-white font-semibold transition ${
+                    isActive
+                      ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`
+                }
               >
                 Join Us
-              </Link>
+              </NavLink>
             </li>
           </ul>
         </nav>
@@ -116,42 +150,67 @@ function Header() {
         </div>
 
         <nav>
-          <ul className="flex flex-col gap-2 text-gray-700 font-medium text-base">
+          <ul className="flex flex-col gap-2 font-medium text-base">
             <li>
-              <Link
+              <NavLink
                 to="/"
+                end
                 onClick={() => setIsOpen(false)}
-                className="block px-3 py-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition"
+                className={({ isActive }) =>
+                  `block px-3 py-2.5 rounded-lg transition ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 font-semibold"
+                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  }`
+                }
               >
                 Home
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link
+              <NavLink
                 to="/about"
                 onClick={() => setIsOpen(false)}
-                className="block px-3 py-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition"
+                className={({ isActive }) =>
+                  `block px-3 py-2.5 rounded-lg transition ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 font-semibold"
+                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  }`
+                }
               >
                 About
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link
+              <NavLink
                 to="/build"
                 onClick={() => setIsOpen(false)}
-                className="block px-3 py-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition"
+                className={({ isActive }) =>
+                  `block px-3 py-2.5 rounded-lg transition ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 font-semibold"
+                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  }`
+                }
               >
                 Build
-              </Link>
+              </NavLink>
             </li>
             <li className="pt-4">
-              <Link
+              <NavLink
                 to="/auth"
                 onClick={() => setIsOpen(false)}
-                className="block text-center rounded-xl bg-blue-600 px-6 py-2.5 text-white font-semibold transition hover:bg-blue-700 shadow-md shadow-blue-500/20"
+                className={({ isActive }) =>
+                  `block text-center rounded-xl px-6 py-2.5 text-white font-semibold transition shadow-md shadow-blue-500/20 ${
+                    isActive
+                      ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`
+                }
               >
                 Join Us
-              </Link>
+              </NavLink>
             </li>
           </ul>
         </nav>

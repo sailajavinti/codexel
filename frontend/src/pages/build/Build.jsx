@@ -23,14 +23,10 @@ function Build() {
 
   return (
     <div className="h-screen overflow-hidden bg-slate-100">
-
       <BuildHeader />
 
       <div className="flex h-[calc(100vh-4rem)] min-h-0">
-
-        <ComponentsPanel
-          onAddComponent={addComponent}
-        />
+        <ComponentsPanel onAddComponent={addComponent} />
 
         <Canvas
           components={components}
@@ -42,9 +38,7 @@ function Build() {
           components={components}
           selectedComponent={selectedComponent}
         />
-
       </div>
-
     </div>
   );
 }

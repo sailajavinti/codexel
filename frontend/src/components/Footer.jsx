@@ -1,6 +1,13 @@
 import { Link } from "react-router-dom";
 
 function Footer() {
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <footer className="bg-slate-900 text-gray-300 mt-12 sm:mt-16 lg:mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
@@ -9,9 +16,13 @@ function Footer() {
 
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            <Link
+              to="/"
+              onClick={scrollToTop}
+              className="text-2xl sm:text-3xl font-bold text-white tracking-tight inline-block"
+            >
               CodeXel
-            </h2>
+            </Link>
             <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-400 leading-6 sm:leading-7 max-w-sm">
               Build beautiful websites visually and export clean,
               production-ready code with ease.
@@ -26,27 +37,47 @@ function Footer() {
 
             <ul className="space-y-2.5 sm:space-y-3 text-sm sm:text-base">
               <li>
-                <Link to="/" className="transition hover:text-white inline-block">
+                <Link
+                  to="/"
+                  onClick={scrollToTop}
+                  className="transition hover:text-white inline-block"
+                >
                   Home
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="transition hover:text-white inline-block">
+                <Link
+                  to="/about"
+                  onClick={scrollToTop}
+                  className="transition hover:text-white inline-block"
+                >
                   About
                 </Link>
               </li>
               <li>
-                <Link to="/build" className="transition hover:text-white inline-block">
+                <Link
+                  to="/build"
+                  onClick={scrollToTop}
+                  className="transition hover:text-white inline-block"
+                >
                   Build
                 </Link>
               </li>
               <li>
-                <Link to="/auth" className="transition hover:text-white inline-block">
+                <Link
+                  to="/auth"
+                  onClick={scrollToTop}
+                  className="transition hover:text-white inline-block"
+                >
                   Login
                 </Link>
               </li>
               <li>
-                <Link to="/auth" className="transition hover:text-white inline-block">
+                <Link
+                  to="/auth"
+                  onClick={scrollToTop}
+                  className="transition hover:text-white inline-block"
+                >
                   Sign Up
                 </Link>
               </li>
@@ -66,7 +97,7 @@ function Footer() {
                   href="mailto:support@codexel.com"
                   className="hover:text-white transition"
                 >
-                  support@codexel.com
+                  supportcodexel@gmail.com
                 </a>
               </p>
               <p className="break-all">
