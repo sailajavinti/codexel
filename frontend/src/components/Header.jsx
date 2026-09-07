@@ -1,16 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { FaUserCircle } from "react-icons/fa";
 
 function Header() {
   const [isOpen, setIsOpen] = useState(false);
 
+  // Check whether the user is logged in
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    !!localStorage.getItem("token")
+  );
+
+  // Update Header when login/logout happens
+  useEffect(() => {
+    const checkAuth = () => {
+      setIsLoggedIn(!!localStorage.getItem("token"));
+    };
+
+    window.addEventListener("authChange", checkAuth);
+    window.addEventListener("storage", checkAuth);
+
+    return () => {
+      window.removeEventListener("authChange", checkAuth);
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto h-16 sm:h-20 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        
+
         {/* Left Section: Mobile Button + Logo */}
         <div className="flex items-center gap-3 sm:gap-4">
-          {/* Mobile Menu Toggle Button (Left Side) */}
+
+          {/* Mobile Menu Button */}
           <button
             type="button"
             onClick={() => setIsOpen(true)}
@@ -41,9 +63,12 @@ function Header() {
           </Link>
         </div>
 
-        {/* Desktop Navigation */}
+        {/* ================= DESKTOP NAVIGATION ================= */}
+
         <nav className="hidden md:block">
           <ul className="flex items-center gap-8 font-medium">
+
+            {/* Home */}
             <li>
               <NavLink
                 to="/"
@@ -59,6 +84,8 @@ function Header() {
                 Home
               </NavLink>
             </li>
+
+            {/* About */}
             <li>
               <NavLink
                 to="/about"
@@ -73,6 +100,8 @@ function Header() {
                 About
               </NavLink>
             </li>
+
+            {/* Build */}
             <li>
               <NavLink
                 to="/build"
@@ -87,6 +116,8 @@ function Header() {
                 Build
               </NavLink>
             </li>
+
+            {/* Join Us - ALWAYS VISIBLE */}
             <li>
               <NavLink
                 to="/auth"
@@ -101,25 +132,46 @@ function Header() {
                 Join Us
               </NavLink>
             </li>
+
+            {/* Profile - ONLY WHEN LOGGED IN */}
+            {isLoggedIn && (
+              <li>
+                <Link
+                  to="/profile"
+                  className="flex items-center transition hover:scale-110"
+                  title="Profile"
+                >
+                  <FaUserCircle className="text-3xl text-blue-600" />
+                </Link>
+              </li>
+            )}
+
           </ul>
         </nav>
       </div>
 
-      {/* Backdrop Overlay for Mobile */}
+      {/* ================= MOBILE BACKDROP ================= */}
+
       <div
         onClick={() => setIsOpen(false)}
         className={`fixed inset-0 z-40 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          isOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
       />
 
-      {/* Left Drawer / Side Panel */}
+      {/* ================= MOBILE SIDE DRAWER ================= */}
+
       <aside
         className={`fixed top-0 left-0 bottom-0 z-50 w-72 max-w-[80vw] bg-white border-r border-gray-200 shadow-2xl p-6 transition-transform duration-300 ease-in-out md:hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
+
+        {/* Drawer Header */}
         <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-100">
+
           <Link
             to="/"
             onClick={() => setIsOpen(false)}
@@ -127,6 +179,8 @@ function Header() {
           >
             CodeXel
           </Link>
+
+          {/* Close Button */}
           <button
             type="button"
             onClick={() => setIsOpen(false)}
@@ -147,10 +201,14 @@ function Header() {
               />
             </svg>
           </button>
+
         </div>
 
+        {/* Mobile Navigation */}
         <nav>
           <ul className="flex flex-col gap-2 font-medium text-base">
+
+            {/* Home */}
             <li>
               <NavLink
                 to="/"
@@ -167,6 +225,8 @@ function Header() {
                 Home
               </NavLink>
             </li>
+
+            {/* About */}
             <li>
               <NavLink
                 to="/about"
@@ -182,6 +242,8 @@ function Header() {
                 About
               </NavLink>
             </li>
+
+            {/* Build */}
             <li>
               <NavLink
                 to="/build"
@@ -197,6 +259,8 @@ function Header() {
                 Build
               </NavLink>
             </li>
+
+            {/* Join Us - ALWAYS VISIBLE */}
             <li className="pt-4">
               <NavLink
                 to="/auth"
@@ -212,6 +276,21 @@ function Header() {
                 Join Us
               </NavLink>
             </li>
+
+            {/* Profile - ONLY WHEN LOGGED IN */}
+            {isLoggedIn && (
+              <li className="pt-2">
+                <Link
+                  to="/profile"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition"
+                >
+                  <FaUserCircle className="text-2xl text-blue-600" />
+                  <span>Profile</span>
+                </Link>
+              </li>
+            )}
+
           </ul>
         </nav>
       </aside>
