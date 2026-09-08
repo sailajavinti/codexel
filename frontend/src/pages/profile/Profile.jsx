@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import ProfileSidebar from "./ProfileSidebar";
 import ProfileOverview from "./ProfileOverview";
 import ProfileHistory from "./ProfileHistory";
-import ProfileSettings from "./ProfileSettings";
 
 import {
   getProfile,
@@ -21,7 +20,6 @@ function Profile() {
     const loadProfile = async () => {
       try {
         const data = await getProfile();
-
         setUser(data.user);
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -30,7 +28,6 @@ function Profile() {
         localStorage.removeItem("user");
 
         window.dispatchEvent(new Event("authChange"));
-
         navigate("/auth");
       }
     };
@@ -43,20 +40,15 @@ function Profile() {
     localStorage.removeItem("user");
 
     window.dispatchEvent(new Event("authChange"));
-
     navigate("/auth");
   };
 
-  const handleUpdateProfile = async (name) => {
-    const data = await updateProfile(name);
+  const handleUpdateProfile = async (payload) => {
+    const data = await updateProfile(payload);
 
     setUser(data.user);
-
-    // Keep stored user information updated
-    localStorage.setItem(
-      "user",
-      JSON.stringify(data.user)
-    );
+    localStorage.setItem("user", JSON.stringify(data.user));
+    window.dispatchEvent(new Event("authChange"));
   };
 
   if (!user) {
@@ -69,7 +61,6 @@ function Profile() {
 
   return (
     <div className="flex min-h-screen bg-[#f7f9fc] font-sans text-gray-900 max-md:flex-col">
-
       <ProfileSidebar
         user={user}
         activeSection={activeSection}
@@ -78,22 +69,14 @@ function Profile() {
       />
 
       <main className="min-w-0 flex-1 px-10 pb-[70px] pt-[45px] max-md:px-4 max-md:py-8">
-
         {activeSection === "profile" && (
-          <ProfileOverview user={user} />
-        )}
-
-        {activeSection === "history" && (
-          <ProfileHistory />
-        )}
-
-        {activeSection === "settings" && (
-          <ProfileSettings
+          <ProfileOverview
             user={user}
             onUpdateProfile={handleUpdateProfile}
           />
         )}
 
+        {activeSection === "history" && <ProfileHistory />}
       </main>
     </div>
   );

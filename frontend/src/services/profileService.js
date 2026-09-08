@@ -1,14 +1,12 @@
 import api from "../api/axios";
 
 export const getProfile = async () => {
-  const response = await api.get("/auth/me");
-  return response.data;
+  const res = await api.get("/auth/me");
+  return res.data;
 };
 
-export const updateProfile = async (name) => {
-  const response = await api.put("/auth/update-profile", {
-    name,
-  });
-
-  return response.data;
+export const updateProfile = async (payload) => {
+  const data = typeof payload === "string" ? { name: payload } : payload;
+  const res = await api.put("/auth/update-profile", data);
+  return res.data;
 };
