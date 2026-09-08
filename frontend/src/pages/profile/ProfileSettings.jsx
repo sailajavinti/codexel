@@ -6,6 +6,7 @@ import {
   FaShieldAlt,
 } from "react-icons/fa";
 
+
 function ProfileSettings({ user, onUpdateProfile }) {
   const [name, setName] = useState(user?.name || "");
   const [saving, setSaving] = useState(false);
@@ -118,60 +119,6 @@ function ProfileSettings({ user, onUpdateProfile }) {
           </button>
 
         </div>
-      </section>
-
-      {/* Password */}
-      <section className="mb-5 rounded-2xl border border-gray-200 bg-white p-6">
-        <SectionHeader
-          icon={<FaLock />}
-          iconClass="bg-emerald-50 text-emerald-600"
-          title="Password & Security"
-          description="Manage your account password."
-        />
-
-        <button
-          type="button"
-          className="mt-5 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-[11px] text-gray-700 transition hover:bg-gray-100"
-        >
-          Change Password
-          <span>→</span>
-        </button>
-      </section>
-
-      {/* Notifications */}
-      <section className="mb-5 rounded-2xl border border-gray-200 bg-white p-6">
-        <SectionHeader
-          icon={<FaBell />}
-          iconClass="bg-orange-50 text-orange-600"
-          title="Notifications"
-          description="Manage your notification preferences."
-        />
-
-        <button
-          type="button"
-          className="mt-5 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-[11px] text-gray-700 transition hover:bg-gray-100"
-        >
-          Notification Settings
-          <span>→</span>
-        </button>
-      </section>
-
-      {/* Privacy */}
-      <section className="mb-5 rounded-2xl border border-gray-200 bg-white p-6">
-        <SectionHeader
-          icon={<FaShieldAlt />}
-          iconClass="bg-violet-50 text-violet-600"
-          title="Privacy & Security"
-          description="Control your account privacy."
-        />
-
-        <button
-          type="button"
-          className="mt-5 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-[11px] text-gray-700 transition hover:bg-gray-100"
-        >
-          Privacy Settings
-          <span>→</span>
-        </button>
       </section>
 
     </div>
