@@ -185,6 +185,57 @@ const getMe = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    // 1. Check name
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        message: "Name is required",
+      });
+    }
+
+    // 2. Validate name length
+    if (name.trim().length < 2) {
+      return res.status(400).json({
+        message: "Name must be at least 2 characters",
+      });
+    }
+
+    // 3. Find logged-in user
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // 4. Update ONLY the name
+    user.name = name.trim();
+
+    await user.save();
+
+    // 5. Send updated user
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+
+  } catch (error) {
+    console.error("Update profile error:", error);
+
+    res.status(500).json({
+      message: "Unable to update profile",
+    });
+  }
+};
+
 
 const forgotPassword = async (req, res) => {
   try {
@@ -402,4 +453,4 @@ const resetPassword = async (req, res) => {
 };
 
 
-export { signup, login, getMe, forgotPassword, resetPassword };
+export { signup, login, getMe, forgotPassword, resetPassword, updateProfile };
