@@ -1,10 +1,20 @@
 import { useState, useEffect } from "react";
-import { FaHistory, FaFolder, FaTrash, FaSpinner } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import {
+  FaHistory,
+  FaFolder,
+  FaTrash,
+  FaSpinner,
+  FaExclamationTriangle,
+} from "react-icons/fa";
 import api from "../../api/axios";
 
 function ProfileHistory() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchHistory();
@@ -22,12 +32,20 @@ function ProfileHistory() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const confirmDelete = async () => {
+    if (!projectToDelete) return;
+
     try {
-      await api.delete(`/projects/${id}`);
-      setHistory((prev) => prev.filter((project) => project._id !== id));
+      setIsDeleting(true);
+      await api.delete(`/projects/${projectToDelete._id}`);
+      setHistory((prev) =>
+        prev.filter((project) => project._id !== projectToDelete._id)
+      );
+      setProjectToDelete(null);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to delete project:", err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -68,7 +86,8 @@ function ProfileHistory() {
           {history.map((project) => (
             <div
               key={project._id}
-              className="flex items-center justify-between p-5 transition hover:bg-gray-50"
+              onClick={() => navigate(`/build?id=${project._id}`)}
+              className="flex items-center justify-between p-5 transition hover:bg-gray-50 cursor-pointer"
             >
               <div className="flex items-center gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
@@ -79,7 +98,8 @@ function ProfileHistory() {
                     {project.title}
                   </h3>
                   <p className="text-xs text-gray-400">
-                    Last modified: {new Date(project.updatedAt).toLocaleDateString()} at{" "}
+                    Last modified:{" "}
+                    {new Date(project.updatedAt).toLocaleDateString()} at{" "}
                     {new Date(project.updatedAt).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -89,7 +109,11 @@ function ProfileHistory() {
               </div>
 
               <button
-                onClick={() => handleDelete(project._id)}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation(); // Avoid triggering route navigation
+                  setProjectToDelete(project);
+                }}
                 className="p-2 text-gray-400 transition hover:text-red-500"
                 title="Delete project"
               >
@@ -97,6 +121,55 @@ function ProfileHistory() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {projectToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl transition-all">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <FaExclamationTriangle className="text-lg" />
+            </div>
+
+            <div className="mt-4 text-center">
+              <h3 className="text-lg font-bold text-gray-900">
+                Delete Project
+              </h3>
+              <p className="mt-2 text-sm text-gray-500">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-gray-800">
+                  "{projectToDelete.title}"
+                </span>
+                ? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setProjectToDelete(null)}
+                disabled={isDeleting}
+                className="w-full rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <FaSpinner className="animate-spin text-xs" /> Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
