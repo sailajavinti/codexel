@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import { resetPassword } from "../services/authService";
 
 function ResetPassword() {
   const { token } = useParams();
@@ -15,38 +16,60 @@ function ResetPassword() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
     setMessage("");
 
-    // Password validation
+    // 1. Check password
     if (!password) {
       setError("Password is required");
       return;
     }
 
+    // 2. Check password length
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
       return;
     }
 
+    // 3. Check confirm password
     if (!confirmPassword) {
       setError("Please confirm your password");
       return;
     }
 
+    // 4. Check passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
-    // API will be connected next
-    console.log("Reset token:", token);
-    console.log("New password:", password);
+    try {
+      setLoading(true);
 
-    setMessage("Password validation successful!");
+      const response = await resetPassword(token, password);
+
+      setMessage(response.message);
+
+      // Clear password fields
+      setPassword("");
+      setConfirmPassword("");
+
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        navigate("/auth");
+      }, 2000);
+
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+        "Unable to reset password. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -94,11 +117,10 @@ function ResetPassword() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter new password"
-                  className={`w-full rounded-lg border px-4 py-3 pr-12 text-sm outline-none transition ${
-                    error
+                  className={`w-full rounded-lg border px-4 py-3 pr-12 text-sm outline-none transition ${error
                       ? "border-red-400 focus:border-red-500"
                       : "border-gray-300 focus:border-blue-500"
-                  }`}
+                    }`}
                 />
 
                 <button
@@ -123,11 +145,10 @@ function ResetPassword() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
-                  className={`w-full rounded-lg border px-4 py-3 pr-12 text-sm outline-none transition ${
-                    error
+                  className={`w-full rounded-lg border px-4 py-3 pr-12 text-sm outline-none transition ${error
                       ? "border-red-400 focus:border-red-500"
                       : "border-gray-300 focus:border-blue-500"
-                  }`}
+                    }`}
                 />
 
                 <button

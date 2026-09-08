@@ -199,7 +199,7 @@ function LoginForm({ setIsLogin }) {
         )}
 
         {/* Remember & Forgot Password */}
-        <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2.5 sm:gap-0 text-xs sm:text-sm pt-0.5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
           <label className="flex items-center gap-2 text-gray-600 cursor-pointer select-none">
             <input
               type="checkbox"
