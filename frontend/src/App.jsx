@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-
+import ResetPassword from "./components/ResetPassword";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
@@ -35,7 +35,7 @@ function AppLayout() {
 
 
         <Route path="/forgot-password" element={<ForgotPassword />} />
-
+        <Route path="/reset-password/:token"element={<ResetPassword />}/>
         <Route path="/profile" element={<Profile />} />
 
 
