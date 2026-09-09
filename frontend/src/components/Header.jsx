@@ -10,10 +10,24 @@ function Header() {
     !!localStorage.getItem("token")
   );
 
-  // Update Header when login/logout happens
+  // Store user details to retrieve avatar
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  });
+
+  // Update Header when login/logout/profile update happens
   useEffect(() => {
     const checkAuth = () => {
       setIsLoggedIn(!!localStorage.getItem("token"));
+      try {
+        setUser(JSON.parse(localStorage.getItem("user") || "null"));
+      } catch {
+        setUser(null);
+      }
     };
 
     window.addEventListener("authChange", checkAuth);
@@ -141,7 +155,15 @@ function Header() {
                   className="flex items-center transition hover:scale-110"
                   title="Profile"
                 >
-                  <FaUserCircle className="text-3xl text-blue-600" />
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="Profile Avatar"
+                      className="h-8 w-8 rounded-full object-cover border border-gray-200 shadow-xs"
+                    />
+                  ) : (
+                    <FaUserCircle className="text-3xl text-blue-600" />
+                  )}
                 </Link>
               </li>
             )}
@@ -283,9 +305,17 @@ function Header() {
                 <Link
                   to="/profile"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition"
+                  className="flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition"
                 >
-                  <FaUserCircle className="text-2xl text-blue-600" />
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="Profile Avatar"
+                      className="h-7 w-7 rounded-full object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <FaUserCircle className="text-2xl text-blue-600" />
+                  )}
                   <span>Profile</span>
                 </Link>
               </li>
