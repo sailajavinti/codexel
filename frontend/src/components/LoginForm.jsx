@@ -73,7 +73,7 @@ function LoginForm({ setIsLogin }) {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       // Move to Build page
-      navigate("/build");
+      navigate("/build", { replace: true });
     } catch (error) {
       if (error.response) {
         setError(error.response.data.message || "Login failed");

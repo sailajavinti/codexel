@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
 import {
   FaArrowLeft,
   FaCheck,
@@ -17,21 +16,22 @@ function BuildHeader({
   onNewProject,
   components,
   onProjectSaved,
+  onBackClick,
+  onMarkDirty,
 }) {
   const [projectName, setProjectName] = useState("Untitled Project");
   const [status, setStatus] = useState("idle");
+  const [statusMessage, setStatusMessage] = useState("");
 
   const [isOpenMenuVisible, setIsOpenMenuVisible] = useState(false);
   const [projectsList, setProjectsList] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Sync state whenever active project changes
   useEffect(() => {
     setProjectName(currentProject?.title || "Untitled Project");
   }, [currentProject]);
 
-  // Handle outside click to dismiss dropdown
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -43,6 +43,14 @@ function BuildHeader({
   }, []);
 
   const handleToggleProjects = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setStatus("error");
+      setStatusMessage("Please login to view projects");
+      setTimeout(() => setStatus("idle"), 3000);
+      return;
+    }
+
     if (!isOpenMenuVisible) {
       try {
         setLoadingProjects(true);
@@ -63,34 +71,43 @@ function BuildHeader({
     }
   };
 
+  const handleChangeName = (e) => {
+    setProjectName(e.target.value);
+    if (onMarkDirty) {
+      onMarkDirty();
+    }
+  };
+
   const handleBlur = () => {
     const trimmed = projectName.trim();
 
-    // 1. If user cleared it or did not type anything on a new project:
     if (!trimmed || trimmed === "Untitled Project") {
-      // Revert back to original title if project already exists, otherwise "Untitled Project"
       setProjectName(currentProject?.title || "Untitled Project");
-      
-      // Prevent creating a new project in DB if it was never created
+
       if (!currentProject?._id) {
         return;
       }
     }
 
-    // 2. If existing project and name did not change, skip the API call
     if (currentProject?._id && trimmed === currentProject.title) {
       return;
     }
 
-    // 3. Save only when a valid new title exists
     handleSave(trimmed || currentProject?.title);
   };
 
   const handleSave = async (customTitle) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setStatus("error");
+      setStatusMessage("Please login to save file");
+      setTimeout(() => setStatus("idle"), 3000);
+      return;
+    }
+
     const rawTitle = customTitle ?? projectName;
     const finalTitle = rawTitle.trim();
 
-    // Do not create a new DB document if title is empty or still the default placeholder
     if (!currentProject?._id && (!finalTitle || finalTitle === "Untitled Project")) {
       setProjectName("Untitled Project");
       return;
@@ -115,7 +132,12 @@ function BuildHeader({
     } catch (err) {
       console.error("Save error:", err);
       setStatus("error");
-      setTimeout(() => setStatus("idle"), 2500);
+      if (err.response?.status === 401) {
+        setStatusMessage("Please login to save file");
+      } else {
+        setStatusMessage("Failed to save");
+      }
+      setTimeout(() => setStatus("idle"), 3000);
     }
   };
 
@@ -123,13 +145,14 @@ function BuildHeader({
     <header className="relative flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
       {/* Left: Navigation + Open Project */}
       <div className="flex items-center gap-4 z-10">
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-blue-600"
+        <button
+          type="button"
+          onClick={onBackClick}
+          className="flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-blue-600 focus:outline-none"
         >
           <FaArrowLeft className="text-xs" />
           Back
-        </Link>
+        </button>
 
         <div className="h-5 w-px bg-gray-200"></div>
 
@@ -182,9 +205,7 @@ function BuildHeader({
                         setIsOpenMenuVisible(false);
                       }}
                       className={`w-full text-left px-2.5 py-2 rounded-lg transition flex flex-col gap-0.5 hover:bg-blue-50 ${
-                        project._id === currentProject?._id
-                          ? "bg-blue-50/70"
-                          : ""
+                        project._id === currentProject?._id ? "bg-blue-50/70" : ""
                       }`}
                     >
                       <span className="text-xs font-semibold text-gray-800 truncate">
@@ -203,13 +224,13 @@ function BuildHeader({
         </div>
       </div>
 
-      {/* Middle: Centered Project Title Input */}
+      {/* Middle: Centered Project Title Input + Status Indicator */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
         <input
           type="text"
           value={projectName}
           onFocus={handleFocus}
-          onChange={(e) => setProjectName(e.target.value)}
+          onChange={handleChangeName}
           onBlur={handleBlur}
           onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
           placeholder="Untitled Project"
@@ -227,7 +248,7 @@ function BuildHeader({
           </span>
         )}
         {status === "error" && (
-          <span className="text-xs font-medium text-red-500">Failed to save</span>
+          <span className="text-xs font-medium text-red-500">{statusMessage}</span>
         )}
       </div>
 

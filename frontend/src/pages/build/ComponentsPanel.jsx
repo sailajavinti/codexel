@@ -1,57 +1,89 @@
-import componentData from "./componentData";
+import {
+  FaBars,
+  FaHeading,
+  FaSquare,
+  FaMousePointer,
+  FaImage,
+  FaIdCard,
+} from "react-icons/fa";
+
+const AVAILABLE_COMPONENTS = [
+  { id: "navbar", name: "Navbar", category: "LAYOUT", icon: FaBars },
+  { id: "hero", name: "Hero", category: "LAYOUT", icon: FaHeading },
+  { id: "section", name: "Section", category: "LAYOUT", icon: FaSquare },
+  { id: "button", name: "Button", category: "ELEMENTS", icon: FaMousePointer },
+  { id: "image", name: "Image", category: "ELEMENTS", icon: FaImage },
+  { id: "card", name: "Card", category: "ELEMENTS", icon: FaIdCard },
+];
 
 function ComponentsPanel({ onAddComponent }) {
-  const categories = ["Layout", "Elements", "Forms"];
+  const handleDragStart = (e, comp) => {
+    e.dataTransfer.setData("application/json", JSON.stringify(comp));
+    e.dataTransfer.effectAllowed = "copy";
+  };
+
+  const layoutItems = AVAILABLE_COMPONENTS.filter((c) => c.category === "LAYOUT");
+  const elementItems = AVAILABLE_COMPONENTS.filter((c) => c.category === "ELEMENTS");
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-gray-200 bg-white">
-      {/* Header */}
-      <div className="shrink-0 border-b border-gray-200 px-5 py-4">
-        <h2 className="text-sm font-bold text-slate-900">Components</h2>
-        <p className="mt-1 text-xs text-gray-500">
-          Drag components to your canvas
-        </p>
+    <aside className="w-64 shrink-0 overflow-y-auto border-r border-gray-200 bg-white p-4">
+      <div className="mb-4">
+        <h2 className="text-sm font-bold text-gray-900">Components</h2>
+        <p className="text-xs text-gray-400">Drag components to your canvas</p>
       </div>
 
-      {/* Components List */}
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        {categories.map((category) => {
-          const categoryComponents = componentData.filter(
-            (component) => component.category === category
-          );
+      <div className="space-y-6">
+        {/* Layout Items */}
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            Layout
+          </span>
+          <div className="mt-2 space-y-2">
+            {layoutItems.map((comp) => {
+              const Icon = comp.icon;
+              return (
+                <div
+                  key={comp.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, comp)}
+                  onClick={() => onAddComponent(comp)}
+                  className="flex cursor-grab items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-600 active:cursor-grabbing"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-xs">
+                    <Icon className="text-gray-500" />
+                  </div>
+                  <span>{comp.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-          return (
-            <div key={category} className="mb-6 last:mb-0">
-              {/* Category */}
-              <h3 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                {category}
-              </h3>
-
-              <div className="space-y-2">
-                {categoryComponents.map((component) => {
-                  const Icon = component.icon;
-
-                  return (
-                    <button
-                      key={component.id}
-                      type="button"
-                      onClick={() => onAddComponent(component)}
-                      className="group flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 hover:shadow"
-                    >
-                      {/* Icon */}
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-gray-500 transition-colors duration-200 group-hover:bg-blue-100 group-hover:text-blue-600">
-                        <Icon />
-                      </span>
-
-                      {/* Component Name */}
-                      <span>{component.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+        {/* Elements Items */}
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            Elements
+          </span>
+          <div className="mt-2 space-y-2">
+            {elementItems.map((comp) => {
+              const Icon = comp.icon;
+              return (
+                <div
+                  key={comp.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, comp)}
+                  onClick={() => onAddComponent(comp)}
+                  className="flex cursor-grab items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-600 active:cursor-grabbing"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-xs">
+                    <Icon className="text-gray-500" />
+                  </div>
+                  <span>{comp.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </aside>
   );

@@ -1,10 +1,56 @@
-import { FaImage } from "react-icons/fa";
+import { useState } from "react";
+import { FaImage, FaTrash } from "react-icons/fa";
 
 function Canvas({
-  components,
+  components = [],
   selectedComponent,
   setSelectedComponent,
+  onDropComponent,
+  onDeleteComponent,
 }) {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const rawData = e.dataTransfer.getData("application/json");
+    if (!rawData) return;
+
+    try {
+      const comp = JSON.parse(rawData);
+      if (onDropComponent) {
+        onDropComponent(comp);
+      }
+    } catch (err) {
+      console.error("Drop parsing error:", err);
+    }
+  };
+
+  const handleDelete = (e, targetId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDeleteComponent) {
+      onDeleteComponent(targetId);
+    }
+  };
+
   const renderComponent = (component) => {
     switch (component.type) {
       case "navbar":
@@ -98,8 +144,22 @@ function Canvas({
   };
 
   return (
-    <main className="min-w-0 flex-1 bg-slate-100 p-6">
-      <div className="h-full w-full overflow-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <main
+      className="min-w-0 flex-1 bg-slate-100 p-6"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => e.preventDefault()}
+    >
+      <div
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`h-full w-full overflow-auto rounded-2xl border bg-white shadow-sm transition-all duration-200 ${
+          isDragOver
+            ? "border-2 border-dashed border-blue-500 bg-blue-50/20 ring-4 ring-blue-100"
+            : "border-gray-200"
+        }`}
+      >
         <div className="mx-auto min-h-full w-full max-w-4xl space-y-5 p-8">
           {components.length === 0 ? (
             <div className="flex min-h-[500px] items-center justify-center">
@@ -111,24 +171,39 @@ function Canvas({
                   Start Building Your Website
                 </h2>
                 <p className="mt-2 max-w-sm text-sm leading-6 text-gray-500">
-                  Select a component from the left panel to start designing your website.
+                  Drag a component from the left panel to start designing your website.
                 </p>
               </div>
             </div>
           ) : (
-            components.map((component) => (
-              <div
-                key={component.id}
-                onClick={() => setSelectedComponent(component.id)}
-                className={`cursor-pointer rounded-2xl transition-all duration-200 ${
-                  selectedComponent === component.id
-                    ? "ring-2 ring-blue-500 ring-offset-2"
-                    : "hover:ring-1 hover:ring-blue-300"
-                }`}
-              >
-                {renderComponent(component)}
-              </div>
-            ))
+            components.map((component, index) => {
+              const compKey = component.id || component._id || index;
+              const isSelected = selectedComponent === compKey;
+
+              return (
+                <div
+                  key={compKey}
+                  onClick={() => setSelectedComponent(compKey)}
+                  className={`group relative cursor-pointer rounded-2xl transition-all duration-200 ${
+                    isSelected
+                      ? "ring-2 ring-blue-500 ring-offset-2"
+                      : "hover:ring-1 hover:ring-blue-300"
+                  }`}
+                >
+                  {/* Delete Trash Button: hidden by default, visible only on hover */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleDelete(e, compKey)}
+                    className="absolute -right-3 -top-3 z-30 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-red-500 opacity-0 shadow-md transition-all duration-150 group-hover:opacity-100 hover:scale-110 hover:bg-red-50 hover:text-red-700 pointer-events-auto"
+                    title="Delete Component"
+                  >
+                    <FaTrash className="pointer-events-none text-xs" />
+                  </button>
+
+                  {renderComponent(component)}
+                </div>
+              );
+            })
           )}
         </div>
       </div>
