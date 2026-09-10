@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import {
+  useSearchParams,
+  useNavigate,
+} from "react-router-dom";
 import BuildHeader from "./BuildHeader";
 import Canvas from "./Canvas";
 import ComponentsPanel from "./ComponentsPanel";
@@ -8,177 +11,513 @@ import api from "../../api/axios";
 import { FaExclamationTriangle } from "react-icons/fa";
 
 function Build() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] =
+    useSearchParams();
+
   const navigate = useNavigate();
 
-  const [currentProject, setCurrentProject] = useState(null);
-  const [components, setComponents] = useState([]);
-  const [selectedComponent, setSelectedComponent] = useState(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const [showExitModal, setShowExitModal] = useState(false);
+  const [currentProject, setCurrentProject] =
+    useState(null);
 
-  // Warn on tab close/refresh only if dirty AND the user is authenticated
+  const [components, setComponents] =
+    useState([]);
+
+  const [selectedComponent, setSelectedComponent] =
+    useState(null);
+
+  const [isDirty, setIsDirty] =
+    useState(false);
+
+  const [showExitModal, setShowExitModal] =
+    useState(false);
+
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      const isAuthenticated = Boolean(localStorage.getItem("token"));
+      const isAuthenticated = Boolean(
+        localStorage.getItem("token")
+      );
+
       if (isDirty && isAuthenticated) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener(
+      "beforeunload",
+      handleBeforeUnload
+    );
+
+    return () =>
+      window.removeEventListener(
+        "beforeunload",
+        handleBeforeUnload
+      );
   }, [isDirty]);
 
-  // Keyboard shortcut to delete selected component
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!selectedComponent) return;
 
-      const tag = document.activeElement?.tagName?.toLowerCase();
-      if (tag === "input" || tag === "textarea") return;
+      const tag =
+        document.activeElement?.tagName?.toLowerCase();
 
-      if (e.key === "Delete" || e.key === "Backspace") {
+      if (
+        tag === "input" ||
+        tag === "textarea"
+      ) {
+        return;
+      }
+
+      if (
+        e.key === "Delete" ||
+        e.key === "Backspace"
+      ) {
         e.preventDefault();
-        deleteComponent(selectedComponent);
+
+        deleteComponent(
+          selectedComponent
+        );
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () =>
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
   }, [selectedComponent]);
 
   useEffect(() => {
-    const projectId = searchParams.get("id");
+    const projectId =
+      searchParams.get("id");
+
     if (projectId) {
       loadProjectById(projectId);
     }
   }, [searchParams]);
 
-  const normalizeComponents = (list = []) => {
-    return list.map((item, index) => ({
-      ...item,
-      id: item.id || item._id || `${item.type || "comp"}-${Date.now()}-${index}`,
-    }));
+  const normalizeComponents = (
+    list = []
+  ) => {
+    return list.map(
+      (item, index) => ({
+        ...item,
+
+        id:
+          item.id ||
+          item._id ||
+          `${item.type || "comp"}-${Date.now()}-${index}`,
+      })
+    );
   };
 
-  const loadProjectById = async (id) => {
+  const loadProjectById = async (
+    id
+  ) => {
     try {
-      const res = await api.get("/projects/history");
-      const found = res.data.find((p) => p._id === id);
+      const res =
+        await api.get(
+          "/projects/history"
+        );
+
+      const found =
+        res.data.find(
+          (p) => p._id === id
+        );
+
       if (found) {
-        handleSelectProject(found);
+        handleSelectProject(
+          found
+        );
       }
     } catch (err) {
-      console.error("Failed to load project:", err);
+      console.error(
+        "Failed to load project:",
+        err
+      );
     }
   };
 
-  const handleSelectProject = (project) => {
+  const handleSelectProject = (
+    project
+  ) => {
     setCurrentProject(project);
-    setComponents(normalizeComponents(project.canvasData || []));
+
+    setComponents(
+      normalizeComponents(
+        project.canvasData || []
+      )
+    );
+
     setSelectedComponent(null);
+
     setIsDirty(false);
 
-    if (searchParams.get("id") !== project._id) {
-      setSearchParams({ id: project._id }, { replace: true });
+    if (
+      searchParams.get("id") !==
+      project._id
+    ) {
+      setSearchParams(
+        {
+          id: project._id,
+        },
+        {
+          replace: true,
+        }
+      );
     }
   };
 
   const handleNewProject = () => {
     setCurrentProject(null);
+
     setComponents([]);
+
     setSelectedComponent(null);
+
     setIsDirty(false);
-    setSearchParams({}, { replace: true });
+
+    setSearchParams(
+      {},
+      {
+        replace: true,
+      }
+    );
   };
 
-  const addComponent = (component) => {
+  const addComponent = (
+    component
+  ) => {
+    const componentType =
+      component.type ||
+      component.id;
+
     const newComponent = {
-      id: `${component.id}-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      type: component.id,
-      name: component.name,
+      id: `${componentType}-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 7)}`,
+
+      type: componentType,
+
+      name:
+        component.name ||
+        componentType,
+
+      /* Navbar */
+      brand: "",
+      home: "",
+      about: "",
+      contact: "",
+
+      /* Hero */
+      heading: "",
+      description: "",
+      buttonText: "",
+
+      /* Section */
+      content: "",
+
+      /* Button */
+      text: "",
+      link: "",
+
+      /* Image */
+      src: "",
+      alt: "",
+      imageName: "",
+      imageWidth: "",
+      imageHeight: "",
+      objectFit: "cover",
+      imageAlign: "left",
+
+      /* Card */
+      title: "",
+
+      /* Form */
+      namePlaceholder: "",
+      emailPlaceholder: "",
     };
 
-    setComponents((prev) => [...prev, newComponent]);
-    setSelectedComponent(newComponent.id);
-    setIsDirty(true);
-  };
-
-  const deleteComponent = (targetId) => {
-    setComponents((prev) =>
-      prev.filter((item) => item.id !== targetId && item._id !== targetId)
+    setComponents(
+      (prev) => [
+        ...prev,
+        newComponent,
+      ]
     );
 
-    setSelectedComponent((prev) => (prev === targetId ? null : prev));
+    setSelectedComponent(
+      newComponent.id
+    );
+
     setIsDirty(true);
   };
 
-const performBackNavigation = () => {
-    // If the user has prior session history in this tab, go back; otherwise send them Home
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate("/", { replace: true });
-    }
+  const updateComponent = (
+    id,
+    updates
+  ) => {
+    setComponents(
+      (prev) =>
+        prev.map(
+          (component) =>
+            (
+              component.id ||
+              component._id
+            ) === id
+              ? {
+                  ...component,
+                  ...updates,
+                }
+              : component
+        )
+    );
+
+    setIsDirty(true);
   };
 
-  const handleBackRequest = () => {
-    const isAuthenticated = Boolean(localStorage.getItem("token"));
+  /* =========================
+     DELETE COMPONENT
+  ========================== */
+  const deleteComponent = (
+    id
+  ) => {
+    setComponents(
+      (prev) =>
+        prev.filter(
+          (component) =>
+            (
+              component.id ||
+              component._id
+            ) !== id
+        )
+    );
 
-    // Prompt for unsaved changes only if dirty AND the user is logged in
-    if (isDirty && isAuthenticated) {
-      setShowExitModal(true);
+    if (
+      selectedComponent === id
+    ) {
+      setSelectedComponent(
+        null
+      );
+    }
+
+    setIsDirty(true);
+  };
+
+  /* =========================
+     MOVE COMPONENT
+  ========================== */
+  const moveComponent = (
+    id,
+    direction
+  ) => {
+    setComponents(
+      (prev) => {
+        const index =
+          prev.findIndex(
+            (component) =>
+              (
+                component.id ||
+                component._id
+              ) === id
+          );
+
+        if (index === -1) {
+          return prev;
+        }
+
+        const updated = [
+          ...prev,
+        ];
+
+        if (
+          direction === "up" &&
+          index > 0
+        ) {
+          [
+            updated[index - 1],
+            updated[index],
+          ] = [
+            updated[index],
+            updated[index - 1],
+          ];
+        }
+
+        if (
+          direction === "down" &&
+          index <
+            updated.length - 1
+        ) {
+          [
+            updated[index],
+            updated[index + 1],
+          ] = [
+            updated[index + 1],
+            updated[index],
+          ];
+        }
+
+        return updated;
+      }
+    );
+
+    setIsDirty(true);
+  };
+
+  const performBackNavigation =
+    () => {
+      if (
+        window.history.state &&
+        window.history.state.idx >
+          0
+      ) {
+        navigate(-1);
+      } else {
+        navigate("/", {
+          replace: true,
+        });
+      }
+    };
+
+  const handleBackRequest = () => {
+    const isAuthenticated =
+      Boolean(
+        localStorage.getItem(
+          "token"
+        )
+      );
+
+    if (
+      isDirty &&
+      isAuthenticated
+    ) {
+      setShowExitModal(
+        true
+      );
     } else {
       performBackNavigation();
     }
   };
 
-  const confirmDiscardAndExit = () => {
-    setIsDirty(false);
-    setShowExitModal(false);
-    performBackNavigation();
-  };
+  const confirmDiscardAndExit =
+    () => {
+      setIsDirty(false);
+
+      setShowExitModal(
+        false
+      );
+
+      performBackNavigation();
+    };
 
   return (
     <div
       className="h-screen overflow-hidden bg-slate-100"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => e.preventDefault()}
+      onDragOver={(e) =>
+        e.preventDefault()
+      }
+      onDrop={(e) =>
+        e.preventDefault()
+      }
     >
       <BuildHeader
-        currentProject={currentProject}
-        onSelectProject={handleSelectProject}
-        onNewProject={handleNewProject}
-        components={components}
-        onBackClick={handleBackRequest}
-        onMarkDirty={() => setIsDirty(true)}
-        onProjectSaved={(savedDoc) => {
-          setCurrentProject(savedDoc);
-          setComponents(normalizeComponents(savedDoc.canvasData || []));
+        currentProject={
+          currentProject
+        }
+        onSelectProject={
+          handleSelectProject
+        }
+        onNewProject={
+          handleNewProject
+        }
+        components={
+          components
+        }
+        onBackClick={
+          handleBackRequest
+        }
+        onMarkDirty={() =>
+          setIsDirty(true)
+        }
+        onProjectSaved={(
+          savedDoc
+        ) => {
+          setCurrentProject(
+            savedDoc
+          );
+
+          setComponents(
+            normalizeComponents(
+              savedDoc.canvasData ||
+                []
+            )
+          );
+
           setIsDirty(false);
-          if (searchParams.get("id") !== savedDoc._id) {
-            setSearchParams({ id: savedDoc._id }, { replace: true });
+
+          if (
+            searchParams.get(
+              "id"
+            ) !== savedDoc._id
+          ) {
+            setSearchParams(
+              {
+                id: savedDoc._id,
+              },
+              {
+                replace: true,
+              }
+            );
           }
         }}
       />
 
       <div className="flex h-[calc(100vh-4rem)] min-h-0">
-        <ComponentsPanel onAddComponent={addComponent} />
+        <ComponentsPanel
+          onAddComponent={
+            addComponent
+          }
+        />
 
         <Canvas
-          components={components}
-          selectedComponent={selectedComponent}
-          setSelectedComponent={setSelectedComponent}
-          onDropComponent={addComponent}
-          onDeleteComponent={deleteComponent}
+          components={
+            components
+          }
+          selectedComponent={
+            selectedComponent
+          }
+          setSelectedComponent={
+            setSelectedComponent
+          }
+          onDropComponent={
+            addComponent
+          }
+          onDeleteComponent={
+            deleteComponent
+          }
+          onMoveComponent={
+            moveComponent
+          }
         />
 
         <PropertiesPanel
-          components={components}
-          selectedComponent={selectedComponent}
-          onDeleteComponent={deleteComponent}
+          components={
+            components
+          }
+          selectedComponent={
+            selectedComponent
+          }
+          onUpdateComponent={
+            updateComponent
+          }
+          onDeleteComponent={
+            deleteComponent
+          }
         />
       </div>
 
@@ -193,23 +532,35 @@ const performBackNavigation = () => {
               <h3 className="text-lg font-bold text-gray-900">
                 Unsaved Changes
               </h3>
-              <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-                You have unsaved changes in your project. If you leave now, all
-                recent edits will be discarded.
+
+              <p className="mt-2 text-sm leading-relaxed text-gray-500">
+                You have unsaved
+                changes in your
+                project. If you
+                leave now, all
+                recent edits will
+                be discarded.
               </p>
             </div>
 
             <div className="mt-6 flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setShowExitModal(false)}
+                onClick={() =>
+                  setShowExitModal(
+                    false
+                  )
+                }
                 className="w-full rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
                 Stay & Save
               </button>
+
               <button
                 type="button"
-                onClick={confirmDiscardAndExit}
+                onClick={
+                  confirmDiscardAndExit
+                }
                 className="w-full rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
               >
                 Discard & Leave
