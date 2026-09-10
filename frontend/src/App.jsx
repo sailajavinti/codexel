@@ -12,6 +12,7 @@ import Build from "./pages/build/Build";
 
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 
 import Profile from "./pages/profile/Profile";
 
@@ -49,6 +50,8 @@ function AppLayout() {
           path="/reset-password/:token"
           element={<ResetPassword />}
         />
+
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
         {/* Application */}
         <Route path="/build" element={<Build />} />

@@ -378,34 +378,7 @@ function SignupForm({ setIsLogin }) {
         </button>
       </form>
 
-      {/* Divider */}
-      <div className="flex items-center gap-3 sm:gap-4 my-6 sm:my-8">
-        <div className="flex-1 h-px bg-gray-200 sm:bg-gray-300"></div>
-        <span className="text-[11px] sm:text-xs tracking-wider text-gray-400 sm:text-gray-500 font-medium">
-          OR SIGN UP WITH
-        </span>
-        <div className="flex-1 h-px bg-gray-200 sm:bg-gray-300"></div>
-      </div>
-
-      {/* Social Signup */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4">
-        <button
-          type="button"
-          className="flex items-center justify-center gap-2.5 sm:gap-3 rounded-xl border border-gray-300 bg-white py-2.5 sm:py-3 text-sm sm:text-base font-medium text-gray-700 transition hover:bg-gray-50 hover:border-gray-400 active:scale-[0.99]"
-        >
-          <FaGoogle className="text-red-500 text-sm sm:text-base" />
-          Google
-        </button>
-
-        <button
-          type="button"
-          className="flex items-center justify-center gap-2.5 sm:gap-3 rounded-xl border border-gray-300 bg-white py-2.5 sm:py-3 text-sm sm:text-base font-medium text-gray-700 transition hover:bg-gray-50 hover:border-gray-400 active:scale-[0.99]"
-        >
-          <FaGithub className="text-sm sm:text-base" />
-          GitHub
-        </button>
-      </div>
-
+    
       {/* Bottom */}
       <p className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-600">
         Already have an account?{" "}

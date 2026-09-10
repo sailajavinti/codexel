@@ -131,21 +131,23 @@ function Header() {
               </NavLink>
             </li>
 
-            {/* Join Us - ALWAYS VISIBLE */}
-            <li>
-              <NavLink
-                to="/auth"
-                className={({ isActive }) =>
-                  `rounded-xl px-6 py-2.5 text-white font-semibold transition ${
-                    isActive
-                      ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
-                      : "bg-blue-600 hover:bg-blue-700"
-                  }`
-                }
-              >
-                Join Us
-              </NavLink>
-            </li>
+            {/* Join Us - ONLY WHEN NOT LOGGED IN */}
+            {!isLoggedIn && (
+              <li>
+                <NavLink
+                  to="/auth"
+                  className={({ isActive }) =>
+                    `rounded-xl px-6 py-2.5 text-white font-semibold transition ${
+                      isActive
+                        ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`
+                  }
+                >
+                  Join Us
+                </NavLink>
+              </li>
+            )}
 
             {/* Profile - ONLY WHEN LOGGED IN */}
             {isLoggedIn && (
@@ -282,22 +284,24 @@ function Header() {
               </NavLink>
             </li>
 
-            {/* Join Us - ALWAYS VISIBLE */}
-            <li className="pt-4">
-              <NavLink
-                to="/auth"
-                onClick={() => setIsOpen(false)}
-                className={({ isActive }) =>
-                  `block text-center rounded-xl px-6 py-2.5 text-white font-semibold transition shadow-md shadow-blue-500/20 ${
-                    isActive
-                      ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
-                      : "bg-blue-600 hover:bg-blue-700"
-                  }`
-                }
-              >
-                Join Us
-              </NavLink>
-            </li>
+            {/* Join Us - ONLY WHEN NOT LOGGED IN */}
+            {!isLoggedIn && (
+              <li className="pt-4">
+                <NavLink
+                  to="/auth"
+                  onClick={() => setIsOpen(false)}
+                  className={({ isActive }) =>
+                    `block text-center rounded-xl px-6 py-2.5 text-white font-semibold transition shadow-md shadow-blue-500/20 ${
+                      isActive
+                        ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`
+                  }
+                >
+                  Join Us
+                </NavLink>
+              </li>
+            )}
 
             {/* Profile - ONLY WHEN LOGGED IN */}
             {isLoggedIn && (
