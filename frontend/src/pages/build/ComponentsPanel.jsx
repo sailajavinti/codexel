@@ -5,15 +5,27 @@ import {
   FaMousePointer,
   FaImage,
   FaIdCard,
+  FaWpforms,
+  FaTags,
+  FaThLarge,
+  FaFont,
+  FaMinus,
+  FaRegWindowMinimize,
 } from "react-icons/fa";
 
 const AVAILABLE_COMPONENTS = [
   { id: "navbar", name: "Navbar", category: "LAYOUT", icon: FaBars },
   { id: "hero", name: "Hero", category: "LAYOUT", icon: FaHeading },
   { id: "section", name: "Section", category: "LAYOUT", icon: FaSquare },
+  { id: "features", name: "Features Grid", category: "LAYOUT", icon: FaThLarge },
+  { id: "pricing", name: "Pricing Table", category: "LAYOUT", icon: FaTags },
+  { id: "footer", name: "Footer", category: "LAYOUT", icon: FaRegWindowMinimize },
+  { id: "heading", name: "Heading / Text", category: "ELEMENTS", icon: FaFont },
   { id: "button", name: "Button", category: "ELEMENTS", icon: FaMousePointer },
   { id: "image", name: "Image", category: "ELEMENTS", icon: FaImage },
   { id: "card", name: "Card", category: "ELEMENTS", icon: FaIdCard },
+  { id: "divider", name: "Divider", category: "ELEMENTS", icon: FaMinus },
+  { id: "form", name: "Contact Form", category: "FORMS", icon: FaWpforms },
 ];
 
 function ComponentsPanel({ onAddComponent }) {
@@ -24,6 +36,7 @@ function ComponentsPanel({ onAddComponent }) {
 
   const layoutItems = AVAILABLE_COMPONENTS.filter((c) => c.category === "LAYOUT");
   const elementItems = AVAILABLE_COMPONENTS.filter((c) => c.category === "ELEMENTS");
+  const formItems = AVAILABLE_COMPONENTS.filter((c) => c.category === "FORMS");
 
   return (
     <aside className="w-64 shrink-0 overflow-y-auto border-r border-gray-200 bg-white p-4">
@@ -33,7 +46,7 @@ function ComponentsPanel({ onAddComponent }) {
       </div>
 
       <div className="space-y-6">
-        {/* Layout Items */}
+        {/* Layout */}
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
             Layout
@@ -59,13 +72,39 @@ function ComponentsPanel({ onAddComponent }) {
           </div>
         </div>
 
-        {/* Elements Items */}
+        {/* Elements */}
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
             Elements
           </span>
           <div className="mt-2 space-y-2">
             {elementItems.map((comp) => {
+              const Icon = comp.icon;
+              return (
+                <div
+                  key={comp.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, comp)}
+                  onClick={() => onAddComponent(comp)}
+                  className="flex cursor-grab items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-600 active:cursor-grabbing"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-xs">
+                    <Icon className="text-gray-500" />
+                  </div>
+                  <span>{comp.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Forms */}
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            Forms
+          </span>
+          <div className="mt-2 space-y-2">
+            {formItems.map((comp) => {
               const Icon = comp.icon;
               return (
                 <div

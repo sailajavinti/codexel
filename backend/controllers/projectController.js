@@ -4,7 +4,6 @@ import Project from "../models/Project.js";
 // Save or Update a Project
 export const saveProject = async (req, res) => {
   try {
-    // Extract ID regardless of whether the token decoded as id, _id, or userId
     const rawUserId =
       req.user?._id ||
       req.user?.id ||
@@ -16,14 +15,20 @@ export const saveProject = async (req, res) => {
     }
 
     const userId = new mongoose.Types.ObjectId(rawUserId);
-    const { id, title, canvasData } = req.body;
+    const { id, title, canvasData, pages } = req.body;
 
     let project;
 
     if (id) {
+      const updateData = {
+        title,
+        ...(canvasData !== undefined && { canvasData }),
+        ...(pages !== undefined && { pages }),
+      };
+
       project = await Project.findOneAndUpdate(
         { _id: id, user: userId },
-        { title, ...(canvasData && { canvasData }) },
+        updateData,
         { new: true }
       );
 
@@ -35,6 +40,7 @@ export const saveProject = async (req, res) => {
         user: userId,
         title: title || "Untitled Project",
         canvasData: canvasData || [],
+        pages: pages || [],
       });
     }
 

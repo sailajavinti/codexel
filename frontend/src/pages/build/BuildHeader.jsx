@@ -14,7 +14,8 @@ function BuildHeader({
   currentProject,
   onSelectProject,
   onNewProject,
-  components,
+  pages = [],
+  components = [],
   onProjectSaved,
   onBackClick,
   onMarkDirty,
@@ -83,10 +84,7 @@ function BuildHeader({
 
     if (!trimmed || trimmed === "Untitled Project") {
       setProjectName(currentProject?.title || "Untitled Project");
-
-      if (!currentProject?._id) {
-        return;
-      }
+      if (!currentProject?._id) return;
     }
 
     if (currentProject?._id && trimmed === currentProject.title) {
@@ -121,6 +119,7 @@ function BuildHeader({
         id: currentProject?._id || null,
         title: titleToPersist,
         canvasData: components,
+        pages: pages,
       });
 
       if (onProjectSaved) {
@@ -142,7 +141,7 @@ function BuildHeader({
   };
 
   return (
-    <header className="relative flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
+    <header className="relative flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
       {/* Left: Navigation + Open Project */}
       <div className="flex items-center gap-4 z-10">
         <button
@@ -224,7 +223,7 @@ function BuildHeader({
         </div>
       </div>
 
-      {/* Middle: Centered Project Title Input + Status Indicator */}
+      {/* Middle: Title Input */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
         <input
           type="text"

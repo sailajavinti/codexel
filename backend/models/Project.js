@@ -17,6 +17,10 @@ const projectSchema = new mongoose.Schema(
       type: Array,
       default: [],
     },
+    pages: {
+      type: Array,
+      default: [],
+    },
   },
   { timestamps: true }
 );
