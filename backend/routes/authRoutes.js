@@ -8,6 +8,7 @@ import {
   resetPassword,
   updateProfile,
   verifyEmail,
+  resendVerificationEmail
 
 } from "../controllers/authController.js";
 
@@ -24,5 +25,6 @@ router.post("/reset-password/:token", resetPassword);
 
 router.get("/me", authMiddleware, getMe);
 router.put("/update-profile", authMiddleware, updateProfile);
+router.post("/resend-verification", resendVerificationEmail);
 
 export default router;

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import {
   FaUser,
@@ -7,8 +6,6 @@ import {
   FaLock,
   FaEye,
   FaEyeSlash,
-  FaGoogle,
-  FaGithub,
 } from "react-icons/fa";
 
 import { signupUser } from "../services/authService";
@@ -26,9 +23,8 @@ function SignupForm({ setIsLogin }) {
 
   const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
 
   // Email validation
   const isValidEmail = (email) => {
@@ -81,6 +77,7 @@ function SignupForm({ setIsLogin }) {
     e.preventDefault();
 
     setError("");
+    setMessage("");
 
     // Stop if validation fails
     if (!validateForm()) {
@@ -96,14 +93,19 @@ function SignupForm({ setIsLogin }) {
         password,
       });
 
-      // Store JWT
-      localStorage.setItem("token", data.token);
+      // Show verification message
+      setMessage(
+        data.message ||
+          "Account created successfully. Please check your email to verify your account."
+      );
 
-      // Store user information
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      // Move to Build page
-      navigate("/build");
+      // Clear form
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setAgreeTerms(false);
+      setErrors({});
     } catch (error) {
       if (error.response) {
         setError(error.response.data.message || "Signup failed");
@@ -144,6 +146,8 @@ function SignupForm({ setIsLogin }) {
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
+                setMessage("");
+                setError("");
 
                 if (errors.name) {
                   setErrors((prev) => ({
@@ -151,8 +155,6 @@ function SignupForm({ setIsLogin }) {
                     name: "",
                   }));
                 }
-
-                setError("");
               }}
               className={`w-full rounded-xl border bg-white py-2.5 sm:py-3 pl-11 sm:pl-12 pr-4 text-sm sm:text-base outline-none transition-all duration-200 focus:ring-4 ${
                 errors.name
@@ -184,6 +186,8 @@ function SignupForm({ setIsLogin }) {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
+                setMessage("");
+                setError("");
 
                 if (errors.email) {
                   setErrors((prev) => ({
@@ -191,8 +195,6 @@ function SignupForm({ setIsLogin }) {
                     email: "",
                   }));
                 }
-
-                setError("");
               }}
               className={`w-full rounded-xl border bg-white py-2.5 sm:py-3 pl-11 sm:pl-12 pr-4 text-sm sm:text-base outline-none transition-all duration-200 focus:ring-4 ${
                 errors.email
@@ -224,6 +226,8 @@ function SignupForm({ setIsLogin }) {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
+                setMessage("");
+                setError("");
 
                 if (errors.password) {
                   setErrors((prev) => ({
@@ -231,8 +235,6 @@ function SignupForm({ setIsLogin }) {
                     password: "",
                   }));
                 }
-
-                setError("");
               }}
               className={`w-full rounded-xl border bg-white py-2.5 sm:py-3 pl-11 sm:pl-12 pr-11 sm:pr-12 text-sm sm:text-base outline-none transition-all duration-200 focus:ring-4 ${
                 errors.password
@@ -267,7 +269,9 @@ function SignupForm({ setIsLogin }) {
           <div className="relative">
             <FaLock
               className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm sm:text-base ${
-                errors.confirmPassword ? "text-red-400" : "text-gray-400"
+                errors.confirmPassword
+                  ? "text-red-400"
+                  : "text-gray-400"
               }`}
             />
 
@@ -277,6 +281,8 @@ function SignupForm({ setIsLogin }) {
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
+                setMessage("");
+                setError("");
 
                 if (errors.confirmPassword) {
                   setErrors((prev) => ({
@@ -284,8 +290,6 @@ function SignupForm({ setIsLogin }) {
                     confirmPassword: "",
                   }));
                 }
-
-                setError("");
               }}
               className={`w-full rounded-xl border bg-white py-2.5 sm:py-3 pl-11 sm:pl-12 pr-11 sm:pr-12 text-sm sm:text-base outline-none transition-all duration-200 focus:ring-4 ${
                 errors.confirmPassword
@@ -298,7 +302,9 @@ function SignupForm({ setIsLogin }) {
               type="button"
               onClick={() => setShowConfirm(!showConfirm)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 p-1 focus:outline-none"
-              aria-label={showConfirm ? "Hide password" : "Show password"}
+              aria-label={
+                showConfirm ? "Hide password" : "Show password"
+              }
             >
               {showConfirm ? (
                 <FaEyeSlash className="text-sm sm:text-base" />
@@ -323,6 +329,8 @@ function SignupForm({ setIsLogin }) {
               checked={agreeTerms}
               onChange={(e) => {
                 setAgreeTerms(e.target.checked);
+                setMessage("");
+                setError("");
 
                 if (errors.terms) {
                   setErrors((prev) => ({
@@ -330,8 +338,6 @@ function SignupForm({ setIsLogin }) {
                     terms: "",
                   }));
                 }
-
-                setError("");
               }}
               className="mt-0.5 sm:mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600 focus:ring-blue-500"
             />
@@ -361,6 +367,23 @@ function SignupForm({ setIsLogin }) {
           )}
         </div>
 
+        {/* Success Message */}
+        {message && (
+          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+            <p className="text-sm leading-5 text-green-700">
+              {message}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setIsLogin(true)}
+              className="mt-2 text-sm font-semibold text-green-700 hover:underline"
+            >
+              Go to Login
+            </button>
+          </div>
+        )}
+
         {/* Server Error */}
         {error && (
           <p className="rounded-lg bg-red-50 px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-red-600">
@@ -378,7 +401,6 @@ function SignupForm({ setIsLogin }) {
         </button>
       </form>
 
-    
       {/* Bottom */}
       <p className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-600">
         Already have an account?{" "}
