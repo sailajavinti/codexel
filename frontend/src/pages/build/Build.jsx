@@ -4,6 +4,7 @@ import BuildHeader from "./BuildHeader";
 import Canvas from "./Canvas";
 import ComponentsPanel from "./ComponentsPanel";
 import PropertiesPanel from "./PropertiesPanel";
+import CodePreview from "./CodePreview";
 import api from "../../api/axios";
 import { FaExclamationTriangle, FaPlus, FaTimes } from "react-icons/fa";
 
@@ -19,15 +20,23 @@ function Build() {
 
   const [currentProject, setCurrentProject] = useState(null);
   const [pages, setPages] = useState([DEFAULT_PAGE]);
+  // Holds only persisted/committed data
+  const [savedPages, setSavedPages] = useState([]);
   const [activePageId, setActivePageId] = useState("page-home");
   const [editingPageId, setEditingPageId] = useState(null);
   const [selectedComponent, setSelectedComponent] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
+  const [showCodePreview, setShowCodePreview] = useState(false);
 
   const activePage =
     pages.find((p) => p.id === activePageId) || pages[0] || DEFAULT_PAGE;
   const components = activePage.canvasData || [];
+
+  // Saved version of the active page for CodePreview
+  const activeSavedPage =
+    savedPages.find((p) => p.id === activePageId) ||
+    savedPages[0] || { id: "empty", name: activePage.name, canvasData: [] };
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -69,7 +78,9 @@ function Build() {
   const normalizeComponents = (list = []) => {
     return list.map((item, index) => ({
       ...item,
-      borderRadius: item.borderRadius ?? 0,
+      width: item.width || (item.type === "button" ? "auto" : "100%"),
+      minHeight: item.minHeight || "",
+      borderRadius: item.borderRadius ?? (item.type === "button" ? 6 : 0),
       id:
         item.id ||
         item._id ||
@@ -111,6 +122,8 @@ function Build() {
     setCurrentProject(project);
     const parsedPages = parseProjectPages(project);
     setPages(parsedPages);
+    // Sync saved snapshot with loaded project
+    setSavedPages(parsedPages);
     setActivePageId(parsedPages[0]?.id || "page-home");
     setEditingPageId(null);
     setSelectedComponent(null);
@@ -124,6 +137,7 @@ function Build() {
   const handleNewProject = () => {
     setCurrentProject(null);
     setPages([DEFAULT_PAGE]);
+    setSavedPages([]);
     setActivePageId("page-home");
     setEditingPageId(null);
     setSelectedComponent(null);
@@ -191,10 +205,15 @@ function Build() {
       id: `${componentType}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       type: componentType,
       name: component.name || componentType,
-      borderRadius: 0,
+
+      width: componentType === "button" ? "auto" : "100%",
+      minHeight: "",
+      borderRadius: componentType === "button" ? 6 : 0,
       margin: 0,
 
       brand: "CodeXel",
+      brandColor: "#0f172a",
+      navLinkColor: "#475569",
       home: "Home",
       about: "About",
       contact: "Contact",
@@ -202,6 +221,9 @@ function Build() {
       heading: "Build Modern Web Experiences",
       description: "Design and export responsive interfaces visually in minutes.",
       buttonText: "Get Started",
+      heroButtonBg: "#ffffff",
+      heroButtonTextColor: "#2563eb",
+      heroButtonLink: "#",
 
       content: "This is a customizable content section.",
 
@@ -217,6 +239,8 @@ function Build() {
       pricingPeriod: "/ month",
       pricingFeatures: "Unlimited Projects\nCode Export\nPriority Support",
       pricingButtonText: "Choose Plan",
+      pricingButtonBg: "#2563eb",
+      pricingButtonTextColor: "#ffffff",
 
       copyright: "© 2026 CodeXel Inc. All rights reserved.",
       footerLink1: "Privacy Policy",
@@ -227,6 +251,11 @@ function Build() {
 
       text: "Click Me",
       link: "#",
+      btnBgColor: "#2563eb",
+      btnTextColor: "#ffffff",
+      btnAlign: "left",
+      btnPaddingX: 20,
+      btnPaddingY: 10,
 
       src: "",
       alt: "",
@@ -302,6 +331,14 @@ function Build() {
     performBackNavigation();
   };
 
+  const handleOpenExport = () => {
+    if (savedPages.length === 0) {
+      alert("Please save your project first before exporting code.");
+      return;
+    }
+    setShowCodePreview(true);
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-slate-100 flex flex-col">
       <BuildHeader
@@ -312,10 +349,13 @@ function Build() {
         components={components}
         onBackClick={handleBackRequest}
         onMarkDirty={() => setIsDirty(true)}
+        onExportClick={handleOpenExport}
         onProjectSaved={(savedDoc) => {
           setCurrentProject(savedDoc);
           const parsed = parseProjectPages(savedDoc);
           setPages(parsed);
+          // Update committed state on successful save
+          setSavedPages(parsed);
           setIsDirty(false);
           if (searchParams.get("id") !== savedDoc._id) {
             setSearchParams({ id: savedDoc._id }, { replace: true });
@@ -422,6 +462,7 @@ function Build() {
           onDropComponent={addComponent}
           onDeleteComponent={deleteComponent}
           onReorderComponents={reorderComponents}
+          onUpdateComponent={updateComponent}
         />
 
         <PropertiesPanel
@@ -431,6 +472,14 @@ function Build() {
           onDeleteComponent={deleteComponent}
         />
       </div>
+
+      {/* Pass only committed/saved data to CodePreview */}
+      <CodePreview
+        isOpen={showCodePreview}
+        onClose={() => setShowCodePreview(false)}
+        activePage={activeSavedPage}
+        pages={savedPages}
+      />
 
       {showExitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">

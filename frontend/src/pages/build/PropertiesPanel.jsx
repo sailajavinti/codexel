@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const WIDTH_OPTIONS = ["Auto", "25%", "33.33%", "50%", "66.67%", "75%", "100%"];
+
 function PropertiesPanel({
   components = [],
   selectedComponent,
@@ -25,12 +27,14 @@ function PropertiesPanel({
         <h2 className="text-lg font-bold text-slate-800">Properties</h2>
         <div className="mt-8 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
           <p className="text-sm text-gray-500">
-            Select a component on the canvas to edit its properties and styles.
+            Select a component on the canvas to edit its properties, width, and styles.
           </p>
         </div>
       </aside>
     );
   }
+
+  const isButton = selected.type === "button";
 
   return (
     <aside className="w-80 shrink-0 overflow-y-auto border-l border-gray-200 bg-white">
@@ -46,9 +50,54 @@ function PropertiesPanel({
 
       <div className="space-y-6 p-5">
 
-        {/* ================= CONTENT ================= */}
-
+        {/* ================= LAYOUT & SIZING ================= */}
         <section>
+          <h3 className="mb-3 text-sm font-bold text-slate-800">Layout & Width</h3>
+
+          <div>
+            <label className="mb-2 block text-xs font-semibold text-gray-600">
+              Width (% of Row)
+            </label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {WIDTH_OPTIONS.map((w) => {
+                const isCurrent =
+                  w === "Auto"
+                    ? selected.width === "auto"
+                    : (selected.width || "100%") === w;
+
+                return (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() =>
+                      updateProperty("width", w === "Auto" ? "auto" : w)
+                    }
+                    className={`py-1.5 text-xs font-semibold rounded border transition ${
+                      isCurrent
+                        ? "border-blue-600 bg-blue-50 text-blue-600 shadow-xs"
+                        : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {w}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <NumberField
+              label="Min Height"
+              value={selected.minHeight || ""}
+              onChange={(v) => updateProperty("minHeight", v)}
+              placeholder="Auto"
+              unit="px"
+            />
+          </div>
+        </section>
+
+        {/* ================= CONTENT ================= */}
+        <section className="border-t border-gray-200 pt-6">
           <h3 className="mb-4 text-sm font-bold text-slate-800">Content</h3>
 
           {/* NAVBAR */}
@@ -60,20 +109,30 @@ function PropertiesPanel({
                 onChange={(value) => updateProperty("brand", value)}
                 placeholder="Your Brand"
               />
+              <ColorField
+                label="Brand Text Color"
+                value={selected.brandColor || "#0f172a"}
+                onChange={(v) => updateProperty("brandColor", v)}
+              />
+              <ColorField
+                label="Nav Links Color"
+                value={selected.navLinkColor || "#475569"}
+                onChange={(v) => updateProperty("navLinkColor", v)}
+              />
               <Field
-                label="Home"
+                label="Home Link"
                 value={selected.home || ""}
                 onChange={(value) => updateProperty("home", value)}
                 placeholder="Home"
               />
               <Field
-                label="About"
+                label="About Link"
                 value={selected.about || ""}
                 onChange={(value) => updateProperty("about", value)}
                 placeholder="About"
               />
               <Field
-                label="Contact"
+                label="Contact Link"
                 value={selected.contact || ""}
                 onChange={(value) => updateProperty("contact", value)}
                 placeholder="Contact"
@@ -96,12 +155,34 @@ function PropertiesPanel({
                 onChange={(value) => updateProperty("description", value)}
                 placeholder="Enter description"
               />
-              <Field
-                label="Button Text"
-                value={selected.buttonText || ""}
-                onChange={(value) => updateProperty("buttonText", value)}
-                placeholder="Get Started"
-              />
+
+              <div className="rounded-lg bg-blue-50/50 p-3 border border-blue-100 space-y-3">
+                <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                  Hero CTA Button
+                </span>
+                <Field
+                  label="Button Text"
+                  value={selected.buttonText || ""}
+                  onChange={(v) => updateProperty("buttonText", v)}
+                  placeholder="Get Started"
+                />
+                <Field
+                  label="Button Link"
+                  value={selected.heroButtonLink || ""}
+                  onChange={(v) => updateProperty("heroButtonLink", v)}
+                  placeholder="#"
+                />
+                <ColorField
+                  label="Button Background"
+                  value={selected.heroButtonBg || "#ffffff"}
+                  onChange={(v) => updateProperty("heroButtonBg", v)}
+                />
+                <ColorField
+                  label="Button Text Color"
+                  value={selected.heroButtonTextColor || "#2563eb"}
+                  onChange={(v) => updateProperty("heroButtonTextColor", v)}
+                />
+              </div>
             </div>
           )}
 
@@ -182,11 +263,27 @@ function PropertiesPanel({
                 value={selected.pricingFeatures || ""}
                 onChange={(v) => updateProperty("pricingFeatures", v)}
               />
-              <Field
-                label="Button Text"
-                value={selected.pricingButtonText || ""}
-                onChange={(v) => updateProperty("pricingButtonText", v)}
-              />
+
+              <div className="rounded-lg bg-blue-50/50 p-3 border border-blue-100 space-y-3">
+                <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                  Plan Button
+                </span>
+                <Field
+                  label="Button Text"
+                  value={selected.pricingButtonText || ""}
+                  onChange={(v) => updateProperty("pricingButtonText", v)}
+                />
+                <ColorField
+                  label="Button Background"
+                  value={selected.pricingButtonBg || "#2563eb"}
+                  onChange={(v) => updateProperty("pricingButtonBg", v)}
+                />
+                <ColorField
+                  label="Button Text Color"
+                  value={selected.pricingButtonTextColor || "#ffffff"}
+                  onChange={(v) => updateProperty("pricingButtonTextColor", v)}
+                />
+              </div>
             </div>
           )}
 
@@ -245,20 +342,69 @@ function PropertiesPanel({
           )}
 
           {/* BUTTON */}
-          {selected.type === "button" && (
+          {isButton && (
             <div className="space-y-4">
               <Field
-                label="Button Text"
+                label="Button Label"
                 value={selected.text || ""}
                 onChange={(value) => updateProperty("text", value)}
                 placeholder="Click Me"
               />
               <Field
-                label="Link"
+                label="Link URL"
                 value={selected.link || ""}
                 onChange={(value) => updateProperty("link", value)}
                 placeholder="https://example.com"
               />
+
+              <ColorField
+                label="Button Background"
+                value={selected.btnBgColor || "#2563eb"}
+                onChange={(value) => updateProperty("btnBgColor", value)}
+              />
+
+              <ColorField
+                label="Button Text Color"
+                value={selected.btnTextColor || "#ffffff"}
+                onChange={(value) => updateProperty("btnTextColor", value)}
+              />
+
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-gray-600">
+                  Button Alignment
+                </label>
+                <div className="grid grid-cols-4 gap-1">
+                  {["left", "center", "right", "full"].map((pos) => (
+                    <button
+                      key={pos}
+                      type="button"
+                      onClick={() => updateProperty("btnAlign", pos)}
+                      className={`capitalize py-1 text-xs font-medium rounded border transition ${
+                        (selected.btnAlign || "left") === pos
+                          ? "border-blue-600 bg-blue-50 text-blue-600"
+                          : "border-gray-200 bg-white text-gray-600"
+                      }`}
+                    >
+                      {pos}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <NumberField
+                  label="Pad X"
+                  value={selected.btnPaddingX !== undefined ? selected.btnPaddingX : 20}
+                  onChange={(v) => updateProperty("btnPaddingX", v)}
+                  unit="px"
+                />
+                <NumberField
+                  label="Pad Y"
+                  value={selected.btnPaddingY !== undefined ? selected.btnPaddingY : 10}
+                  onChange={(v) => updateProperty("btnPaddingY", v)}
+                  unit="px"
+                />
+              </div>
             </div>
           )}
 
@@ -401,25 +547,34 @@ function PropertiesPanel({
         </section>
 
         {/* ================= STYLING ================= */}
-
         <section className="border-t border-gray-200 pt-6">
           <h3 className="mb-4 text-sm font-bold text-slate-800">Styling</h3>
 
           <div className="space-y-4">
-            {/* COLORS */}
-            <ColorField
-              label="Background Color"
-              value={selected.backgroundColor || "#ffffff"}
-              onChange={(value) => updateProperty("backgroundColor", value)}
-            />
+            {!isButton && (
+              <>
+                <ColorField
+                  label="Background Color"
+                  value={selected.backgroundColor || "#ffffff"}
+                  onChange={(value) => updateProperty("backgroundColor", value)}
+                />
 
-            <ColorField
-              label="Text Color"
-              value={selected.textColor || "#1e293b"}
-              onChange={(value) => updateProperty("textColor", value)}
-            />
+                <ColorField
+                  label="Text Color"
+                  value={selected.textColor || "#1e293b"}
+                  onChange={(value) => updateProperty("textColor", value)}
+                />
 
-            {/* TYPOGRAPHY */}
+                <NumberField
+                  label="Padding"
+                  value={selected.padding !== undefined ? selected.padding : ""}
+                  onChange={(value) => updateProperty("padding", value)}
+                  placeholder="20"
+                  unit="px"
+                />
+              </>
+            )}
+
             <NumberField
               label="Font Size"
               value={selected.fontSize || ""}
@@ -444,30 +599,6 @@ function PropertiesPanel({
                 <option value="800">Extra Bold</option>
               </select>
             </div>
-
-            <div>
-              <label className="mb-2 block text-xs font-semibold text-gray-600">
-                Text Alignment
-              </label>
-              <select
-                value={selected.textAlign || "left"}
-                onChange={(e) => updateProperty("textAlign", e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-              >
-                <option value="left">Left</option>
-                <option value="center">Center</option>
-                <option value="right">Right</option>
-              </select>
-            </div>
-
-            {/* SPACING & CORNERS */}
-            <NumberField
-              label="Padding"
-              value={selected.padding !== undefined ? selected.padding : ""}
-              onChange={(value) => updateProperty("padding", value)}
-              placeholder="20"
-              unit="px"
-            />
 
             <NumberField
               label="Margin"
@@ -523,7 +654,7 @@ function PropertiesPanel({
               </div>
             </div>
 
-            {/* EFFECTS (SHADOW & OPACITY) */}
+            {/* EFFECTS */}
             <div className="border-t border-gray-100 pt-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
                 Effects
