@@ -16,7 +16,7 @@ function formatComponentName(name) {
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
-function generateComponentJSX(comp) {
+function generateComponentJSX(comp, pages = []) {
   const widthClassMap = {
     "25%": "w-full md:w-1/4",
     "33.33%": "w-full md:w-1/3",
@@ -67,6 +67,25 @@ function generateComponentJSX(comp) {
         customFontSize ? `, fontSize: '${customFontSize}px'` : ""
       }${customWeight ? `, fontWeight: '${customWeight}'` : "" } }}`;
 
+      const navLinks = comp.navLinks || [
+        { id: "link-1", label: comp.home || "Home", targetPageId: comp.homePageId || "" },
+        { id: "link-2", label: comp.about || "About", targetPageId: comp.aboutPageId || "" },
+        { id: "link-3", label: comp.contact || "Contact", targetPageId: comp.contactPageId || "" },
+      ];
+
+      const resolveHref = (pageId) => {
+        if (!pageId) return "#";
+        const found = pages.find((p) => p.id === pageId);
+        return found ? `/${formatComponentName(found.name).toLowerCase()}` : "#";
+      };
+
+      const linksJSX = navLinks
+        .map(
+          (l, i) =>
+            `          <a href="${resolveHref(l.targetPageId)}" className="hover:opacity-80">${l.label || `Link ${i + 1}`}</a>`
+        )
+        .join("\n");
+
       return `      {/* Navbar */}
       <nav className="${widthClass} ${zClass} flex items-center justify-between px-8 py-4 ${
         !comp.backgroundColor ? "bg-white border-b border-gray-100" : ""
@@ -74,10 +93,8 @@ function generateComponentJSX(comp) {
         <span className="font-bold tracking-tight" ${brandStyle}>
           ${comp.brand || "Brand"}
         </span>
-        <div className="flex gap-6 opacity-90" ${linkStyle}>
-          <a href="#" className="hover:opacity-80">${comp.home || "Home"}</a>
-          <a href="#" className="hover:opacity-80">${comp.about || "About"}</a>
-          <a href="#" className="hover:opacity-80">${comp.contact || "Contact"}</a>
+        <div className="flex flex-wrap gap-6 opacity-90 items-center" ${linkStyle}>
+${linksJSX}
         </div>
       </nav>`;
     }
@@ -339,9 +356,9 @@ function generateComponentJSX(comp) {
   }
 }
 
-function generatePageCode(pageName, components) {
+function generatePageCode(pageName, components, pages = []) {
   const componentName = formatComponentName(pageName);
-  const elementsCode = components.map(generateComponentJSX).join("\n\n");
+  const elementsCode = components.map((c) => generateComponentJSX(c, pages)).join("\n\n");
 
   return `import React from 'react';
 
@@ -371,7 +388,7 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
 
   const validPages = pages.length > 0 ? pages : [activePage];
   const currentPageToView = validPages.find((p) => p.id === selectedPageId) || validPages[0];
-  const currentCode = generatePageCode(currentPageToView.name, currentPageToView.canvasData || []);
+  const currentCode = generatePageCode(currentPageToView.name, currentPageToView.canvasData || [], validPages);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(currentCode);
@@ -380,7 +397,6 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
   };
 
   const handleDownload = async () => {
-    // Single-page project: download as individual .jsx file
     if (validPages.length <= 1) {
       const fileName = `${formatComponentName(currentPageToView.name)}.jsx`;
       const blob = new Blob([currentCode], { type: "text/javascript" });
@@ -393,7 +409,6 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
       return;
     }
 
-    // Multi-page project: package each page as an individual file in a ZIP folder
     try {
       setIsZipping(true);
       const zip = new JSZip();
@@ -401,7 +416,7 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
 
       validPages.forEach((p) => {
         const componentName = formatComponentName(p.name);
-        const code = generatePageCode(p.name, p.canvasData || []);
+        const code = generatePageCode(p.name, p.canvasData || [], validPages);
         folder.file(`${componentName}.jsx`, code);
       });
 
@@ -477,7 +492,7 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
           </div>
         )}
 
-        {/* Code View Header Details */}
+        {/* Details Bar */}
         <div className="flex items-center justify-between px-6 py-2 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400 font-mono">
           <span>File: src/pages/{formatComponentName(currentPageToView.name)}.jsx</span>
           <span>{currentPageToView.canvasData?.length || 0} Components</span>

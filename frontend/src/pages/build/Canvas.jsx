@@ -33,6 +33,7 @@ function Canvas({
   onReorderComponents,
   onUpdateComponent,
   onDuplicateComponent,
+  onNavigatePage,
   viewportMode = "desktop",
   isPreviewMode = false,
 }) {
@@ -81,7 +82,6 @@ function Canvas({
     };
   };
 
-  // Drag resizing for Width & Height
   const handleWidthResizeMouseDown = (e, compKey, currentWidth) => {
     if (isPreviewMode) return;
     e.preventDefault();
@@ -263,7 +263,21 @@ function Canvas({
     const customWeight = component.fontWeight || undefined;
 
     switch (component.type) {
-      case "navbar":
+      case "navbar": {
+        const navLinks = component.navLinks || [
+          { id: "link-1", label: component.home || "Home", targetPageId: component.homePageId || "" },
+          { id: "link-2", label: component.about || "About", targetPageId: component.aboutPageId || "" },
+          { id: "link-3", label: component.contact || "Contact", targetPageId: component.contactPageId || "" },
+        ];
+
+        const handleLinkClick = (e, targetPageId) => {
+          e.preventDefault();
+          if (targetPageId && onNavigatePage) {
+            e.stopPropagation();
+            onNavigatePage(targetPageId);
+          }
+        };
+
         return (
           <nav
             style={style}
@@ -287,14 +301,26 @@ function Canvas({
                 fontSize: customFontSize ? `${customFontSize}px` : undefined,
                 fontWeight: customWeight || "500",
               }}
-              className="flex gap-6 opacity-90"
+              className="flex flex-wrap gap-6 opacity-90 select-none items-center"
             >
-              <span>{component.home || "Home"}</span>
-              <span>{component.about || "About"}</span>
-              <span>{component.contact || "Contact"}</span>
+              {navLinks.map((link, idx) => (
+                <span
+                  key={link.id || idx}
+                  onClick={(e) => handleLinkClick(e, link.targetPageId)}
+                  className={`transition ${
+                    link.targetPageId
+                      ? "cursor-pointer hover:underline hover:text-blue-600 font-semibold"
+                      : ""
+                  }`}
+                  title={link.targetPageId ? "Click to navigate to this page" : ""}
+                >
+                  {link.label || `Link ${idx + 1}`}
+                </span>
+              ))}
             </div>
           </nav>
         );
+      }
 
       case "hero": {
         const align = component.textAlign || "left";
@@ -797,7 +823,7 @@ function Canvas({
                   onDragOver={(e) => handleItemDragOver(e, index)}
                   onDrop={(e) => handleItemDrop(e, index)}
                 >
-                  {/* Selection Overlay */}
+                  {/* Selection Outline Overlay */}
                   {isSelected && !isPreviewMode && (
                     <div className="pointer-events-none absolute inset-0 z-20 border-2 border-blue-500 shadow-[0_0_0_1px_rgba(59,130,246,0.2)]" />
                   )}
@@ -815,14 +841,13 @@ function Canvas({
                     </div>
                   )}
 
-                  {/* Actions Badge (Duplicate + Delete + Width Indicator) */}
+                  {/* Actions Badge */}
                   {isSelected && !isPreviewMode && (
                     <div className="absolute right-2 top-2 z-30 flex items-center gap-1.5 bg-white/95 px-1.5 py-1 rounded shadow-md border border-gray-200 backdrop-blur-xs text-xs">
                       <span className="text-[10px] font-bold text-blue-600 uppercase">
                         {component.width || "100%"}
                       </span>
 
-                      {/* Duplicate Button */}
                       <button
                         type="button"
                         onClick={(e) => handleDuplicate(e, compKey)}
@@ -832,7 +857,6 @@ function Canvas({
                         <FaCopy className="pointer-events-none text-[10px]" />
                       </button>
 
-                      {/* Delete Button */}
                       <button
                         type="button"
                         onClick={(e) => handleDelete(e, compKey)}
@@ -844,7 +868,7 @@ function Canvas({
                     </div>
                   )}
 
-                  {/* Component Body */}
+                  {/* Component View */}
                   <div className="w-full h-full">{renderComponent(component)}</div>
 
                   {/* Right Resize Handle */}

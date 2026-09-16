@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaCopy, FaTrash } from "react-icons/fa";
+import { FaCopy, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 
 const WIDTH_OPTIONS = ["Auto", "25%", "33.33%", "50%", "66.67%", "75%", "100%"];
 
@@ -9,10 +9,10 @@ function PropertiesPanel({
   onUpdateComponent,
   onDeleteComponent,
   onDuplicateComponent,
+  pages = [],
 }) {
   const selected = components.find(
-    (component) =>
-      (component.id || component._id) === selectedComponent
+    (component) => (component.id || component._id) === selectedComponent
   );
 
   const updateProperty = (property, value) => {
@@ -38,6 +38,36 @@ function PropertiesPanel({
 
   const isButton = selected.type === "button";
   const compId = selected.id || selected._id;
+
+  // Normalize navLinks for backwards compatibility
+  const navLinks = selected.navLinks || [
+    { id: "link-1", label: selected.home || "Home", targetPageId: selected.homePageId || "" },
+    { id: "link-2", label: selected.about || "About", targetPageId: selected.aboutPageId || "" },
+    { id: "link-3", label: selected.contact || "Contact", targetPageId: selected.contactPageId || "" },
+  ];
+
+  const handleAddNavLink = () => {
+    const newLink = {
+      id: `link-${Date.now()}`,
+      label: `Page ${navLinks.length + 1}`,
+      targetPageId: "",
+    };
+    updateProperty("navLinks", [...navLinks, newLink]);
+  };
+
+  const handleUpdateNavLink = (index, updates) => {
+    const updated = navLinks.map((item, i) => (i === index ? { ...item, ...updates } : item));
+    updateProperty("navLinks", updated);
+  };
+
+  const handleRemoveNavLink = (index) => {
+    if (navLinks.length <= 1) {
+      alert("Navbar must have at least one link.");
+      return;
+    }
+    const filtered = navLinks.filter((_, i) => i !== index);
+    updateProperty("navLinks", filtered);
+  };
 
   return (
     <aside className="w-80 h-full min-h-0 flex flex-col border-l border-gray-200 bg-white">
@@ -103,7 +133,7 @@ function PropertiesPanel({
         <section className="border-t border-gray-200 pt-6">
           <h3 className="mb-4 text-sm font-bold text-slate-800">Content</h3>
 
-          {/* NAVBAR */}
+          {/* NAVBAR: DYNAMIC LINKS EDITOR */}
           {selected.type === "navbar" && (
             <div className="space-y-4">
               <Field
@@ -122,24 +152,60 @@ function PropertiesPanel({
                 value={selected.navLinkColor || "#475569"}
                 onChange={(v) => updateProperty("navLinkColor", v)}
               />
-              <Field
-                label="Home Link"
-                value={selected.home || ""}
-                onChange={(value) => updateProperty("home", value)}
-                placeholder="Home"
-              />
-              <Field
-                label="About Link"
-                value={selected.about || ""}
-                onChange={(value) => updateProperty("about", value)}
-                placeholder="About"
-              />
-              <Field
-                label="Contact Link"
-                value={selected.contact || ""}
-                onChange={(value) => updateProperty("contact", value)}
-                placeholder="Contact"
-              />
+
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    Navigation Links ({navLinks.length})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddNavLink}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 transition"
+                  >
+                    <FaPlus className="text-[9px]" /> Add Link
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {navLinks.map((link, index) => (
+                    <div
+                      key={link.id || index}
+                      className="rounded-xl border border-gray-200/80 bg-gray-50/80 p-3 space-y-2 relative group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase">
+                          Item #{index + 1}
+                        </span>
+                        {navLinks.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveNavLink(index)}
+                            className="text-gray-400 hover:text-red-500 transition p-1"
+                            title="Remove link"
+                          >
+                            <FaTimes className="text-[10px]" />
+                          </button>
+                        )}
+                      </div>
+
+                      <Field
+                        label="Label"
+                        value={link.label || ""}
+                        onChange={(val) => handleUpdateNavLink(index, { label: val })}
+                        placeholder="Link Name"
+                      />
+
+                      <PageSelectField
+                        label="Target Page"
+                        value={link.targetPageId || ""}
+                        pages={pages}
+                        onChange={(val) => handleUpdateNavLink(index, { targetPageId: val })}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -742,10 +808,32 @@ function PropertiesPanel({
   );
 }
 
+function PageSelectField({ label, value, pages = [], onChange }) {
+  return (
+    <div>
+      <label className="mb-1 block text-[11px] font-semibold text-gray-600">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-blue-500"
+      >
+        <option value="">None (Static link / #)</option>
+        {pages.map((p) => (
+          <option key={p.id} value={p.id}>
+            Navigate to: {p.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function Field({ label, value, onChange, placeholder = "" }) {
   return (
     <div>
-      <label className="mb-2 block text-xs font-semibold text-gray-600">
+      <label className="mb-1 block text-xs font-semibold text-gray-600">
         {label}
       </label>
       <input

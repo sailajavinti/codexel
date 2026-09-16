@@ -165,6 +165,14 @@ function Build() {
       minHeight: item.minHeight || "",
       borderRadius: item.borderRadius ?? (item.type === "button" ? 6 : 0),
       id: item.id || item._id || `${item.type || "comp"}-${Date.now()}-${index}`,
+      navLinks:
+        item.type === "navbar" && !item.navLinks
+          ? [
+              { id: "link-1", label: item.home || "Home", targetPageId: item.homePageId || "" },
+              { id: "link-2", label: item.about || "About", targetPageId: item.aboutPageId || "" },
+              { id: "link-3", label: item.contact || "Contact", targetPageId: item.contactPageId || "" },
+            ]
+          : item.navLinks,
     }));
   };
 
@@ -315,9 +323,11 @@ function Build() {
       brand: "CodeXel",
       brandColor: "#0f172a",
       navLinkColor: "#475569",
-      home: "Home",
-      about: "About",
-      contact: "Contact",
+      navLinks: [
+        { id: "link-1", label: "Home", targetPageId: "" },
+        { id: "link-2", label: "About", targetPageId: "" },
+        { id: "link-3", label: "Contact", targetPageId: "" },
+      ],
       heading: "Build Modern Web Experiences",
       description: "Design and export responsive interfaces visually in minutes.",
       buttonText: "Get Started",
@@ -579,9 +589,9 @@ function Build() {
         </div>
       )}
 
-      {/* Main Workspace (Enforces min-h-0 so vertical scrolling works inside left & right panels) */}
+      {/* Main Workspace */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {/* DESKTOP PERMANENT COMPONENTS PANEL (≥ 1024px) */}
+        {/* DESKTOP PERMANENT COMPONENTS PANEL */}
         {!isPreviewMode && (
           <div className="hidden shrink-0 lg:block h-full min-h-0">
             <ComponentsPanel onAddComponent={addComponent} />
@@ -598,11 +608,16 @@ function Build() {
           onDuplicateComponent={duplicateComponent}
           onReorderComponents={reorderComponents}
           onUpdateComponent={updateComponent}
+          onNavigatePage={(targetId) => {
+            setActivePageId(targetId);
+            setSelectedComponent(null);
+            setOpenPanel(null);
+          }}
           viewportMode={viewportMode}
           isPreviewMode={isPreviewMode}
         />
 
-        {/* DESKTOP PERMANENT PROPERTIES PANEL (≥ 1024px) */}
+        {/* DESKTOP PERMANENT PROPERTIES PANEL */}
         {!isPreviewMode && (
           <div className="hidden shrink-0 lg:block h-full min-h-0">
             <PropertiesPanel
@@ -611,11 +626,12 @@ function Build() {
               onUpdateComponent={updateComponent}
               onDeleteComponent={deleteComponent}
               onDuplicateComponent={duplicateComponent}
+              pages={pages}
             />
           </div>
         )}
 
-        {/* TABLET COMPONENTS DRAWER (768px - 1023px) */}
+        {/* TABLET COMPONENTS DRAWER */}
         {!isPreviewMode && openPanel === "components" && (
           <div className="absolute inset-y-0 left-0 z-50 hidden w-72 h-full min-h-0 border-r border-gray-200 bg-white shadow-2xl md:block lg:hidden">
             <ComponentsPanel
@@ -627,7 +643,7 @@ function Build() {
           </div>
         )}
 
-        {/* TABLET PROPERTIES DRAWER (768px - 1023px) */}
+        {/* TABLET PROPERTIES DRAWER */}
         {!isPreviewMode && openPanel === "properties" && (
           <div className="absolute inset-y-0 right-0 z-50 hidden w-80 h-full min-h-0 border-l border-gray-200 bg-white shadow-2xl md:block lg:hidden">
             <PropertiesPanel
@@ -636,6 +652,7 @@ function Build() {
               onUpdateComponent={updateComponent}
               onDeleteComponent={deleteComponent}
               onDuplicateComponent={duplicateComponent}
+              pages={pages}
             />
           </div>
         )}
@@ -702,6 +719,7 @@ function Build() {
                 onUpdateComponent={updateComponent}
                 onDeleteComponent={deleteComponent}
                 onDuplicateComponent={duplicateComponent}
+                pages={pages}
               />
             </div>
           </div>
