@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { FaTimes, FaCopy, FaCheck, FaCode, FaDownload } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaTimes, FaCopy, FaCheck, FaCode, FaDownload, FaFileCode, FaFolder } from "react-icons/fa";
+import JSZip from "jszip";
 
 const SHADOW_MAP = {
   none: "none",
@@ -8,6 +9,12 @@ const SHADOW_MAP = {
   lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
 };
+
+function formatComponentName(name) {
+  const cleaned = (name || "Page").replace(/[^a-zA-Z0-9]/g, "");
+  if (!cleaned) return "Page";
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
 
 function generateComponentJSX(comp) {
   const widthClassMap = {
@@ -22,8 +29,9 @@ function generateComponentJSX(comp) {
 
   const widthClass = widthClassMap[comp.width] || "w-full";
   const hasShadow = comp.boxShadow && comp.boxShadow !== "none";
-  // Elevate stacking order so the shadow paints over subsequent elements
   const zClass = hasShadow ? "relative z-10" : "relative";
+  const customFontSize = comp.fontSize ? Number(comp.fontSize) : null;
+  const customWeight = comp.fontWeight || null;
 
   const buildStyles = (extraStyles = {}) => {
     const combined = {
@@ -51,12 +59,22 @@ function generateComponentJSX(comp) {
   switch (comp.type) {
     case "navbar": {
       const styleAttr = buildStyles();
+      const brandStyle = `style={{ color: '${comp.brandColor || "#0f172a"}'${
+        customFontSize ? `, fontSize: '${Math.round(customFontSize * 1.25)}px'` : ""
+      }${customWeight ? `, fontWeight: '${customWeight}'` : "" } }}`;
+
+      const linkStyle = `style={{ color: '${comp.navLinkColor || "#475569"}'${
+        customFontSize ? `, fontSize: '${customFontSize}px'` : ""
+      }${customWeight ? `, fontWeight: '${customWeight}'` : "" } }}`;
+
       return `      {/* Navbar */}
-      <nav className="${widthClass} ${zClass} flex items-center justify-between px-8 py-4 ${!comp.backgroundColor ? "bg-white border-b border-gray-100" : ""}" ${styleAttr}>
-        <span className="text-xl font-bold" style={{ color: '${comp.brandColor || "#0f172a"}' }}>
+      <nav className="${widthClass} ${zClass} flex items-center justify-between px-8 py-4 ${
+        !comp.backgroundColor ? "bg-white border-b border-gray-100" : ""
+      }" ${styleAttr}>
+        <span className="font-bold tracking-tight" ${brandStyle}>
           ${comp.brand || "Brand"}
         </span>
-        <div className="flex gap-6 text-sm font-medium" style={{ color: '${comp.navLinkColor || "#475569"}' }}>
+        <div className="flex gap-6 opacity-90" ${linkStyle}>
           <a href="#" className="hover:opacity-80">${comp.home || "Home"}</a>
           <a href="#" className="hover:opacity-80">${comp.about || "About"}</a>
           <a href="#" className="hover:opacity-80">${comp.contact || "Contact"}</a>
@@ -70,19 +88,41 @@ function generateComponentJSX(comp) {
       const defaultTextColor = hasCustomBg && !comp.textColor ? { color: "'#0f172a'" } : {};
       const styleAttr = buildStyles(defaultTextColor);
 
+      const align = comp.textAlign || "left";
+      const alignClasses =
+        align === "center"
+          ? "items-center text-center mx-auto"
+          : align === "right"
+          ? "items-end text-right ml-auto"
+          : "items-start text-left";
+
+      const headingStyle = customFontSize || customWeight
+        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 2)}px', ` : ""}${
+            customWeight ? `fontWeight: '${customWeight}'` : ""
+          } }}`
+        : "";
+
+      const descStyle = customFontSize || customWeight
+        ? `style={{ ${customFontSize ? `fontSize: '${customFontSize}px', ` : ""}${
+            customWeight ? `fontWeight: '${customWeight}'` : ""
+          } }}`
+        : "";
+
       return `      {/* Hero Section */}
       <section className="${widthClass} ${zClass} p-12 ${bgClass}" ${styleAttr}>
-        <div className="max-w-3xl">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+        <div className="flex flex-col w-full ${alignClasses}">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight" ${headingStyle}>
             ${comp.heading || "Build Modern Web Experiences"}
           </h1>
-          <p className="mt-4 text-lg opacity-90 leading-relaxed">
+          <p className="mt-4 max-w-2xl text-lg opacity-90 leading-relaxed" ${descStyle}>
             ${comp.description || "Design and export responsive interfaces visually in minutes."}
           </p>
           <div className="mt-6">
             <a
               href="${comp.heroButtonLink || "#"}"
-              style={{ backgroundColor: '${comp.heroButtonBg || "#ffffff"}', color: '${comp.heroButtonTextColor || "#2563eb"}' }}
+              style={{ backgroundColor: '${comp.heroButtonBg || "#ffffff"}', color: '${comp.heroButtonTextColor || "#2563eb"}'${
+                customFontSize ? `, fontSize: '${customFontSize}px'` : ""
+              } }}
               className="inline-block px-6 py-3 rounded-md font-semibold shadow-xs hover:opacity-95 transition"
             >
               ${comp.buttonText || "Get Started"}
@@ -94,9 +134,15 @@ function generateComponentJSX(comp) {
 
     case "section": {
       const styleAttr = buildStyles();
+      const headingStyle = customFontSize || customWeight
+        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 1.5)}px', ` : ""}${
+            customWeight ? `fontWeight: '${customWeight}'` : ""
+          } }}`
+        : "";
+
       return `      {/* Content Section */}
       <section className="${widthClass} ${zClass} p-10 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
-        ${comp.heading ? `<h2 className="text-2xl font-bold mb-3">${comp.heading}</h2>` : ""}
+        ${comp.heading ? `<h2 className="text-2xl font-bold mb-3" ${headingStyle}>${comp.heading}</h2>` : ""}
         <p className="opacity-90 leading-relaxed">
           ${comp.content || "This is a customizable content section."}
         </p>
@@ -105,38 +151,56 @@ function generateComponentJSX(comp) {
 
     case "heading": {
       const styleAttr = buildStyles();
+      const headingStyle = customFontSize || customWeight
+        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 1.5)}px', ` : ""}${
+            customWeight ? `fontWeight: '${customWeight}'` : ""
+          } }}`
+        : "";
+
       return `      {/* Heading / Text */}
       <div className="${widthClass} ${zClass} p-6 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
-        <h2 className="text-2xl font-bold">${comp.title || "Custom Heading"}</h2>
+        <h2 className="text-2xl font-bold" ${headingStyle}>${comp.title || "Custom Heading"}</h2>
         ${comp.subtitle ? `<p className="mt-2 opacity-80 leading-relaxed">${comp.subtitle}</p>` : ""}
       </div>`;
     }
 
     case "card": {
       const styleAttr = buildStyles();
+      const cardTitleStyle = customFontSize || customWeight
+        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 1.25)}px', ` : ""}${
+            customWeight ? `fontWeight: '${customWeight}'` : ""
+          } }}`
+        : "";
+
       return `      {/* Card */}
       <div className="${widthClass} ${zClass} p-6 ${!comp.backgroundColor ? "bg-white border border-gray-100" : ""}" ${styleAttr}>
-        <h3 className="text-xl font-bold">${comp.cardTitle || comp.title || "Card Title"}</h3>
+        <h3 className="text-xl font-bold" ${cardTitleStyle}>${comp.cardTitle || comp.title || "Card Title"}</h3>
         <p className="mt-2 opacity-80 leading-relaxed">${comp.cardContent || comp.content || "Card content."}</p>
       </div>`;
     }
 
     case "features": {
       const styleAttr = buildStyles();
+      const titleStyle = customFontSize || customWeight
+        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 1.15)}px', ` : ""}${
+            customWeight ? `fontWeight: '${customWeight}'` : ""
+          } }}`
+        : "";
+
       return `      {/* Features Grid */}
       <section className="${widthClass} ${zClass} p-10 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-6 bg-black/5 border border-black/10 rounded-lg">
-            <h4 className="font-bold">${comp.featureTitle1 || "Feature 1"}</h4>
-            <p className="mt-2 text-sm opacity-80">${comp.featureDesc1 || "Feature description text."}</p>
+            <h4 className="font-bold" ${titleStyle}>${comp.featureTitle1 || "Feature 1"}</h4>
+            <p className="mt-2 text-sm opacity-80 leading-relaxed">${comp.featureDesc1 || "Feature description text."}</p>
           </div>
           <div className="p-6 bg-black/5 border border-black/10 rounded-lg">
-            <h4 className="font-bold">${comp.featureTitle2 || "Feature 2"}</h4>
-            <p className="mt-2 text-sm opacity-80">${comp.featureDesc2 || "Feature description text."}</p>
+            <h4 className="font-bold" ${titleStyle}>${comp.featureTitle2 || "Feature 2"}</h4>
+            <p className="mt-2 text-sm opacity-80 leading-relaxed">${comp.featureDesc2 || "Feature description text."}</p>
           </div>
           <div className="p-6 bg-black/5 border border-black/10 rounded-lg">
-            <h4 className="font-bold">${comp.featureTitle3 || "Feature 3"}</h4>
-            <p className="mt-2 text-sm opacity-80">${comp.featureDesc3 || "Feature description text."}</p>
+            <h4 className="font-bold" ${titleStyle}>${comp.featureTitle3 || "Feature 3"}</h4>
+            <p className="mt-2 text-sm opacity-80 leading-relaxed">${comp.featureDesc3 || "Feature description text."}</p>
           </div>
         </div>
       </section>`;
@@ -144,6 +208,12 @@ function generateComponentJSX(comp) {
 
     case "pricing": {
       const styleAttr = buildStyles();
+      const priceStyle = customFontSize || customWeight
+        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 2.25)}px', ` : ""}${
+            customWeight ? `fontWeight: '${customWeight}'` : ""
+          } }}`
+        : "";
+
       return `      {/* Pricing Card */}
       <section className="${widthClass} ${zClass} p-8 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
         <div className="max-w-xs mx-auto border border-gray-200 p-6 rounded-lg text-center shadow-xs">
@@ -151,18 +221,20 @@ function generateComponentJSX(comp) {
             ${comp.pricingPlan || "Pro"}
           </span>
           <div className="mt-4 flex items-baseline justify-center gap-1">
-            <span className="text-4xl font-extrabold">${comp.pricingPrice || "$29"}</span>
+            <span className="text-4xl font-extrabold" ${priceStyle}>${comp.pricingPrice || "$29"}</span>
             <span className="text-sm opacity-70">${comp.pricingPeriod || "/ mo"}</span>
           </div>
           <ul className="mt-5 space-y-2 text-xs opacity-90 text-left border-t border-b border-gray-100 py-4">
             ${(comp.pricingFeatures || "Feature 1\nFeature 2")
               .split("\n")
-              .map((f) => `<li className="flex items-center gap-2"><span className="text-blue-500">✓</span> ${f}</li>`)
+              .map((f) => `<li className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> ${f}</li>`)
               .join("\n            ")}
           </ul>
           <button
-            style={{ backgroundColor: '${comp.pricingButtonBg || "#2563eb"}', color: '${comp.pricingButtonTextColor || "#ffffff"}' }}
-            className="mt-5 w-full py-2.5 rounded-md font-semibold text-xs shadow-xs hover:opacity-90 transition"
+            style={{ backgroundColor: '${comp.pricingButtonBg || "#2563eb"}', color: '${comp.pricingButtonTextColor || "#ffffff"}'${
+              customFontSize ? `, fontSize: '${customFontSize}px'` : ""
+            } }}
+            className="mt-5 w-full py-2.5 rounded-md font-semibold shadow-xs hover:opacity-90 transition"
           >
             ${comp.pricingButtonText || "Choose Plan"}
           </button>
@@ -192,7 +264,7 @@ function generateComponentJSX(comp) {
             fontWeight: '${comp.fontWeight || "600"}',
             ${buttonShadow}
           }}
-          className="inline-flex items-center justify-center font-semibold text-sm hover:opacity-90 transition ${comp.btnAlign === "full" ? "w-full" : ""}"
+          className="inline-flex items-center justify-center font-semibold hover:opacity-90 transition ${comp.btnAlign === "full" ? "w-full" : ""}"
         >
           ${comp.text || "Click Me"}
         </a>
@@ -268,7 +340,7 @@ function generateComponentJSX(comp) {
 }
 
 function generatePageCode(pageName, components) {
-  const componentName = pageName.replace(/[^a-zA-Z0-9]/g, "") || "Page";
+  const componentName = formatComponentName(pageName);
   const elementsCode = components.map(generateComponentJSX).join("\n\n");
 
   return `import React from 'react';
@@ -282,41 +354,73 @@ ${elementsCode}
 }`;
 }
 
-function CodePreview({ isOpen, onClose, activePage, pages }) {
-  const [exportMode, setExportMode] = useState("current");
+function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
+  const [selectedPageId, setSelectedPageId] = useState(activePage?.id || pages[0]?.id || null);
   const [copied, setCopied] = useState(false);
+  const [isZipping, setIsZipping] = useState(false);
+
+  useEffect(() => {
+    if (activePage?.id) {
+      setSelectedPageId(activePage.id);
+    } else if (pages.length > 0) {
+      setSelectedPageId(pages[0].id);
+    }
+  }, [activePage, pages, isOpen]);
 
   if (!isOpen) return null;
 
-  const currentCode = generatePageCode(activePage.name, activePage.canvasData || []);
-
-  const allPagesCode = pages
-    .map(
-      (p) =>
-        `// =====================\n// File: ${p.name}.jsx\n// =====================\n${generatePageCode(
-          p.name,
-          p.canvasData || []
-        )}`
-    )
-    .join("\n\n\n");
-
-  const activeCode = exportMode === "current" ? currentCode : allPagesCode;
+  const validPages = pages.length > 0 ? pages : [activePage];
+  const currentPageToView = validPages.find((p) => p.id === selectedPageId) || validPages[0];
+  const currentCode = generatePageCode(currentPageToView.name, currentPageToView.canvasData || []);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(activeCode);
+    navigator.clipboard.writeText(currentCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([activeCode], { type: "text/javascript" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = exportMode === "current" ? `${activePage.name}.jsx` : `CodeXel-Project.jsx`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    // Single-page project: download as individual .jsx file
+    if (validPages.length <= 1) {
+      const fileName = `${formatComponentName(currentPageToView.name)}.jsx`;
+      const blob = new Blob([currentCode], { type: "text/javascript" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // Multi-page project: package each page as an individual file in a ZIP folder
+    try {
+      setIsZipping(true);
+      const zip = new JSZip();
+      const folder = zip.folder("src/pages");
+
+      validPages.forEach((p) => {
+        const componentName = formatComponentName(p.name);
+        const code = generatePageCode(p.name, p.canvasData || []);
+        folder.file(`${componentName}.jsx`, code);
+      });
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `CodeXel-Project-Pages.zip`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to generate zip:", err);
+      alert("Failed to bundle files into a zip. Please try again.");
+    } finally {
+      setIsZipping(false);
+    }
   };
+
+  const isMultiPage = validPages.length > 1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
@@ -329,67 +433,84 @@ function CodePreview({ isOpen, onClose, activePage, pages }) {
             </div>
             <div>
               <h3 className="text-sm font-bold text-white">Export Code</h3>
-              <p className="text-[11px] text-slate-400">React + Tailwind CSS Output</p>
+              <p className="text-[11px] text-slate-400">
+                React + Tailwind CSS Output ({validPages.length} {validPages.length === 1 ? "page" : "pages"})
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex rounded-lg bg-slate-800 p-0.5 border border-slate-700">
-              <button
-                type="button"
-                onClick={() => setExportMode("current")}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  exportMode === "current"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Current Page ({activePage.name})
-              </button>
-              <button
-                type="button"
-                onClick={() => setExportMode("all")}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  exportMode === "all"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                All Pages ({pages.length})
-              </button>
-            </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-white transition p-1"
+          >
+            <FaTimes />
+          </button>
+        </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-slate-400 hover:text-white transition p-1"
-            >
-              <FaTimes />
-            </button>
+        {/* Multi-Page Tabs Bar */}
+        {isMultiPage && (
+          <div className="flex items-center gap-1.5 border-b border-slate-800 bg-slate-950/70 px-6 py-2 overflow-x-auto no-scrollbar">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-2">
+              Select Page to View / Copy:
+            </span>
+            {validPages.map((page) => {
+              const isSelected = page.id === selectedPageId;
+              const formattedName = formatComponentName(page.name);
+
+              return (
+                <button
+                  key={page.id}
+                  type="button"
+                  onClick={() => setSelectedPageId(page.id)}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition ${
+                    isSelected
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
+                  <FaFileCode className="text-[10px]" />
+                  <span>{formattedName}.jsx</span>
+                </button>
+              );
+            })}
           </div>
+        )}
+
+        {/* Code View Header Details */}
+        <div className="flex items-center justify-between px-6 py-2 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400 font-mono">
+          <span>File: src/pages/{formatComponentName(currentPageToView.name)}.jsx</span>
+          <span>{currentPageToView.canvasData?.length || 0} Components</span>
         </div>
 
         {/* Code Content */}
         <div className="flex-1 overflow-auto bg-slate-900 p-6 font-mono text-xs text-slate-200 selection:bg-blue-600">
           <pre className="leading-relaxed">
-            <code>{activeCode}</code>
+            <code>{currentCode}</code>
           </pre>
         </div>
 
         {/* Footer */}
         <div className="flex h-16 shrink-0 items-center justify-between border-t border-slate-800 px-6 bg-slate-950">
           <span className="text-xs text-slate-500">
-            Exported JSX is fully responsive and compatible with standard Tailwind CSS configurations.
+            {isMultiPage
+              ? `Multi-page project: Downloads a .zip folder containing all ${validPages.length} page files.`
+              : "Single-page project: Downloads as an individual .jsx component file."}
           </span>
 
           <div className="flex items-center gap-3">
             <button
               type="button"
+              disabled={isZipping}
               onClick={handleDownload}
-              className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 transition"
+              className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 transition disabled:opacity-50"
             >
-              <FaDownload className="text-[11px]" />
-              Download .JSX
+              {isMultiPage ? <FaFolder className="text-[11px] text-amber-400" /> : <FaDownload className="text-[11px]" />}
+              {isZipping
+                ? "Creating Zip..."
+                : isMultiPage
+                ? `Download All as .ZIP (${validPages.length} files)`
+                : `Download ${formatComponentName(currentPageToView.name)}.jsx`}
             </button>
 
             <button
@@ -398,7 +519,9 @@ function CodePreview({ isOpen, onClose, activePage, pages }) {
               className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-500 transition"
             >
               {copied ? <FaCheck className="text-xs text-emerald-300" /> : <FaCopy className="text-xs" />}
-              {copied ? "Copied to Clipboard!" : "Copy Code"}
+              {copied
+                ? `Copied ${formatComponentName(currentPageToView.name)}.jsx!`
+                : `Copy ${formatComponentName(currentPageToView.name)}.jsx`}
             </button>
           </div>
         </div>

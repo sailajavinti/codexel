@@ -10,6 +10,14 @@ const SNAP_WIDTHS = [
   { label: "100%", value: 100 },
 ];
 
+const SHADOW_MAP = {
+  none: "none",
+  sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+  md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+  xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+};
+
 function Canvas({
   components = [],
   selectedComponent,
@@ -24,20 +32,14 @@ function Canvas({
   const containerRef = useRef(null);
 
   const getComponentStyle = (component) => {
-    const shadowMap = {
-      none: "none",
-      sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-      md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-      lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-      xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
-    };
-
     const isButton = component.type === "button";
 
     return {
       backgroundColor: isButton ? undefined : component.backgroundColor || undefined,
       color: component.textColor || undefined,
       fontSize: component.fontSize ? `${component.fontSize}px` : undefined,
+      fontWeight: component.fontWeight || undefined,
+      textAlign: component.textAlign || undefined,
       padding: isButton
         ? undefined
         : component.padding !== undefined && component.padding !== ""
@@ -48,8 +50,6 @@ function Canvas({
           ? `${component.margin}px`
           : 0,
       borderRadius: isButton ? undefined : `${component.borderRadius ?? 0}px`,
-      textAlign: component.textAlign || undefined,
-      fontWeight: component.fontWeight || undefined,
       borderWidth: isButton
         ? undefined
         : component.borderWidth
@@ -62,7 +62,7 @@ function Canvas({
       boxShadow: isButton
         ? undefined
         : component.boxShadow
-        ? shadowMap[component.boxShadow]
+        ? SHADOW_MAP[component.boxShadow]
         : undefined,
       minHeight: component.minHeight ? `${component.minHeight}px` : undefined,
       opacity:
@@ -72,7 +72,7 @@ function Canvas({
     };
   };
 
-  // --- Horizontal & Vertical Drag Resizing ---
+  // Drag resizing for Width & Height
   const handleWidthResizeMouseDown = (e, compKey, currentWidth) => {
     e.preventDefault();
     e.stopPropagation();
@@ -134,7 +134,6 @@ function Canvas({
     window.addEventListener("mouseup", onMouseUp);
   };
 
-  // --- Outer Container Drop ---
   const handleOuterDragOver = (e) => {
     e.preventDefault();
     if (draggedIndex === null) {
@@ -164,7 +163,6 @@ function Canvas({
     }
   };
 
-  // --- Reordering Drag Handlers ---
   const handleGripDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.setData("text/plain", `${index}`);
@@ -237,23 +235,35 @@ function Canvas({
 
   const renderComponent = (component) => {
     const style = getComponentStyle(component);
+    const customFontSize = component.fontSize ? Number(component.fontSize) : null;
+    const customWeight = component.fontWeight || undefined;
 
     switch (component.type) {
       case "navbar":
         return (
           <nav
             style={style}
-            className="flex h-full w-full items-center justify-between px-8 py-4"
+            className={`flex h-full w-full items-center justify-between px-8 py-4 ${
+              !component.backgroundColor ? "bg-white" : ""
+            }`}
           >
             <div
-              style={{ color: component.brandColor || undefined }}
-              className="text-xl font-bold"
+              style={{
+                color: component.brandColor || undefined,
+                fontSize: customFontSize ? `${Math.round(customFontSize * 1.25)}px` : undefined,
+                fontWeight: customWeight || "700",
+              }}
+              className="tracking-tight"
             >
               {component.brand || "Brand"}
             </div>
             <div
-              style={{ color: component.navLinkColor || undefined }}
-              className="flex gap-6 text-sm font-medium opacity-90"
+              style={{
+                color: component.navLinkColor || undefined,
+                fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                fontWeight: customWeight || "500",
+              }}
+              className="flex gap-6 opacity-90"
             >
               <span>{component.home || "Home"}</span>
               <span>{component.about || "About"}</span>
@@ -262,7 +272,15 @@ function Canvas({
           </nav>
         );
 
-      case "hero":
+      case "hero": {
+        const align = component.textAlign || "left";
+        const alignClasses =
+          align === "center"
+            ? "items-center text-center mx-auto"
+            : align === "right"
+            ? "items-end text-right ml-auto"
+            : "items-start text-left";
+
         return (
           <section
             style={style}
@@ -272,35 +290,69 @@ function Canvas({
                 : ""
             }`}
           >
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-              {component.heading || "Your Hero Heading"}
-            </h1>
-            <p className="mt-3 max-w-2xl opacity-90 leading-relaxed">
-              {component.description || "Your hero description goes here."}
-            </p>
-            <div className="mt-5">
-              <a
-                href={component.heroButtonLink || "#"}
-                onClick={(e) => e.preventDefault()}
+            <div className={`flex flex-col w-full ${alignClasses}`}>
+              <h1
                 style={{
-                  backgroundColor: component.heroButtonBg || "#ffffff",
-                  color: component.heroButtonTextColor || "#2563eb",
+                  fontSize: customFontSize ? `${Math.round(customFontSize * 2)}px` : undefined,
+                  fontWeight: customWeight || "800",
+                  lineHeight: 1.15,
                 }}
-                className="inline-block rounded-md px-5 py-2.5 font-semibold shadow-xs transition hover:opacity-90"
+                className="text-4xl md:text-5xl tracking-tight"
               >
-                {component.buttonText || "Get Started"}
-              </a>
+                {component.heading || "Your Hero Heading"}
+              </h1>
+              <p
+                style={{
+                  fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                  fontWeight: customWeight || "normal",
+                }}
+                className="mt-4 max-w-2xl opacity-90 leading-relaxed"
+              >
+                {component.description || "Your hero description goes here."}
+              </p>
+              <div className="mt-6">
+                <a
+                  href={component.heroButtonLink || "#"}
+                  onClick={(e) => e.preventDefault()}
+                  style={{
+                    backgroundColor: component.heroButtonBg || "#ffffff",
+                    color: component.heroButtonTextColor || "#2563eb",
+                    fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                  }}
+                  className="inline-block rounded-md px-6 py-3 font-semibold shadow-xs transition hover:opacity-90"
+                >
+                  {component.buttonText || "Get Started"}
+                </a>
+              </div>
             </div>
           </section>
         );
+      }
 
       case "section":
         return (
-          <section style={style} className="h-full w-full p-8">
+          <section
+            style={style}
+            className={`h-full w-full p-8 ${!component.backgroundColor ? "bg-white" : ""}`}
+          >
             {component.heading && (
-              <h2 className="mb-2 text-2xl font-bold">{component.heading}</h2>
+              <h2
+                style={{
+                  fontSize: customFontSize ? `${Math.round(customFontSize * 1.5)}px` : undefined,
+                  fontWeight: customWeight || "700",
+                }}
+                className="mb-3 text-2xl"
+              >
+                {component.heading}
+              </h2>
             )}
-            <p className="opacity-90 leading-relaxed">
+            <p
+              style={{
+                fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                fontWeight: customWeight || "normal",
+              }}
+              className="opacity-90 leading-relaxed"
+            >
               {component.content || "This is a section. Add your content here."}
             </p>
           </section>
@@ -308,41 +360,82 @@ function Canvas({
 
       case "features":
         return (
-          <section style={style} className="h-full w-full p-8">
+          <section
+            style={style}
+            className={`h-full w-full p-8 ${!component.backgroundColor ? "bg-white" : ""}`}
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-black/5 p-5 rounded-sm border border-black/10">
-                <h4 className="font-bold">{component.featureTitle1 || "Feature 1"}</h4>
-                <p className="mt-1 text-sm opacity-80">{component.featureDesc1 || "Feature description."}</p>
-              </div>
-              <div className="bg-black/5 p-5 rounded-sm border border-black/10">
-                <h4 className="font-bold">{component.featureTitle2 || "Feature 2"}</h4>
-                <p className="mt-1 text-sm opacity-80">{component.featureDesc2 || "Feature description."}</p>
-              </div>
-              <div className="bg-black/5 p-5 rounded-sm border border-black/10">
-                <h4 className="font-bold">{component.featureTitle3 || "Feature 3"}</h4>
-                <p className="mt-1 text-sm opacity-80">{component.featureDesc3 || "Feature description."}</p>
-              </div>
+              {[
+                { title: component.featureTitle1 || "Feature 1", desc: component.featureDesc1 || "Feature description." },
+                { title: component.featureTitle2 || "Feature 2", desc: component.featureDesc2 || "Feature description." },
+                { title: component.featureTitle3 || "Feature 3", desc: component.featureDesc3 || "Feature description." },
+              ].map((feat, i) => (
+                <div key={i} className="bg-black/5 p-5 rounded-lg border border-black/10">
+                  <h4
+                    style={{
+                      fontSize: customFontSize ? `${Math.round(customFontSize * 1.15)}px` : undefined,
+                      fontWeight: customWeight || "700",
+                    }}
+                  >
+                    {feat.title}
+                  </h4>
+                  <p
+                    style={{
+                      fontSize: customFontSize ? `${Math.round(customFontSize * 0.9)}px` : undefined,
+                      fontWeight: customWeight || "normal",
+                    }}
+                    className="mt-2 opacity-80 leading-relaxed"
+                  >
+                    {feat.desc}
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
         );
 
       case "pricing":
         return (
-          <section style={style} className="h-full w-full p-8">
-            <div className="border border-gray-200 p-6 text-center shadow-xs rounded-sm max-w-xs mx-auto">
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+          <section
+            style={style}
+            className={`h-full w-full p-8 ${!component.backgroundColor ? "bg-white" : ""}`}
+          >
+            <div className="border border-gray-200 p-6 text-center shadow-xs rounded-lg max-w-xs mx-auto">
+              <span
+                style={{ fontSize: customFontSize ? `${Math.round(customFontSize * 0.75)}px` : undefined }}
+                className="font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full"
+              >
                 {component.pricingPlan || "Pro"}
               </span>
-              <div className="mt-3 flex items-baseline justify-center gap-1">
-                <span className="text-3xl font-extrabold">{component.pricingPrice || "$29"}</span>
-                <span className="opacity-70 text-sm">{component.pricingPeriod || "/ mo"}</span>
+              <div className="mt-4 flex items-baseline justify-center gap-1">
+                <span
+                  style={{
+                    fontSize: customFontSize ? `${Math.round(customFontSize * 2.25)}px` : undefined,
+                    fontWeight: customWeight || "800",
+                  }}
+                  className="text-4xl"
+                >
+                  {component.pricingPrice || "$29"}
+                </span>
+                <span
+                  style={{ fontSize: customFontSize ? `${Math.round(customFontSize * 0.85)}px` : undefined }}
+                  className="opacity-70"
+                >
+                  {component.pricingPeriod || "/ mo"}
+                </span>
               </div>
-              <ul className="mt-4 space-y-2 text-xs opacity-90 text-left border-t border-b border-gray-100 py-3">
+              <ul
+                style={{
+                  fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                  fontWeight: customWeight || "normal",
+                }}
+                className="mt-5 space-y-2 text-left border-t border-b border-gray-100 py-4 opacity-90"
+              >
                 {(component.pricingFeatures || "Feature 1\nFeature 2")
                   .split("\n")
                   .map((f, i) => (
                     <li key={i} className="flex items-center gap-2">
-                      <span className="text-blue-500">✓</span> {f}
+                      <span className="text-blue-500 font-bold">✓</span> {f}
                     </li>
                   ))}
               </ul>
@@ -351,8 +444,9 @@ function Canvas({
                 style={{
                   backgroundColor: component.pricingButtonBg || "#2563eb",
                   color: component.pricingButtonTextColor || "#ffffff",
+                  fontSize: customFontSize ? `${customFontSize}px` : undefined,
                 }}
-                className="mt-4 w-full rounded-md px-3 py-2 text-xs font-semibold shadow-xs transition hover:opacity-90"
+                className="mt-5 w-full rounded-md py-2.5 font-semibold shadow-xs transition hover:opacity-90"
               >
                 {component.pricingButtonText || "Choose Plan"}
               </button>
@@ -364,12 +458,17 @@ function Canvas({
         return (
           <footer
             style={style}
-            className={`flex flex-col sm:flex-row items-center justify-between px-8 py-6 text-sm gap-4 h-full w-full ${
+            className={`flex flex-col sm:flex-row items-center justify-between px-8 py-6 gap-4 h-full w-full ${
               !component.backgroundColor ? "bg-slate-900 text-slate-400" : ""
             }`}
           >
-            <div>{component.copyright || "© 2026 CodeXel Inc."}</div>
-            <div className="flex gap-6">
+            <div style={{ fontSize: customFontSize ? `${customFontSize}px` : undefined, fontWeight: customWeight }}>
+              {component.copyright || "© 2026 CodeXel Inc."}
+            </div>
+            <div
+              style={{ fontSize: customFontSize ? `${customFontSize}px` : undefined, fontWeight: customWeight }}
+              className="flex gap-6"
+            >
               <span>{component.footerLink1 || "Privacy"}</span>
               <span>{component.footerLink2 || "Terms"}</span>
             </div>
@@ -378,10 +477,29 @@ function Canvas({
 
       case "heading":
         return (
-          <div style={style} className="p-6 h-full w-full">
-            <h2 className="text-2xl font-bold">{component.title || "Custom Heading"}</h2>
+          <div
+            style={style}
+            className={`p-6 h-full w-full ${!component.backgroundColor ? "bg-white" : ""}`}
+          >
+            <h2
+              style={{
+                fontSize: customFontSize ? `${Math.round(customFontSize * 1.5)}px` : undefined,
+                fontWeight: customWeight || "700",
+              }}
+              className="text-2xl"
+            >
+              {component.title || "Custom Heading"}
+            </h2>
             {component.subtitle && (
-              <p className="mt-2 opacity-80 leading-relaxed">{component.subtitle}</p>
+              <p
+                style={{
+                  fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                  fontWeight: customWeight || "normal",
+                }}
+                className="mt-2 opacity-80 leading-relaxed"
+              >
+                {component.subtitle}
+              </p>
             )}
           </div>
         );
@@ -407,14 +525,6 @@ function Canvas({
           full: "w-full",
         };
 
-        const shadowMap = {
-          none: "none",
-          sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-          md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-          lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-          xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
-        };
-
         return (
           <div className={`p-2 flex ${alignMap[component.btnAlign || "left"]} w-full h-full`}>
             <a
@@ -428,9 +538,9 @@ function Canvas({
                 paddingTop: `${component.btnPaddingY ?? 10}px`,
                 paddingBottom: `${component.btnPaddingY ?? 10}px`,
                 borderRadius: `${component.borderRadius ?? 6}px`,
-                fontSize: component.fontSize ? `${component.fontSize}px` : undefined,
-                fontWeight: component.fontWeight || "600",
-                boxShadow: component.boxShadow ? shadowMap[component.boxShadow] : undefined,
+                fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                fontWeight: customWeight || "600",
+                boxShadow: component.boxShadow ? SHADOW_MAP[component.boxShadow] : undefined,
                 borderWidth: component.borderWidth ? `${component.borderWidth}px` : undefined,
                 borderStyle: component.borderStyle || (component.borderWidth ? "solid" : undefined),
                 borderColor: component.borderColor || undefined,
@@ -447,9 +557,28 @@ function Canvas({
 
       case "card":
         return (
-          <div style={style} className="p-6 h-full w-full">
-            <h3 className="text-xl font-bold">{component.cardTitle || component.title || "Card Title"}</h3>
-            <p className="mt-2 opacity-80 leading-relaxed">{component.cardContent || component.content || "Card content."}</p>
+          <div
+            style={style}
+            className={`p-6 h-full w-full ${!component.backgroundColor ? "bg-white border border-gray-100" : ""}`}
+          >
+            <h3
+              style={{
+                fontSize: customFontSize ? `${Math.round(customFontSize * 1.25)}px` : undefined,
+                fontWeight: customWeight || "700",
+              }}
+              className="text-xl"
+            >
+              {component.cardTitle || component.title || "Card Title"}
+            </h3>
+            <p
+              style={{
+                fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                fontWeight: customWeight || "normal",
+              }}
+              className="mt-2 opacity-80 leading-relaxed"
+            >
+              {component.cardContent || component.content || "Card content."}
+            </p>
           </div>
         );
 
@@ -496,28 +625,57 @@ function Canvas({
           <form
             style={style}
             onSubmit={(e) => e.preventDefault()}
-            className="space-y-4 p-8 h-full w-full"
+            className={`space-y-4 p-8 h-full w-full ${!component.backgroundColor ? "bg-white" : ""}`}
           >
-            {component.formTitle && <h3 className="text-xl font-bold">{component.formTitle}</h3>}
+            {component.formTitle && (
+              <h3
+                style={{
+                  fontSize: customFontSize ? `${Math.round(customFontSize * 1.25)}px` : undefined,
+                  fontWeight: customWeight || "700",
+                }}
+                className="text-xl"
+              >
+                {component.formTitle}
+              </h3>
+            )}
             <div>
-              <label className="mb-1 block text-sm font-medium">Name</label>
+              <label
+                style={{
+                  fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                  fontWeight: customWeight || "500",
+                }}
+                className="mb-1 block"
+              >
+                Name
+              </label>
               <input
                 type="text"
                 placeholder={component.namePlaceholder || "Enter your name"}
+                style={{ fontSize: customFontSize ? `${customFontSize}px` : undefined }}
                 className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500 text-gray-900 bg-white"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Email</label>
+              <label
+                style={{
+                  fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                  fontWeight: customWeight || "500",
+                }}
+                className="mb-1 block"
+              >
+                Email
+              </label>
               <input
                 type="email"
                 placeholder={component.emailPlaceholder || "Enter your email"}
+                style={{ fontSize: customFontSize ? `${customFontSize}px` : undefined }}
                 className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500 text-gray-900 bg-white"
               />
             </div>
             <button
               type="submit"
-              className="rounded-md bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700"
+              style={{ fontSize: customFontSize ? `${customFontSize}px` : undefined }}
+              className="rounded-md bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 transition"
             >
               Submit
             </button>
@@ -560,7 +718,13 @@ function Canvas({
           <div className="flex flex-wrap content-start">
             {components.map((component, index) => {
               const compKey = component.id || component._id;
-              const isSelected = selectedComponent === compKey;
+              const isSelected = Boolean(
+                selectedComponent &&
+                  (selectedComponent === compKey ||
+                    String(selectedComponent) === String(component.id) ||
+                    String(selectedComponent) === String(component._id))
+              );
+
               const isBeingDragged = draggedIndex === index;
               const isDropTarget = dropIndicator?.index === index && draggedIndex !== index;
               const isAutoWidth = component.width === "auto";
@@ -573,12 +737,11 @@ function Canvas({
                     width: isAutoWidth ? "auto" : component.width || "100%",
                     flexGrow: isAutoWidth ? 0 : undefined,
                     flexShrink: 0,
-                    // Elevates elements with shadows or when selected so shadows render over following sections
                     zIndex: isSelected ? 30 : hasShadow ? 10 : 1,
                   }}
                   className={`group relative transition-all ${
-                    isSelected ? "ring-2 ring-blue-500 ring-inset" : ""
-                  } ${isBeingDragged ? "opacity-30 scale-[0.98]" : "opacity-100"} ${
+                    isBeingDragged ? "opacity-30 scale-[0.98]" : "opacity-100"
+                  } ${
                     isDropTarget && dropIndicator?.position === "before"
                       ? "border-l-4 border-l-blue-600"
                       : ""
@@ -594,7 +757,12 @@ function Canvas({
                   onDragOver={(e) => handleItemDragOver(e, index)}
                   onDrop={(e) => handleItemDrop(e, index)}
                 >
-                  {/* Grip Handle for Moving */}
+                  {/* Selection Overlay (Guaranteed visible above all opaque backgrounds) */}
+                  {isSelected && (
+                    <div className="pointer-events-none absolute inset-0 z-20 border-2 border-blue-500 shadow-[0_0_0_1px_rgba(59,130,246,0.2)]" />
+                  )}
+
+                  {/* Drag Reorder Handle */}
                   <div
                     draggable
                     onDragStart={(e) => handleGripDragStart(e, index)}
@@ -605,9 +773,9 @@ function Canvas({
                     <FaGripVertical className="text-[10px]" />
                   </div>
 
-                  {/* Delete Button & Width Badge */}
+                  {/* Actions Badge */}
                   {isSelected && (
-                    <div className="absolute right-2 top-2 z-30 flex items-center gap-1.5 bg-white/90 px-1.5 py-1 rounded shadow-md border border-gray-200 backdrop-blur-xs text-xs">
+                    <div className="absolute right-2 top-2 z-30 flex items-center gap-1.5 bg-white/95 px-1.5 py-1 rounded shadow-md border border-gray-200 backdrop-blur-xs text-xs">
                       <span className="text-[10px] font-bold text-blue-600 uppercase">
                         {component.width || "100%"}
                       </span>
@@ -622,10 +790,10 @@ function Canvas({
                     </div>
                   )}
 
-                  {/* Inner Component Markup */}
+                  {/* Component View */}
                   <div className="w-full h-full">{renderComponent(component)}</div>
 
-                  {/* Right Boundary Resize Handle */}
+                  {/* Right Resize Handle */}
                   {isSelected && (
                     <div
                       onMouseDown={(e) =>
@@ -638,7 +806,7 @@ function Canvas({
                     </div>
                   )}
 
-                  {/* Bottom Boundary Resize Handle */}
+                  {/* Bottom Resize Handle */}
                   {isSelected && (
                     <div
                       onMouseDown={(e) =>
