@@ -39,7 +39,7 @@ export const createDefaultComponent = (type) => {
           { id: "link-2", label: "About", targetPageId: "" },
           { id: "link-3", label: "Pricing", targetPageId: "" },
         ],
-        showNavCta: true,
+        showNavCta: false, // Removed by default
         navCtaText: "Get Started",
         navCtaPageId: "",
         navCtaBg: "#2563eb",

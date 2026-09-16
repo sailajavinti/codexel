@@ -71,7 +71,7 @@ export function renderComponentOnCanvas({
       return (
         <nav
           style={style}
-          className={`flex h-full w-full items-center justify-between px-8 py-4 ${
+          className={`flex flex-wrap h-full w-full items-center justify-between px-6 md:px-8 py-4 gap-4 ${
             !component.backgroundColor ? "bg-white border-b border-gray-100" : ""
           } ${hoverClass}`}
         >
@@ -81,14 +81,14 @@ export function renderComponentOnCanvas({
               fontSize: customFontSize ? `${Math.round(customFontSize * 1.25)}px` : undefined,
               fontWeight: customWeight || "700",
             }}
-            className="tracking-tight whitespace-pre-line"
+            className="tracking-tight whitespace-pre-line shrink-0"
           >
             {component.brand || "Brand"}
           </div>
 
           <div
             style={{ color: component.navLinkColor || undefined }}
-            className="flex flex-wrap gap-6 items-center opacity-90 select-none text-sm font-medium"
+            className="flex flex-wrap gap-4 md:gap-6 items-center opacity-90 select-none text-sm font-medium"
           >
             {navLinks.map((link, idx) => (
               <span
@@ -113,7 +113,7 @@ export function renderComponentOnCanvas({
                   backgroundColor: component.navCtaBg || "#2563eb",
                   color: component.navCtaColor || "#ffffff",
                 }}
-                className="px-4 py-2 rounded-lg text-xs font-semibold shadow-xs hover:opacity-90 transition"
+                className="px-4 py-2 rounded-lg text-xs font-semibold shadow-xs hover:opacity-90 transition shrink-0"
               >
                 {component.navCtaText || "Get Started"}
               </button>
@@ -130,7 +130,7 @@ export function renderComponentOnCanvas({
       return (
         <section
           style={style}
-          className={`flex flex-col justify-center h-full w-full p-10 ${
+          className={`flex flex-col justify-center h-full w-full p-6 md:p-10 ${
             !component.backgroundColor
               ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
               : ""
@@ -142,19 +142,19 @@ export function renderComponentOnCanvas({
                 fontSize: customFontSize ? `${Math.round(customFontSize * 2)}px` : undefined,
                 fontWeight: customWeight || "800",
               }}
-              className="text-4xl md:text-5xl tracking-tight whitespace-pre-line leading-tight"
+              className="text-3xl md:text-5xl tracking-tight whitespace-pre-line leading-tight"
             >
               {component.heading}
             </h1>
             <p
               style={{ fontSize: customFontSize ? `${customFontSize}px` : undefined }}
-              className="mt-4 max-w-2xl opacity-90 leading-relaxed whitespace-pre-line"
+              className="mt-4 max-w-2xl opacity-90 leading-relaxed whitespace-pre-line text-sm md:text-base"
             >
               {component.description}
             </p>
 
             {(showPrimary || showSecondary) && (
-              <div className="mt-8 flex flex-wrap gap-3 items-center justify-center">
+              <div className="mt-8 flex flex-wrap gap-3 items-center justify-center w-full">
                 {showPrimary && (
                   <button
                     type="button"
@@ -188,7 +188,7 @@ export function renderComponentOnCanvas({
       return (
         <section
           style={style}
-          className={`h-full w-full p-8 ${!component.backgroundColor ? "bg-white" : ""} ${hoverClass}`}
+          className={`h-full w-full p-6 md:p-8 ${!component.backgroundColor ? "bg-white" : ""} ${hoverClass}`}
         >
           {component.heading && (
             <h2
@@ -196,7 +196,7 @@ export function renderComponentOnCanvas({
                 fontSize: customFontSize ? `${Math.round(customFontSize * 1.5)}px` : undefined,
                 fontWeight: customWeight || "700",
               }}
-              className="mb-3 text-2xl whitespace-pre-line"
+              className="mb-3 text-xl md:text-2xl whitespace-pre-line"
             >
               {component.heading}
             </h2>
@@ -206,7 +206,7 @@ export function renderComponentOnCanvas({
               fontSize: customFontSize ? `${customFontSize}px` : undefined,
               fontWeight: customWeight || "normal",
             }}
-            className="opacity-90 leading-relaxed whitespace-pre-line"
+            className="opacity-90 leading-relaxed whitespace-pre-line text-sm md:text-base"
           >
             {component.content}
           </p>
@@ -218,14 +218,14 @@ export function renderComponentOnCanvas({
       const boxHover = HOVER_EFFECT_MAP[component.boxHoverEffect || "none"] || "";
 
       return (
-        <section style={style} className={`h-full w-full p-8 ${!component.backgroundColor ? "bg-white" : ""}`}>
+        <section style={style} className={`h-full w-full p-6 md:p-8 ${!component.backgroundColor ? "bg-white" : ""}`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {features.map((feat) => (
               <div
                 key={feat.id}
                 className={`bg-black/5 p-5 rounded-xl border border-black/10 ${boxHover}`}
               >
-                <h4 className="font-bold whitespace-pre-line">{feat.title}</h4>
+                <h4 className="font-bold whitespace-pre-line text-sm md:text-base">{feat.title}</h4>
                 <p className="mt-2 text-xs opacity-80 leading-relaxed whitespace-pre-line">{feat.desc}</p>
               </div>
             ))}
@@ -240,10 +240,10 @@ export function renderComponentOnCanvas({
       return (
         <section
           style={style}
-          className={`h-full w-full p-8 ${!component.backgroundColor ? "bg-slate-50" : ""}`}
+          className={`h-full w-full p-6 md:p-8 ${!component.backgroundColor ? "bg-slate-50" : ""}`}
         >
           <div
-            className={`border border-gray-200 p-8 text-center shadow-md rounded-2xl max-w-sm mx-auto bg-white ${hoverClass}`}
+            className={`border border-gray-200 p-6 md:p-8 text-center shadow-md rounded-2xl max-w-sm mx-auto bg-white ${hoverClass}`}
           >
             {component.pricingBadge && (
               <span className="font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-xs">
@@ -293,7 +293,7 @@ export function renderComponentOnCanvas({
       return (
         <section
           style={style}
-          className={`h-full w-full p-8 ${!component.backgroundColor ? "bg-slate-50" : ""}`}
+          className={`h-full w-full p-6 md:p-8 ${!component.backgroundColor ? "bg-slate-50" : ""}`}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {list.map((t) => (
@@ -332,11 +332,11 @@ export function renderComponentOnCanvas({
     case "faq": {
       const list = component.faqList || [];
       return (
-        <section style={style} className="h-full w-full p-8 bg-white">
+        <section style={style} className="h-full w-full p-6 md:p-8 bg-white">
           <div className="max-w-3xl mx-auto space-y-4">
             {component.faqTitle && (
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">{component.faqTitle}</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900">{component.faqTitle}</h2>
                 {component.faqSubtitle && (
                   <p className="mt-1 text-xs text-gray-500">{component.faqSubtitle}</p>
                 )}
@@ -357,15 +357,15 @@ export function renderComponentOnCanvas({
     case "authForm": {
       const fields = component.authFields || [];
       return (
-        <div className="flex w-full justify-center items-center py-8">
+        <div className="flex w-full justify-center items-center py-8 px-4">
           <div
             style={style}
-            className={`p-8 w-full max-w-md ${
+            className={`p-6 md:p-8 w-full max-w-md ${
               !component.backgroundColor ? "bg-white border border-gray-100 shadow-xl rounded-2xl" : ""
             } ${hoverClass}`}
           >
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold tracking-tight text-gray-900">{component.authTitle}</h3>
+              <h3 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">{component.authTitle}</h3>
               {component.authSubtitle && (
                 <p className="mt-1 text-xs text-gray-500 whitespace-pre-line">{component.authSubtitle}</p>
               )}
@@ -435,10 +435,10 @@ export function renderComponentOnCanvas({
         <form
           style={style}
           onSubmit={(e) => e.preventDefault()}
-          className={`space-y-4 p-8 h-full w-full ${!component.backgroundColor ? "bg-white" : ""} ${hoverClass}`}
+          className={`space-y-4 p-6 md:p-8 h-full w-full ${!component.backgroundColor ? "bg-white" : ""} ${hoverClass}`}
         >
           {component.formTitle && (
-            <h3 className="text-xl font-bold whitespace-pre-line">{component.formTitle}</h3>
+            <h3 className="text-lg md:text-xl font-bold whitespace-pre-line">{component.formTitle}</h3>
           )}
           {formFields.map((field) => (
             <div key={field.id}>
@@ -475,7 +475,7 @@ export function renderComponentOnCanvas({
       return (
         <footer
           style={style}
-          className={`px-8 py-10 h-full w-full ${
+          className={`px-6 md:px-8 py-10 h-full w-full ${
             !component.backgroundColor ? "bg-slate-950 text-slate-400" : ""
           } ${hoverClass}`}
         >
@@ -514,15 +514,15 @@ export function renderComponentOnCanvas({
     case "paragraph":
       return (
         <div style={style} className={`p-6 h-full w-full ${!component.backgroundColor ? "bg-white" : ""} ${hoverClass}`}>
-          <p className="whitespace-pre-line leading-relaxed">{component.content}</p>
+          <p className="whitespace-pre-line leading-relaxed text-sm md:text-base">{component.content}</p>
         </div>
       );
 
     case "heading":
       return (
         <div style={style} className={`p-6 h-full w-full ${!component.backgroundColor ? "bg-white" : ""} ${hoverClass}`}>
-          <h2 className="text-2xl font-bold whitespace-pre-line">{component.title}</h2>
-          {component.subtitle && <p className="mt-2 opacity-80 whitespace-pre-line">{component.subtitle}</p>}
+          <h2 className="text-xl md:text-2xl font-bold whitespace-pre-line">{component.title}</h2>
+          {component.subtitle && <p className="mt-2 opacity-80 whitespace-pre-line text-xs md:text-sm">{component.subtitle}</p>}
         </div>
       );
 
@@ -541,7 +541,7 @@ export function renderComponentOnCanvas({
               paddingBottom: `${component.btnPaddingY ?? 10}px`,
               borderRadius: `${component.borderRadius ?? 6}px`,
             }}
-            className={`font-semibold shadow-xs hover:opacity-90 transition ${hoverClass}`}
+            className={`font-semibold shadow-xs hover:opacity-90 transition text-sm ${hoverClass}`}
           >
             {component.text || "Click Me"}
           </button>
