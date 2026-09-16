@@ -471,6 +471,112 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+    });
+
+    // Don't reveal whether an account exists
+    if (!user) {
+      return res.status(200).json({
+        message:
+          "If an account exists with this email, a verification email has been sent.",
+      });
+    }
+
+    // Already verified
+    if (user.isVerified) {
+      return res.status(400).json({
+        message: "This email is already verified.",
+      });
+    }
+
+    // Generate a new verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    const hashedVerificationToken = crypto
+      .createHash("sha256")
+      .update(verificationToken)
+      .digest("hex");
+
+    user.emailVerificationToken = hashedVerificationToken;
+    user.emailVerificationExpires =
+      Date.now() + 5 * 60 * 1000;
+
+    await user.save();
+
+    const verificationUrl =
+      `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"CodeXel" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Verify your CodeXel email",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
+          <h2>Verify your CodeXel account</h2>
+
+          <p>Hello ${user.name},</p>
+
+          <p>
+            Click the button below to verify your email address.
+          </p>
+
+          <a
+            href="${verificationUrl}"
+            style="
+              display: inline-block;
+              padding: 12px 20px;
+              background-color: #2563eb;
+              color: white;
+              text-decoration: none;
+              border-radius: 8px;
+            "
+          >
+            Verify Email
+          </a>
+
+          <p style="margin-top: 20px;">
+            This verification link expires in 5 minutes.
+          </p>
+
+          <p>
+            If you did not create this account, you can ignore this email.
+          </p>
+        </div>
+      `,
+    });
+
+    return res.status(200).json({
+      message:
+        "If an account exists with this email, a verification email has been sent.",
+    });
+  } catch (error) {
+    console.error("Resend verification error:", error);
+
+    return res.status(500).json({
+      message: "Unable to resend verification email",
+    });
+  }
+};
+
 export {
-  signup, login, getMe, forgotPassword, resetPassword, updateProfile, verifyEmail,
+  signup, login, getMe, forgotPassword, resetPassword, updateProfile, verifyEmail,resendVerificationEmail,
 };

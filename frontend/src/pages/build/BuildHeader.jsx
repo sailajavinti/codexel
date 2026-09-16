@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
   FaCheck,
@@ -21,6 +22,7 @@ function BuildHeader({
   onMarkDirty,
   onExportClick,
 }) {
+  const navigate = useNavigate();
   const [projectName, setProjectName] = useState("Untitled Project");
   const [status, setStatus] = useState("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -141,13 +143,28 @@ function BuildHeader({
     }
   };
 
+  const handleBack = () => {
+    const isVerificationTab =
+      sessionStorage.getItem("verificationTab") === "true";
+
+    if (isVerificationTab) {
+      sessionStorage.removeItem("verificationTab");
+
+      navigate("/", { replace: true });
+
+      return;
+    }
+
+    onBackClick();
+  };
+
   return (
     <header className="relative flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
       {/* Left: Navigation + Open Project */}
       <div className="flex items-center gap-4 z-10">
         <button
           type="button"
-          onClick={onBackClick}
+          onClick={handleBack}
           className="flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-blue-600 focus:outline-none"
         >
           <FaArrowLeft className="text-xs" />
@@ -204,9 +221,8 @@ function BuildHeader({
                         onSelectProject(project);
                         setIsOpenMenuVisible(false);
                       }}
-                      className={`w-full text-left px-2.5 py-2 rounded-lg transition flex flex-col gap-0.5 hover:bg-blue-50 ${
-                        project._id === currentProject?._id ? "bg-blue-50/70" : ""
-                      }`}
+                      className={`w-full text-left px-2.5 py-2 rounded-lg transition flex flex-col gap-0.5 hover:bg-blue-50 ${project._id === currentProject?._id ? "bg-blue-50/70" : ""
+                        }`}
                     >
                       <span className="text-xs font-semibold text-gray-800 truncate">
                         {project.title}
