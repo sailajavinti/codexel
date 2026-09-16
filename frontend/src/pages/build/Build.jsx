@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import BuildHeader from "./BuildHeader";
 import Canvas from "./Canvas";
@@ -14,13 +14,14 @@ const DEFAULT_PAGE = {
   canvasData: [],
 };
 
+const MAX_HISTORY_STEPS = 30;
+
 function Build() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const [currentProject, setCurrentProject] = useState(null);
   const [pages, setPages] = useState([DEFAULT_PAGE]);
-  // Holds only persisted/committed data
   const [savedPages, setSavedPages] = useState([]);
   const [activePageId, setActivePageId] = useState("page-home");
   const [editingPageId, setEditingPageId] = useState(null);
@@ -29,15 +30,24 @@ function Build() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showCodePreview, setShowCodePreview] = useState(false);
 
+  // Viewport & Live Preview
+  const [viewportMode, setViewportMode] = useState("desktop"); // 'desktop' | 'tablet' | 'mobile'
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // Undo / Redo History Stacks
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const isUndoRedoAction = useRef(false);
+
   const activePage =
     pages.find((p) => p.id === activePageId) || pages[0] || DEFAULT_PAGE;
   const components = activePage.canvasData || [];
 
-  // Saved version of the active page for CodePreview
   const activeSavedPage =
     savedPages.find((p) => p.id === activePageId) ||
     savedPages[0] || { id: "empty", name: activePage.name, canvasData: [] };
 
+  // Beforeunload warning
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       const isAuthenticated = Boolean(localStorage.getItem("token"));
@@ -51,14 +61,41 @@ function Build() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
 
+  // Keyboard Shortcuts: Delete, Duplicate (Ctrl+D), Undo (Ctrl+Z), Redo (Ctrl+Y / Ctrl+Shift+Z)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (!selectedComponent) return;
-
       const tag = document.activeElement?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea") return;
 
-      if (e.key === "Delete" || e.key === "Backspace") {
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+      // Undo: Ctrl+Z / Cmd+Z (without Shift)
+      if (cmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Ctrl+Y OR Cmd+Shift+Z / Ctrl+Shift+Z
+      if (
+        (cmdOrCtrl && e.key.toLowerCase() === "y") ||
+        (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === "z")
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Duplicate: Ctrl+D / Cmd+D
+      if (cmdOrCtrl && e.key.toLowerCase() === "d" && selectedComponent) {
+        e.preventDefault();
+        duplicateComponent(selectedComponent);
+        return;
+      }
+
+      // Delete / Backspace
+      if (selectedComponent && (e.key === "Delete" || e.key === "Backspace")) {
         e.preventDefault();
         deleteComponent(selectedComponent);
       }
@@ -66,14 +103,57 @@ function Build() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedComponent]);
+  }, [selectedComponent, historyIndex, history]);
 
+  // Load project on mount / query change
   useEffect(() => {
     const projectId = searchParams.get("id");
     if (projectId) {
       loadProjectById(projectId);
     }
   }, [searchParams]);
+
+  // Push to undo stack whenever pages change, unless triggered by undo/redo
+  const commitToHistory = (newPages) => {
+    if (isUndoRedoAction.current) {
+      isUndoRedoAction.current = false;
+      return;
+    }
+
+    setHistory((prevHistory) => {
+      const truncated = prevHistory.slice(0, historyIndex + 1);
+      const updated = [...truncated, JSON.parse(JSON.stringify(newPages))];
+      if (updated.length > MAX_HISTORY_STEPS) {
+        updated.shift();
+      }
+      return updated;
+    });
+
+    setHistoryIndex((prevIndex) => {
+      const nextIndex = Math.min(prevIndex + 1, MAX_HISTORY_STEPS - 1);
+      return nextIndex;
+    });
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      isUndoRedoAction.current = true;
+      const targetState = history[historyIndex - 1];
+      setPages(JSON.parse(JSON.stringify(targetState)));
+      setHistoryIndex(historyIndex - 1);
+      setIsDirty(true);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      isUndoRedoAction.current = true;
+      const targetState = history[historyIndex + 1];
+      setPages(JSON.parse(JSON.stringify(targetState)));
+      setHistoryIndex(historyIndex + 1);
+      setIsDirty(true);
+    }
+  };
 
   const normalizeComponents = (list = []) => {
     return list.map((item, index) => ({
@@ -122,8 +202,12 @@ function Build() {
     setCurrentProject(project);
     const parsedPages = parseProjectPages(project);
     setPages(parsedPages);
-    // Sync saved snapshot with loaded project
     setSavedPages(parsedPages);
+
+    // Reset history stack for the loaded project
+    setHistory([JSON.parse(JSON.stringify(parsedPages))]);
+    setHistoryIndex(0);
+
     setActivePageId(parsedPages[0]?.id || "page-home");
     setEditingPageId(null);
     setSelectedComponent(null);
@@ -138,6 +222,9 @@ function Build() {
     setCurrentProject(null);
     setPages([DEFAULT_PAGE]);
     setSavedPages([]);
+    setHistory([JSON.parse(JSON.stringify([DEFAULT_PAGE]))]);
+    setHistoryIndex(0);
+
     setActivePageId("page-home");
     setEditingPageId(null);
     setSelectedComponent(null);
@@ -152,7 +239,10 @@ function Build() {
       name: `Page ${pageNum}`,
       canvasData: [],
     };
-    setPages((prev) => [...prev, newPage]);
+    const nextPages = [...pages, newPage];
+    setPages(nextPages);
+    commitToHistory(nextPages);
+
     setActivePageId(newPage.id);
     setEditingPageId(null);
     setSelectedComponent(null);
@@ -168,6 +258,7 @@ function Build() {
 
     const filtered = pages.filter((p) => p.id !== pageIdToDelete);
     setPages(filtered);
+    commitToHistory(filtered);
 
     if (activePageId === pageIdToDelete) {
       setActivePageId(filtered[0]?.id || "page-home");
@@ -178,23 +269,28 @@ function Build() {
   };
 
   const handleRenamePage = (pageId, newName) => {
-    setPages((prev) =>
-      prev.map((p) => (p.id === pageId ? { ...p, name: newName } : p))
+    const nextPages = pages.map((p) =>
+      p.id === pageId ? { ...p, name: newName } : p
     );
+    setPages(nextPages);
+    commitToHistory(nextPages);
     setIsDirty(true);
   };
 
   const setComponentsForActivePage = (updater) => {
-    setPages((prevPages) =>
-      prevPages.map((page) => {
+    setPages((prevPages) => {
+      const nextPages = prevPages.map((page) => {
         if (page.id === activePageId) {
           const updatedCanvas =
             typeof updater === "function" ? updater(page.canvasData || []) : updater;
           return { ...page, canvasData: updatedCanvas };
         }
         return page;
-      })
-    );
+      });
+
+      commitToHistory(nextPages);
+      return nextPages;
+    });
     setIsDirty(true);
   };
 
@@ -297,6 +393,26 @@ function Build() {
     }
   };
 
+  // Component Duplication
+  const duplicateComponent = (id) => {
+    setComponentsForActivePage((prev) => {
+      const targetIndex = prev.findIndex((c) => (c.id || c._id) === id);
+      if (targetIndex === -1) return prev;
+
+      const targetComp = prev[targetIndex];
+      const clonedComp = {
+        ...JSON.parse(JSON.stringify(targetComp)),
+        id: `${targetComp.type || "comp"}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        _id: undefined,
+      };
+
+      const updated = [...prev];
+      updated.splice(targetIndex + 1, 0, clonedComp);
+      setSelectedComponent(clonedComp.id);
+      return updated;
+    });
+  };
+
   const reorderComponents = (startIndex, endIndex) => {
     if (startIndex === endIndex) return;
 
@@ -350,110 +466,120 @@ function Build() {
         onBackClick={handleBackRequest}
         onMarkDirty={() => setIsDirty(true)}
         onExportClick={handleOpenExport}
+        viewportMode={viewportMode}
+        onChangeViewport={setViewportMode}
+        isPreviewMode={isPreviewMode}
+        onTogglePreviewMode={() => setIsPreviewMode((prev) => !prev)}
         onProjectSaved={(savedDoc) => {
           setCurrentProject(savedDoc);
           const parsed = parseProjectPages(savedDoc);
           setPages(parsed);
-          // Update committed state on successful save
           setSavedPages(parsed);
           setIsDirty(false);
+
+          // Reset Undo / Redo history to fresh snapshot on save
+          setHistory([JSON.parse(JSON.stringify(parsed))]);
+          setHistoryIndex(0);
+
           if (searchParams.get("id") !== savedDoc._id) {
             setSearchParams({ id: savedDoc._id }, { replace: true });
           }
         }}
       />
 
-      {/* Page Tabs Bar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
-          {pages.map((page) => {
-            const isActive = page.id === activePageId;
-            const isEditing = editingPageId === page.id;
+      {/* Page Tabs Bar (Hidden in Live Preview Mode) */}
+      {!isPreviewMode && (
+        <div className="flex h-10 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
+            {pages.map((page) => {
+              const isActive = page.id === activePageId;
+              const isEditing = editingPageId === page.id;
 
-            return (
-              <div
-                key={page.id}
-                onClick={() => {
-                  if (!isActive) {
-                    setActivePageId(page.id);
-                    setEditingPageId(null);
-                    setSelectedComponent(null);
-                  }
-                }}
-                className={`group flex items-center gap-2 rounded-lg px-3 py-1 text-xs font-semibold cursor-pointer transition select-none ${
-                  isActive
-                    ? "bg-blue-50 text-blue-600 shadow-xs"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                {isActive && isEditing ? (
-                  <input
-                    type="text"
-                    autoFocus
-                    value={page.name}
-                    onChange={(e) => handleRenamePage(page.id, e.target.value)}
-                    onBlur={() => {
-                      if (!page.name.trim()) {
-                        handleRenamePage(page.id, "Untitled Page");
-                      }
+              return (
+                <div
+                  key={page.id}
+                  onClick={() => {
+                    if (!isActive) {
+                      setActivePageId(page.id);
                       setEditingPageId(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === "Escape") {
+                      setSelectedComponent(null);
+                    }
+                  }}
+                  className={`group flex items-center gap-2 rounded-lg px-3 py-1 text-xs font-semibold cursor-pointer transition select-none ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 shadow-xs"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  {isActive && isEditing ? (
+                    <input
+                      type="text"
+                      autoFocus
+                      value={page.name}
+                      onChange={(e) => handleRenamePage(page.id, e.target.value)}
+                      onBlur={() => {
                         if (!page.name.trim()) {
                           handleRenamePage(page.id, "Untitled Page");
                         }
                         setEditingPageId(null);
-                      }
-                    }}
-                    className="bg-white border border-blue-300 rounded px-1.5 py-0.5 outline-none w-24 text-blue-700"
-                  />
-                ) : (
-                  <span
-                    onDoubleClick={() => {
-                      if (isActive) {
-                        setEditingPageId(page.id);
-                      }
-                    }}
-                    title={isActive ? "Double-click to rename" : "Click to view page"}
-                    className="truncate max-w-[120px]"
-                  >
-                    {page.name}
-                  </span>
-                )}
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === "Escape") {
+                          if (!page.name.trim()) {
+                            handleRenamePage(page.id, "Untitled Page");
+                          }
+                          setEditingPageId(null);
+                        }
+                      }}
+                      className="bg-white border border-blue-300 rounded px-1.5 py-0.5 outline-none w-24 text-blue-700"
+                    />
+                  ) : (
+                    <span
+                      onDoubleClick={() => {
+                        if (isActive) {
+                          setEditingPageId(page.id);
+                        }
+                      }}
+                      title={isActive ? "Double-click to rename" : "Click to view page"}
+                      className="truncate max-w-[120px]"
+                    >
+                      {page.name}
+                    </span>
+                  )}
 
-                {pages.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeletePage(e, page.id)}
-                    className="text-gray-400 hover:text-red-500 transition"
-                    title="Delete page"
-                  >
-                    <FaTimes className="text-[10px]" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
+                  {pages.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeletePage(e, page.id)}
+                      className="text-gray-400 hover:text-red-500 transition"
+                      title="Delete page"
+                    >
+                      <FaTimes className="text-[10px]" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
 
-          <button
-            type="button"
-            onClick={handleAddPage}
-            className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition"
-            title="Add new page"
-          >
-            <FaPlus className="text-[9px]" /> New Page
-          </button>
+            <button
+              type="button"
+              onClick={handleAddPage}
+              className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition"
+              title="Add new page"
+            >
+              <FaPlus className="text-[9px]" /> New Page
+            </button>
+          </div>
+
+          <span className="text-[11px] font-medium text-gray-400">
+            Page: <strong className="text-gray-700">{activePage.name}</strong>
+          </span>
         </div>
+      )}
 
-        <span className="text-[11px] font-medium text-gray-400">
-          Page: <strong className="text-gray-700">{activePage.name}</strong>
-        </span>
-      </div>
-
-      {/* Main Workspace */}
+      {/* Main Workspace (Panels auto-hide when in Live Preview Mode) */}
       <div className="flex flex-1 min-h-0">
-        <ComponentsPanel onAddComponent={addComponent} />
+        {!isPreviewMode && <ComponentsPanel onAddComponent={addComponent} />}
 
         <Canvas
           components={components}
@@ -461,19 +587,25 @@ function Build() {
           setSelectedComponent={setSelectedComponent}
           onDropComponent={addComponent}
           onDeleteComponent={deleteComponent}
+          onDuplicateComponent={duplicateComponent}
           onReorderComponents={reorderComponents}
           onUpdateComponent={updateComponent}
+          viewportMode={viewportMode}
+          isPreviewMode={isPreviewMode}
         />
 
-        <PropertiesPanel
-          components={components}
-          selectedComponent={selectedComponent}
-          onUpdateComponent={updateComponent}
-          onDeleteComponent={deleteComponent}
-        />
+        {!isPreviewMode && (
+          <PropertiesPanel
+            components={components}
+            selectedComponent={selectedComponent}
+            onUpdateComponent={updateComponent}
+            onDeleteComponent={deleteComponent}
+            onDuplicateComponent={duplicateComponent}
+          />
+        )}
       </div>
 
-      {/* Pass only committed/saved data to CodePreview */}
+      {/* Code Export & Preview Modal */}
       <CodePreview
         isOpen={showCodePreview}
         onClose={() => setShowCodePreview(false)}
@@ -481,6 +613,7 @@ function Build() {
         pages={savedPages}
       />
 
+      {/* Exit Confirmation Modal */}
       {showExitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">

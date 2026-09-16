@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FaCopy, FaTrash } from "react-icons/fa";
 
 const WIDTH_OPTIONS = ["Auto", "25%", "33.33%", "50%", "66.67%", "75%", "100%"];
 
@@ -7,6 +8,7 @@ function PropertiesPanel({
   selectedComponent,
   onUpdateComponent,
   onDeleteComponent,
+  onDuplicateComponent,
 }) {
   const selected = components.find(
     (component) =>
@@ -35,6 +37,7 @@ function PropertiesPanel({
   }
 
   const isButton = selected.type === "button";
+  const compId = selected.id || selected._id;
 
   return (
     <aside className="w-80 shrink-0 overflow-y-auto border-l border-gray-200 bg-white">
@@ -49,7 +52,6 @@ function PropertiesPanel({
       </div>
 
       <div className="space-y-6 p-5">
-
         {/* ================= LAYOUT & SIZING ================= */}
         <section>
           <h3 className="mb-3 text-sm font-bold text-slate-800">Layout & Width</h3>
@@ -600,6 +602,21 @@ function PropertiesPanel({
               </select>
             </div>
 
+            <div>
+              <label className="mb-2 block text-xs font-semibold text-gray-600">
+                Text Alignment
+              </label>
+              <select
+                value={selected.textAlign || "left"}
+                onChange={(e) => updateProperty("textAlign", e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+              >
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+
             <NumberField
               label="Margin"
               value={selected.margin !== undefined ? selected.margin : ""}
@@ -701,17 +718,22 @@ function PropertiesPanel({
           </div>
         </section>
 
-        {/* DELETE */}
-        <section className="border-t border-gray-200 pt-6">
+        {/* QUICK ACTIONS: DUPLICATE & DELETE */}
+        <section className="border-t border-gray-200 pt-6 space-y-2">
           <button
             type="button"
-            onClick={() =>
-              onDeleteComponent &&
-              onDeleteComponent(selected.id || selected._id)
-            }
-            className="w-full rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+            onClick={() => onDuplicateComponent && onDuplicateComponent(compId)}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-100"
           >
-            Delete Component
+            <FaCopy className="text-xs" /> Duplicate Component (Ctrl+D)
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onDeleteComponent && onDeleteComponent(compId)}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+          >
+            <FaTrash className="text-xs" /> Delete Component
           </button>
         </section>
       </div>

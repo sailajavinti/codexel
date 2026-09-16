@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
   FaCheck,
@@ -8,6 +7,11 @@ import {
   FaChevronDown,
   FaClock,
   FaPlus,
+  FaDesktop,
+  FaTabletAlt,
+  FaMobileAlt,
+  FaEye,
+  FaEdit,
 } from "react-icons/fa";
 import api from "../../api/axios";
 
@@ -21,8 +25,11 @@ function BuildHeader({
   onBackClick,
   onMarkDirty,
   onExportClick,
+  viewportMode = "desktop",
+  onChangeViewport,
+  isPreviewMode = false,
+  onTogglePreviewMode,
 }) {
-  const navigate = useNavigate();
   const [projectName, setProjectName] = useState("Untitled Project");
   const [status, setStatus] = useState("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -143,28 +150,13 @@ function BuildHeader({
     }
   };
 
-  const handleBack = () => {
-    const isVerificationTab =
-      sessionStorage.getItem("verificationTab") === "true";
-
-    if (isVerificationTab) {
-      sessionStorage.removeItem("verificationTab");
-
-      navigate("/", { replace: true });
-
-      return;
-    }
-
-    onBackClick();
-  };
-
   return (
     <header className="relative flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
-      {/* Left: Navigation + Open Project */}
-      <div className="flex items-center gap-4 z-10">
+      {/* Left: Navigation & Open Project */}
+      <div className="flex items-center gap-3 z-10">
         <button
           type="button"
-          onClick={handleBack}
+          onClick={onBackClick}
           className="flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-blue-600 focus:outline-none"
         >
           <FaArrowLeft className="text-xs" />
@@ -221,8 +213,9 @@ function BuildHeader({
                         onSelectProject(project);
                         setIsOpenMenuVisible(false);
                       }}
-                      className={`w-full text-left px-2.5 py-2 rounded-lg transition flex flex-col gap-0.5 hover:bg-blue-50 ${project._id === currentProject?._id ? "bg-blue-50/70" : ""
-                        }`}
+                      className={`w-full text-left px-2.5 py-2 rounded-lg transition flex flex-col gap-0.5 hover:bg-blue-50 ${
+                        project._id === currentProject?._id ? "bg-blue-50/70" : ""
+                      }`}
                     >
                       <span className="text-xs font-semibold text-gray-800 truncate">
                         {project.title}
@@ -240,36 +233,100 @@ function BuildHeader({
         </div>
       </div>
 
-      {/* Middle: Title Input */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
-        <input
-          type="text"
-          value={projectName}
-          onFocus={handleFocus}
-          onChange={handleChangeName}
-          onBlur={handleBlur}
-          onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
-          placeholder="Untitled Project"
-          className="rounded px-2.5 py-1 text-center text-sm font-semibold text-slate-800 transition hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
+      {/* Middle: Title Input + Responsive Viewport Switcher */}
+      <div className="flex items-center gap-4">
+        {/* Responsive Viewport Controls */}
+        <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1">
+          <button
+            type="button"
+            onClick={() => onChangeViewport && onChangeViewport("desktop")}
+            title="Desktop View (100%)"
+            className={`flex h-7 w-7 items-center justify-center rounded transition ${
+              viewportMode === "desktop"
+                ? "bg-white text-blue-600 shadow-xs"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            <FaDesktop className="text-xs" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeViewport && onChangeViewport("tablet")}
+            title="Tablet View (768px)"
+            className={`flex h-7 w-7 items-center justify-center rounded transition ${
+              viewportMode === "tablet"
+                ? "bg-white text-blue-600 shadow-xs"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            <FaTabletAlt className="text-xs" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeViewport && onChangeViewport("mobile")}
+            title="Mobile View (375px)"
+            className={`flex h-7 w-7 items-center justify-center rounded transition ${
+              viewportMode === "mobile"
+                ? "bg-white text-blue-600 shadow-xs"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            <FaMobileAlt className="text-xs" />
+          </button>
+        </div>
 
-        {status === "saving" && (
-          <span className="flex items-center gap-1 text-xs text-gray-400">
-            <FaSpinner className="animate-spin text-[10px]" /> Saving...
-          </span>
-        )}
-        {status === "saved" && (
-          <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
-            <FaCheck className="text-[10px]" /> Saved
-          </span>
-        )}
-        {status === "error" && (
-          <span className="text-xs font-medium text-red-500">{statusMessage}</span>
-        )}
+        {/* Project Name Field */}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={projectName}
+            onFocus={handleFocus}
+            onChange={handleChangeName}
+            onBlur={handleBlur}
+            onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
+            placeholder="Untitled Project"
+            className="rounded px-2.5 py-1 text-center text-sm font-semibold text-slate-800 transition hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[200px]"
+          />
+
+          {status === "saving" && (
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <FaSpinner className="animate-spin text-[10px]" /> Saving...
+            </span>
+          )}
+          {status === "saved" && (
+            <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+              <FaCheck className="text-[10px]" /> Saved
+            </span>
+          )}
+          {status === "error" && (
+            <span className="text-xs font-medium text-red-500">{statusMessage}</span>
+          )}
+        </div>
       </div>
 
-      {/* Right: Actions */}
+      {/* Right: Preview Mode Toggle + Save + Export */}
       <div className="flex items-center gap-3 z-10">
+        <button
+          type="button"
+          onClick={onTogglePreviewMode}
+          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+            isPreviewMode
+              ? "border-blue-600 bg-blue-50 text-blue-600"
+              : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+          title={isPreviewMode ? "Return to Editor" : "Preview Canvas"}
+        >
+          {isPreviewMode ? (
+            <>
+              <FaEdit className="text-xs" /> Edit Mode
+            </>
+          ) : (
+            <>
+              <FaEye className="text-xs" /> Live Preview
+            </>
+          )}
+        </button>
+
         <button
           type="button"
           onClick={() => handleSave()}

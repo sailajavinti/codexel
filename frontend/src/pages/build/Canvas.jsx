@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FaImage, FaTrash, FaGripVertical } from "react-icons/fa";
+import { FaImage, FaTrash, FaGripVertical, FaCopy } from "react-icons/fa";
 
 const SNAP_WIDTHS = [
   { label: "25%", value: 25 },
@@ -18,6 +18,12 @@ const SHADOW_MAP = {
   xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
 };
 
+const VIEWPORT_WIDTHS = {
+  desktop: "max-w-5xl",
+  tablet: "max-w-[768px]",
+  mobile: "max-w-[375px]",
+};
+
 function Canvas({
   components = [],
   selectedComponent,
@@ -26,6 +32,9 @@ function Canvas({
   onDeleteComponent,
   onReorderComponents,
   onUpdateComponent,
+  onDuplicateComponent,
+  viewportMode = "desktop",
+  isPreviewMode = false,
 }) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dropIndicator, setDropIndicator] = useState(null);
@@ -74,6 +83,7 @@ function Canvas({
 
   // Drag resizing for Width & Height
   const handleWidthResizeMouseDown = (e, compKey, currentWidth) => {
+    if (isPreviewMode) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -111,6 +121,7 @@ function Canvas({
   };
 
   const handleHeightResizeMouseDown = (e, compKey, currentMinHeight) => {
+    if (isPreviewMode) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -135,6 +146,7 @@ function Canvas({
   };
 
   const handleOuterDragOver = (e) => {
+    if (isPreviewMode) return;
     e.preventDefault();
     if (draggedIndex === null) {
       e.dataTransfer.dropEffect = "copy";
@@ -142,6 +154,7 @@ function Canvas({
   };
 
   const handleOuterDrop = (e) => {
+    if (isPreviewMode) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -164,12 +177,14 @@ function Canvas({
   };
 
   const handleGripDragStart = (e, index) => {
+    if (isPreviewMode) return;
     setDraggedIndex(index);
     e.dataTransfer.setData("text/plain", `${index}`);
     e.dataTransfer.effectAllowed = "move";
   };
 
   const handleItemDragOver = (e, index) => {
+    if (isPreviewMode) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -191,6 +206,7 @@ function Canvas({
   };
 
   const handleItemDrop = (e, index) => {
+    if (isPreviewMode) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -230,6 +246,14 @@ function Canvas({
     e.stopPropagation();
     if (onDeleteComponent) {
       onDeleteComponent(id);
+    }
+  };
+
+  const handleDuplicate = (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDuplicateComponent) {
+      onDuplicateComponent(id);
     }
   };
 
@@ -313,7 +337,9 @@ function Canvas({
               <div className="mt-6">
                 <a
                   href={component.heroButtonLink || "#"}
-                  onClick={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    if (!isPreviewMode) e.preventDefault();
+                  }}
                   style={{
                     backgroundColor: component.heroButtonBg || "#ffffff",
                     color: component.heroButtonTextColor || "#2563eb",
@@ -529,7 +555,9 @@ function Canvas({
           <div className={`p-2 flex ${alignMap[component.btnAlign || "left"]} w-full h-full`}>
             <a
               href={component.link || "#"}
-              onClick={(e) => e.preventDefault()}
+              onClick={(e) => {
+                if (!isPreviewMode) e.preventDefault();
+              }}
               style={{
                 backgroundColor: component.btnBgColor || "#2563eb",
                 color: component.btnTextColor || "#ffffff",
@@ -693,13 +721,22 @@ function Canvas({
 
   return (
     <main
-      className="relative flex-1 overflow-y-auto bg-slate-100 p-6"
+      className={`relative flex-1 overflow-y-auto p-6 transition-all duration-300 ${
+        isPreviewMode ? "bg-slate-200/70" : "bg-slate-100"
+      }`}
       onDragOver={handleOuterDragOver}
       onDrop={handleOuterDrop}
+      onClick={() => {
+        if (!isPreviewMode && setSelectedComponent) {
+          setSelectedComponent(null);
+        }
+      }}
     >
       <div
         ref={containerRef}
-        className="mx-auto min-h-full max-w-5xl shadow-sm border border-gray-200 bg-white"
+        className={`mx-auto min-h-full transition-all duration-300 shadow-sm border border-gray-200 bg-white ${
+          VIEWPORT_WIDTHS[viewportMode] || "max-w-5xl"
+        } ${isPreviewMode ? "shadow-2xl rounded-lg overflow-hidden my-4" : ""}`}
         onDragOver={handleOuterDragOver}
         onDrop={handleOuterDrop}
       >
@@ -719,14 +756,16 @@ function Canvas({
             {components.map((component, index) => {
               const compKey = component.id || component._id;
               const isSelected = Boolean(
-                selectedComponent &&
+                !isPreviewMode &&
+                  selectedComponent &&
                   (selectedComponent === compKey ||
                     String(selectedComponent) === String(component.id) ||
                     String(selectedComponent) === String(component._id))
               );
 
-              const isBeingDragged = draggedIndex === index;
-              const isDropTarget = dropIndicator?.index === index && draggedIndex !== index;
+              const isBeingDragged = !isPreviewMode && draggedIndex === index;
+              const isDropTarget =
+                !isPreviewMode && dropIndicator?.index === index && draggedIndex !== index;
               const isAutoWidth = component.width === "auto";
               const hasShadow = component.boxShadow && component.boxShadow !== "none";
 
@@ -751,50 +790,65 @@ function Canvas({
                       : ""
                   }`}
                   onClick={(e) => {
+                    if (isPreviewMode) return;
                     e.stopPropagation();
                     if (setSelectedComponent) setSelectedComponent(compKey);
                   }}
                   onDragOver={(e) => handleItemDragOver(e, index)}
                   onDrop={(e) => handleItemDrop(e, index)}
                 >
-                  {/* Selection Overlay (Guaranteed visible above all opaque backgrounds) */}
-                  {isSelected && (
+                  {/* Selection Overlay */}
+                  {isSelected && !isPreviewMode && (
                     <div className="pointer-events-none absolute inset-0 z-20 border-2 border-blue-500 shadow-[0_0_0_1px_rgba(59,130,246,0.2)]" />
                   )}
 
                   {/* Drag Reorder Handle */}
-                  <div
-                    draggable
-                    onDragStart={(e) => handleGripDragStart(e, index)}
-                    onDragEnd={handleDragEnd}
-                    className="absolute left-2 top-2 z-30 flex h-6 w-6 cursor-grab active:cursor-grabbing items-center justify-center rounded bg-white/90 text-gray-500 shadow-md border border-gray-200 opacity-0 transition group-hover:opacity-100 hover:bg-blue-50 hover:text-blue-600 backdrop-blur-xs"
-                    title="Drag to reposition component"
-                  >
-                    <FaGripVertical className="text-[10px]" />
-                  </div>
+                  {!isPreviewMode && (
+                    <div
+                      draggable
+                      onDragStart={(e) => handleGripDragStart(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className="absolute left-2 top-2 z-30 flex h-6 w-6 cursor-grab active:cursor-grabbing items-center justify-center rounded bg-white/90 text-gray-500 shadow-md border border-gray-200 opacity-0 transition group-hover:opacity-100 hover:bg-blue-50 hover:text-blue-600 backdrop-blur-xs"
+                      title="Drag to reposition component"
+                    >
+                      <FaGripVertical className="text-[10px]" />
+                    </div>
+                  )}
 
-                  {/* Actions Badge */}
-                  {isSelected && (
+                  {/* Actions Badge (Duplicate + Delete + Width Indicator) */}
+                  {isSelected && !isPreviewMode && (
                     <div className="absolute right-2 top-2 z-30 flex items-center gap-1.5 bg-white/95 px-1.5 py-1 rounded shadow-md border border-gray-200 backdrop-blur-xs text-xs">
                       <span className="text-[10px] font-bold text-blue-600 uppercase">
                         {component.width || "100%"}
                       </span>
+
+                      {/* Duplicate Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleDuplicate(e, compKey)}
+                        className="flex h-5 w-5 items-center justify-center rounded text-blue-600 hover:bg-blue-50 hover:text-blue-800 transition"
+                        title="Duplicate Component (Ctrl+D)"
+                      >
+                        <FaCopy className="pointer-events-none text-[10px]" />
+                      </button>
+
+                      {/* Delete Button */}
                       <button
                         type="button"
                         onClick={(e) => handleDelete(e, compKey)}
                         className="flex h-5 w-5 items-center justify-center rounded text-red-500 hover:bg-red-50 hover:text-red-700 transition"
-                        title="Delete Component"
+                        title="Delete Component (Del)"
                       >
                         <FaTrash className="pointer-events-none text-[10px]" />
                       </button>
                     </div>
                   )}
 
-                  {/* Component View */}
+                  {/* Component Body */}
                   <div className="w-full h-full">{renderComponent(component)}</div>
 
                   {/* Right Resize Handle */}
-                  {isSelected && (
+                  {isSelected && !isPreviewMode && (
                     <div
                       onMouseDown={(e) =>
                         handleWidthResizeMouseDown(e, compKey, component.width)
@@ -807,7 +861,7 @@ function Canvas({
                   )}
 
                   {/* Bottom Resize Handle */}
-                  {isSelected && (
+                  {isSelected && !isPreviewMode && (
                     <div
                       onMouseDown={(e) =>
                         handleHeightResizeMouseDown(e, compKey, component.minHeight)
