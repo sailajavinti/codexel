@@ -13,36 +13,41 @@ import {
   FaMinus,
   FaRegWindowMinimize,
   FaChevronDown,
+  FaAlignLeft,
+  FaUserLock,
+  FaComments,
+  FaQuestionCircle,
 } from "react-icons/fa";
+import { AVAILABLE_COMPONENTS } from "./components/constants";
 
-const AVAILABLE_COMPONENTS = [
-  { id: "navbar", name: "Navbar", category: "LAYOUT", icon: FaBars },
-  { id: "hero", name: "Hero", category: "LAYOUT", icon: FaHeading },
-  { id: "section", name: "Section", category: "LAYOUT", icon: FaSquare },
-  { id: "features", name: "Features Grid", category: "LAYOUT", icon: FaThLarge },
-  { id: "pricing", name: "Pricing Table", category: "LAYOUT", icon: FaTags },
-  { id: "footer", name: "Footer", category: "LAYOUT", icon: FaRegWindowMinimize },
-  { id: "heading", name: "Heading / Text", category: "ELEMENTS", icon: FaFont },
-  { id: "button", name: "Button", category: "ELEMENTS", icon: FaMousePointer },
-  { id: "image", name: "Image", category: "ELEMENTS", icon: FaImage },
-  { id: "card", name: "Card", category: "ELEMENTS", icon: FaIdCard },
-  { id: "divider", name: "Divider", category: "ELEMENTS", icon: FaMinus },
-  { id: "form", name: "Contact Form", category: "FORMS", icon: FaWpforms },
-];
+const ICON_MAP = {
+  navbar: FaBars,
+  hero: FaHeading,
+  section: FaSquare,
+  features: FaThLarge,
+  pricing: FaTags,
+  testimonials: FaComments,
+  faq: FaQuestionCircle,
+  footer: FaRegWindowMinimize,
+  heading: FaFont,
+  paragraph: FaAlignLeft,
+  button: FaMousePointer,
+  image: FaImage,
+  card: FaIdCard,
+  divider: FaMinus,
+  form: FaWpforms,
+  authForm: FaUserLock,
+};
 
 function ComponentsPanel({ onAddComponent }) {
-  // Track open state for each category independently
   const [openCategories, setOpenCategories] = useState({
     LAYOUT: true,
-    ELEMENTS: false,
-    FORMS: false,
+    ELEMENTS: true,
+    FORMS: true,
   });
 
   const toggleCategory = (cat) => {
-    setOpenCategories((prev) => ({
-      ...prev,
-      [cat]: !prev[cat],
-    }));
+    setOpenCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
   };
 
   const handleDragStart = (e, comp) => {
@@ -51,27 +56,23 @@ function ComponentsPanel({ onAddComponent }) {
   };
 
   const categories = [
-    { key: "LAYOUT", title: "Layout", items: AVAILABLE_COMPONENTS.filter((c) => c.category === "LAYOUT") },
-    { key: "ELEMENTS", title: "Elements", items: AVAILABLE_COMPONENTS.filter((c) => c.category === "ELEMENTS") },
-    { key: "FORMS", title: "Forms", items: AVAILABLE_COMPONENTS.filter((c) => c.category === "FORMS") },
+    { key: "LAYOUT", title: "Layout & Sections", items: AVAILABLE_COMPONENTS.filter((c) => c.category === "LAYOUT") },
+    { key: "ELEMENTS", title: "Design Elements", items: AVAILABLE_COMPONENTS.filter((c) => c.category === "ELEMENTS") },
+    { key: "FORMS", title: "Forms & Security", items: AVAILABLE_COMPONENTS.filter((c) => c.category === "FORMS") },
   ];
 
   return (
     <aside className="w-64 h-full min-h-0 flex flex-col border-r border-gray-200 bg-white">
-      {/* Pinned Header */}
       <div className="p-4 border-b border-gray-100 shrink-0">
         <h2 className="text-sm font-bold text-gray-900">Components</h2>
-        <p className="text-xs text-gray-400">Drag components to your canvas</p>
+        <p className="text-xs text-gray-400">Click or drag elements to canvas</p>
       </div>
 
-      {/* Scrollable Category Accordions */}
       <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
         {categories.map(({ key, title, items }) => {
           const isOpen = Boolean(openCategories[key]);
-
           return (
             <div key={key} className="rounded-xl border border-gray-100 bg-gray-50/50 overflow-hidden">
-              {/* Toggle Header Button */}
               <button
                 type="button"
                 onClick={() => toggleCategory(key)}
@@ -92,11 +93,10 @@ function ComponentsPanel({ onAddComponent }) {
                 />
               </button>
 
-              {/* Collapsible List */}
               {isOpen && (
                 <div className="p-2 pt-0 space-y-1.5">
                   {items.map((comp) => {
-                    const Icon = comp.icon;
+                    const Icon = ICON_MAP[comp.id] || FaSquare;
                     return (
                       <div
                         key={comp.id}

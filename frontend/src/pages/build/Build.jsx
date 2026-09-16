@@ -6,12 +6,14 @@ import ComponentsPanel from "./ComponentsPanel";
 import PropertiesPanel from "./PropertiesPanel";
 import CodePreview from "./CodePreview";
 import api from "../../api/axios";
+import { createDefaultComponent } from "./components/constants";
 import {
   FaExclamationTriangle,
   FaPlus,
   FaTimes,
   FaThLarge,
   FaSlidersH,
+  FaTrash,
 } from "react-icons/fa";
 
 const DEFAULT_PAGE = {
@@ -35,31 +37,23 @@ function Build() {
   const [isDirty, setIsDirty] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showCodePreview, setShowCodePreview] = useState(false);
+  const [pageToDelete, setPageToDelete] = useState(null);
 
-  // Viewport & Live Preview
   const [viewportMode, setViewportMode] = useState("desktop");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-
-  // Responsive editor panels: "components" | "properties" | null
   const [openPanel, setOpenPanel] = useState(null);
 
-  // Undo / Redo History
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const isUndoRedoAction = useRef(false);
 
-  const activePage =
-    pages.find((p) => p.id === activePageId) || pages[0] || DEFAULT_PAGE;
-
+  const activePage = pages.find((p) => p.id === activePageId) || pages[0] || DEFAULT_PAGE;
   const components = activePage.canvasData || [];
-
-  const activeSavedPage =
-    savedPages.find((p) => p.id === activePageId) ||
-    savedPages[0] || {
-      id: "empty",
-      name: activePage.name,
-      canvasData: [],
-    };
+  const activeSavedPage = savedPages.find((p) => p.id === activePageId) || savedPages[0] || {
+    id: "empty",
+    name: activePage.name,
+    canvasData: [],
+  };
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -69,7 +63,6 @@ function Build() {
         e.returnValue = "";
       }
     };
-
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
@@ -87,7 +80,6 @@ function Build() {
         undo();
         return;
       }
-
       if (
         (cmdOrCtrl && e.key.toLowerCase() === "y") ||
         (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === "z")
@@ -96,28 +88,23 @@ function Build() {
         redo();
         return;
       }
-
       if (cmdOrCtrl && e.key.toLowerCase() === "d" && selectedComponent) {
         e.preventDefault();
         duplicateComponent(selectedComponent);
         return;
       }
-
       if (selectedComponent && (e.key === "Delete" || e.key === "Backspace")) {
         e.preventDefault();
         deleteComponent(selectedComponent);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedComponent, historyIndex, history]);
 
   useEffect(() => {
     const projectId = searchParams.get("id");
-    if (projectId) {
-      loadProjectById(projectId);
-    }
+    if (projectId) loadProjectById(projectId);
   }, [searchParams]);
 
   const commitToHistory = (newPages) => {
@@ -125,16 +112,12 @@ function Build() {
       isUndoRedoAction.current = false;
       return;
     }
-
     setHistory((prevHistory) => {
       const truncated = prevHistory.slice(0, historyIndex + 1);
       const updated = [...truncated, JSON.parse(JSON.stringify(newPages))];
-      if (updated.length > MAX_HISTORY_STEPS) {
-        updated.shift();
-      }
+      if (updated.length > MAX_HISTORY_STEPS) updated.shift();
       return updated;
     });
-
     setHistoryIndex((prevIndex) => Math.min(prevIndex + 1, MAX_HISTORY_STEPS - 1));
   };
 
@@ -158,38 +141,19 @@ function Build() {
     }
   };
 
-  const normalizeComponents = (list = []) => {
-    return list.map((item, index) => ({
-      ...item,
-      width: item.width || (item.type === "button" ? "auto" : "100%"),
-      minHeight: item.minHeight || "",
-      borderRadius: item.borderRadius ?? (item.type === "button" ? 6 : 0),
-      id: item.id || item._id || `${item.type || "comp"}-${Date.now()}-${index}`,
-      navLinks:
-        item.type === "navbar" && !item.navLinks
-          ? [
-              { id: "link-1", label: item.home || "Home", targetPageId: item.homePageId || "" },
-              { id: "link-2", label: item.about || "About", targetPageId: item.aboutPageId || "" },
-              { id: "link-3", label: item.contact || "Contact", targetPageId: item.contactPageId || "" },
-            ]
-          : item.navLinks,
-    }));
-  };
-
   const parseProjectPages = (project) => {
     if (Array.isArray(project.pages) && project.pages.length > 0) {
       return project.pages.map((p, idx) => ({
         id: p.id || `page-${idx}`,
         name: p.name || `Page ${idx + 1}`,
-        canvasData: normalizeComponents(p.canvasData || []),
+        canvasData: p.canvasData || [],
       }));
     }
-
     return [
       {
         id: "page-home",
         name: "Home",
-        canvasData: normalizeComponents(project.canvasData || []),
+        canvasData: project.canvasData || [],
       },
     ];
   };
@@ -198,9 +162,7 @@ function Build() {
     try {
       const res = await api.get("/projects/history");
       const found = res.data.find((p) => p._id === id);
-      if (found) {
-        handleSelectProject(found);
-      }
+      if (found) handleSelectProject(found);
     } catch (err) {
       console.error("Failed to load project:", err);
     }
@@ -247,7 +209,6 @@ function Build() {
       name: `Page ${pageNum}`,
       canvasData: [],
     };
-
     const nextPages = [...pages, newPage];
     setPages(nextPages);
     commitToHistory(nextPages);
@@ -256,33 +217,30 @@ function Build() {
     setEditingPageId(null);
     setSelectedComponent(null);
     setIsDirty(true);
-    setOpenPanel(null);
   };
 
-  const handleDeletePage = (e, pageIdToDelete) => {
-    e.stopPropagation();
+  const confirmDeletePage = () => {
+    if (!pageToDelete) return;
     if (pages.length <= 1) {
       alert("Projects must contain at least one page.");
+      setPageToDelete(null);
       return;
     }
 
-    const filtered = pages.filter((p) => p.id !== pageIdToDelete);
+    const filtered = pages.filter((p) => p.id !== pageToDelete.id);
     setPages(filtered);
     commitToHistory(filtered);
 
-    if (activePageId === pageIdToDelete) {
+    if (activePageId === pageToDelete.id) {
       setActivePageId(filtered[0]?.id || "page-home");
       setSelectedComponent(null);
     }
-
-    setEditingPageId(null);
+    setPageToDelete(null);
     setIsDirty(true);
   };
 
   const handleRenamePage = (pageId, newName) => {
-    const nextPages = pages.map((p) =>
-      p.id === pageId ? { ...p, name: newName } : p
-    );
+    const nextPages = pages.map((p) => (p.id === pageId ? { ...p, name: newName } : p));
     setPages(nextPages);
     commitToHistory(nextPages);
     setIsDirty(true);
@@ -293,88 +251,20 @@ function Build() {
       const nextPages = prevPages.map((page) => {
         if (page.id === activePageId) {
           const updatedCanvas =
-            typeof updater === "function"
-              ? updater(page.canvasData || [])
-              : updater;
-
+            typeof updater === "function" ? updater(page.canvasData || []) : updater;
           return { ...page, canvasData: updatedCanvas };
         }
         return page;
       });
-
       commitToHistory(nextPages);
       return nextPages;
     });
-
     setIsDirty(true);
   };
 
-  const addComponent = (component) => {
-    const componentType = component.type || component.id;
-
-    const newComponent = {
-      id: `${componentType}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      type: componentType,
-      name: component.name || componentType,
-      width: componentType === "button" ? "auto" : "100%",
-      minHeight: "",
-      borderRadius: componentType === "button" ? 6 : 0,
-      margin: 0,
-      brand: "CodeXel",
-      brandColor: "#0f172a",
-      navLinkColor: "#475569",
-      navLinks: [
-        { id: "link-1", label: "Home", targetPageId: "" },
-        { id: "link-2", label: "About", targetPageId: "" },
-        { id: "link-3", label: "Contact", targetPageId: "" },
-      ],
-      heading: "Build Modern Web Experiences",
-      description: "Design and export responsive interfaces visually in minutes.",
-      buttonText: "Get Started",
-      heroButtonBg: "#ffffff",
-      heroButtonTextColor: "#2563eb",
-      heroButtonLink: "#",
-      content: "This is a customizable content section.",
-      featureTitle1: "Fast & Lightweight",
-      featureDesc1: "Optimized for speed and minimal build sizes.",
-      featureTitle2: "Component-Driven",
-      featureDesc2: "Flexible layout primitives built for reusable design.",
-      featureTitle3: "Export Ready",
-      featureDesc3: "Download clean React and Tailwind CSS output.",
-      pricingPlan: "Pro Plan",
-      pricingPrice: "$29",
-      pricingPeriod: "/ month",
-      pricingFeatures: "Unlimited Projects\nCode Export\nPriority Support",
-      pricingButtonText: "Choose Plan",
-      pricingButtonBg: "#2563eb",
-      pricingButtonTextColor: "#ffffff",
-      copyright: "© 2026 CodeXel Inc. All rights reserved.",
-      footerLink1: "Privacy Policy",
-      footerLink2: "Terms of Service",
-      title: "Clean Headings & Copy",
-      subtitle: "Add engaging subtitles or body content to support your sections.",
-      text: "Click Me",
-      link: "#",
-      btnBgColor: "#2563eb",
-      btnTextColor: "#ffffff",
-      btnAlign: "left",
-      btnPaddingX: 20,
-      btnPaddingY: 10,
-      src: "",
-      alt: "",
-      imageName: "",
-      imageWidth: "",
-      imageHeight: "",
-      objectFit: "cover",
-      imageAlign: "left",
-      cardTitle: "Feature Card",
-      cardContent: "Cards are ideal for grouping summaries, specs, or quick highlights.",
-      dividerColor: "#e2e8f0",
-      dividerThickness: "1",
-      formTitle: "Contact Us",
-      namePlaceholder: "Enter your name",
-      emailPlaceholder: "Enter your email",
-    };
+  const addComponent = (compInfo) => {
+    const type = compInfo.type || compInfo.id;
+    const newComponent = createDefaultComponent(type);
 
     setComponentsForActivePage((prev) => [...prev, newComponent]);
     setSelectedComponent(newComponent.id);
@@ -382,17 +272,13 @@ function Build() {
 
   const updateComponent = (id, updates) => {
     setComponentsForActivePage((prev) =>
-      prev.map((comp) =>
-        (comp.id || comp._id) === id ? { ...comp, ...updates } : comp
-      )
+      prev.map((comp) => ((comp.id || comp._id) === id ? { ...comp, ...updates } : comp))
     );
   };
 
   const deleteComponent = (id) => {
     if (!id) return;
-    setComponentsForActivePage((prev) =>
-      prev.filter((comp) => (comp.id || comp._id) !== id)
-    );
+    setComponentsForActivePage((prev) => prev.filter((comp) => (comp.id || comp._id) !== id));
     if (selectedComponent === id) {
       setSelectedComponent(null);
       setOpenPanel(null);
@@ -404,14 +290,12 @@ function Build() {
     setComponentsForActivePage((prev) => {
       const targetIndex = prev.findIndex((c) => (c.id || c._id) === id);
       if (targetIndex === -1) return prev;
-
       const targetComp = prev[targetIndex];
       const clonedComp = {
         ...JSON.parse(JSON.stringify(targetComp)),
         id: `${targetComp.type || "comp"}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         _id: undefined,
       };
-
       const updated = [...prev];
       updated.splice(targetIndex + 1, 0, clonedComp);
       setSelectedComponent(clonedComp.id);
@@ -429,53 +313,26 @@ function Build() {
     });
   };
 
-  const performBackNavigation = () => {
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate("/", { replace: true });
-    }
-  };
-
-  const handleBackRequest = () => {
-    const isAuthenticated = Boolean(localStorage.getItem("token"));
-    if (isDirty && isAuthenticated) {
-      setShowExitModal(true);
-    } else {
-      performBackNavigation();
-    }
-  };
-
-  const confirmDiscardAndExit = () => {
-    setIsDirty(false);
-    setShowExitModal(false);
-    performBackNavigation();
-  };
-
-  const handleOpenExport = () => {
-    if (savedPages.length === 0) {
-      alert("Please save your project first before exporting code.");
-      return;
-    }
-    setShowCodePreview(true);
-  };
-
-  const togglePanel = (panel) => {
-    setOpenPanel((current) => (current === panel ? null : panel));
-  };
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
-      {/* Header */}
       <BuildHeader
         currentProject={currentProject}
         onSelectProject={handleSelectProject}
         onNewProject={handleNewProject}
         pages={pages}
         components={components}
-        onBackClick={handleBackRequest}
+        onBackClick={() => {
+          if (isDirty && Boolean(localStorage.getItem("token"))) setShowExitModal(true);
+          else navigate("/", { replace: true });
+        }}
         onMarkDirty={() => setIsDirty(true)}
-        onExportClick={handleOpenExport}
+        onExportClick={() => {
+          if (savedPages.length === 0) {
+            alert("Please save your project first before exporting code.");
+            return;
+          }
+          setShowCodePreview(true);
+        }}
         viewportMode={viewportMode}
         onChangeViewport={setViewportMode}
         isPreviewMode={isPreviewMode}
@@ -489,19 +346,17 @@ function Build() {
           setPages(parsed);
           setSavedPages(parsed);
           setIsDirty(false);
-
           setHistory([JSON.parse(JSON.stringify(parsed))]);
           setHistoryIndex(0);
-
           if (searchParams.get("id") !== savedDoc._id) {
             setSearchParams({ id: savedDoc._id }, { replace: true });
           }
         }}
       />
 
-      {/* Page Tabs */}
+      {/* Pages Tabs */}
       {!isPreviewMode && (
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-2 sm:px-4 lg:px-6">
+        <div className="flex h-10 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-1 overflow-x-auto py-1 no-scrollbar">
             {pages.map((page) => {
               const isActive = page.id === activePageId;
@@ -515,13 +370,10 @@ function Build() {
                       setActivePageId(page.id);
                       setEditingPageId(null);
                       setSelectedComponent(null);
-                      setOpenPanel(null);
                     }
                   }}
-                  className={`group flex shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold transition sm:gap-2 sm:px-3 ${
-                    isActive
-                      ? "bg-blue-50 text-blue-600 shadow-xs"
-                      : "text-gray-600 hover:bg-gray-100"
+                  className={`group flex shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                    isActive ? "bg-blue-50 text-blue-600 shadow-xs" : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
                   {isActive && isEditing ? (
@@ -531,28 +383,22 @@ function Build() {
                       value={page.name}
                       onChange={(e) => handleRenamePage(page.id, e.target.value)}
                       onBlur={() => {
-                        if (!page.name.trim()) {
-                          handleRenamePage(page.id, "Untitled Page");
-                        }
+                        if (!page.name.trim()) handleRenamePage(page.id, "Untitled Page");
                         setEditingPageId(null);
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === "Escape") {
-                          if (!page.name.trim()) {
-                            handleRenamePage(page.id, "Untitled Page");
-                          }
+                          if (!page.name.trim()) handleRenamePage(page.id, "Untitled Page");
                           setEditingPageId(null);
                         }
                       }}
-                      className="w-20 rounded border border-blue-300 bg-white px-1.5 py-0.5 text-blue-700 outline-none sm:w-24"
+                      className="w-24 rounded border border-blue-300 bg-white px-1 py-0.5 text-blue-700 outline-none"
                     />
                   ) : (
                     <span
-                      onDoubleClick={() => {
-                        if (isActive) setEditingPageId(page.id);
-                      }}
+                      onDoubleClick={() => isActive && setEditingPageId(page.id)}
                       title={isActive ? "Double-click to rename" : "Click to view page"}
-                      className="max-w-[90px] truncate sm:max-w-[120px]"
+                      className="max-w-[120px] truncate"
                     >
                       {page.name}
                     </span>
@@ -561,8 +407,11 @@ function Build() {
                   {pages.length > 1 && (
                     <button
                       type="button"
-                      onClick={(e) => handleDeletePage(e, page.id)}
-                      className="text-gray-400 transition hover:text-red-500"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPageToDelete(page);
+                      }}
+                      className="text-gray-400 hover:text-red-500 transition"
                       title="Delete page"
                     >
                       <FaTimes className="text-[10px]" />
@@ -575,30 +424,26 @@ function Build() {
             <button
               type="button"
               onClick={handleAddPage}
-              className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-blue-600 sm:px-2.5"
-              title="Add new page"
+              className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition"
             >
-              <FaPlus className="text-[9px]" />
-              <span className="hidden sm:inline">New Page</span>
+              <FaPlus className="text-[9px]" /> New Page
             </button>
           </div>
 
-          <span className="ml-2 hidden shrink-0 text-[11px] font-medium text-gray-400 sm:inline">
-            Page: <strong className="text-gray-700">{activePage.name}</strong>
+          <span className="text-[11px] font-medium text-gray-400">
+            Active: <strong className="text-gray-700">{activePage.name}</strong>
           </span>
         </div>
       )}
 
       {/* Main Workspace */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {/* DESKTOP PERMANENT COMPONENTS PANEL */}
         {!isPreviewMode && (
           <div className="hidden shrink-0 lg:block h-full min-h-0">
             <ComponentsPanel onAddComponent={addComponent} />
           </div>
         )}
 
-        {/* CANVAS */}
         <Canvas
           components={components}
           selectedComponent={selectedComponent}
@@ -611,13 +456,11 @@ function Build() {
           onNavigatePage={(targetId) => {
             setActivePageId(targetId);
             setSelectedComponent(null);
-            setOpenPanel(null);
           }}
           viewportMode={viewportMode}
           isPreviewMode={isPreviewMode}
         />
 
-        {/* DESKTOP PERMANENT PROPERTIES PANEL */}
         {!isPreviewMode && (
           <div className="hidden shrink-0 lg:block h-full min-h-0">
             <PropertiesPanel
@@ -631,21 +474,20 @@ function Build() {
           </div>
         )}
 
-        {/* TABLET COMPONENTS DRAWER */}
+        {/* Responsive Drawers */}
         {!isPreviewMode && openPanel === "components" && (
-          <div className="absolute inset-y-0 left-0 z-50 hidden w-72 h-full min-h-0 border-r border-gray-200 bg-white shadow-2xl md:block lg:hidden">
+          <div className="absolute inset-y-0 left-0 z-50 w-72 h-full min-h-0 border-r border-gray-200 bg-white shadow-2xl md:block lg:hidden">
             <ComponentsPanel
-              onAddComponent={(component) => {
-                addComponent(component);
+              onAddComponent={(c) => {
+                addComponent(c);
                 setOpenPanel(null);
               }}
             />
           </div>
         )}
 
-        {/* TABLET PROPERTIES DRAWER */}
         {!isPreviewMode && openPanel === "properties" && (
-          <div className="absolute inset-y-0 right-0 z-50 hidden w-80 h-full min-h-0 border-l border-gray-200 bg-white shadow-2xl md:block lg:hidden">
+          <div className="absolute inset-y-0 right-0 z-50 w-80 h-full min-h-0 border-l border-gray-200 bg-white shadow-2xl md:block lg:hidden">
             <PropertiesPanel
               components={components}
               selectedComponent={selectedComponent}
@@ -656,139 +498,33 @@ function Build() {
             />
           </div>
         )}
-
-        {/* MOBILE BACKDROP */}
-        {!isPreviewMode && openPanel && (
-          <button
-            type="button"
-            aria-label="Close panel"
-            onClick={() => setOpenPanel(null)}
-            className="absolute inset-0 z-40 bg-black/25 md:hidden"
-          />
-        )}
-
-        {/* MOBILE BOTTOM SHEET (COMPONENTS) */}
-        {!isPreviewMode && openPanel === "components" && (
-          <div className="absolute inset-x-0 bottom-0 z-50 max-h-[72%] h-[72vh] flex flex-col overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:hidden">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 shrink-0">
-              <div>
-                <h2 className="text-sm font-bold text-gray-900">Components</h2>
-                <p className="text-[11px] text-gray-400">Tap a component to add it</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpenPanel(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200"
-                aria-label="Close components"
-              >
-                <FaTimes className="text-xs" />
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <ComponentsPanel
-                onAddComponent={(component) => {
-                  addComponent(component);
-                  setOpenPanel(null);
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* MOBILE BOTTOM SHEET (PROPERTIES) */}
-        {!isPreviewMode && openPanel === "properties" && (
-          <div className="absolute inset-x-0 bottom-0 z-50 max-h-[78%] h-[78vh] flex flex-col overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:hidden">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 shrink-0">
-              <div>
-                <h2 className="text-sm font-bold text-gray-900">Properties</h2>
-                <p className="text-[11px] text-gray-400">Edit the selected component</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpenPanel(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200"
-                aria-label="Close properties"
-              >
-                <FaTimes className="text-xs" />
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <PropertiesPanel
-                components={components}
-                selectedComponent={selectedComponent}
-                onUpdateComponent={updateComponent}
-                onDeleteComponent={deleteComponent}
-                onDuplicateComponent={duplicateComponent}
-                pages={pages}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* TABLET CONTROLS */}
+      {/* Mobile/Tablet Bar */}
       {!isPreviewMode && (
-        <div className="hidden h-14 shrink-0 items-center justify-center gap-3 border-t border-gray-200 bg-white px-4 shadow-sm md:flex lg:hidden">
+        <div className="flex h-12 shrink-0 items-center justify-around border-t border-gray-200 bg-white px-2 lg:hidden">
           <button
             type="button"
-            onClick={() => togglePanel("components")}
-            className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
-              openPanel === "components"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            onClick={() => setOpenPanel((p) => (p === "components" ? null : "components"))}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+              openPanel === "components" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
             }`}
           >
-            <FaThLarge />
-            Components
+            <FaThLarge /> Components
           </button>
-
           <button
             type="button"
-            onClick={() => togglePanel("properties")}
-            className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
-              openPanel === "properties"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            onClick={() => setOpenPanel((p) => (p === "properties" ? null : "properties"))}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+              openPanel === "properties" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
             }`}
           >
-            <FaSlidersH />
-            Properties
+            <FaSlidersH /> Properties
           </button>
         </div>
       )}
 
-      {/* MOBILE CONTROLS */}
-      {!isPreviewMode && (
-        <div className="flex h-14 shrink-0 items-center justify-around border-t border-gray-200 bg-white px-2 shadow-sm md:hidden">
-          <button
-            type="button"
-            onClick={() => togglePanel("components")}
-            className={`flex min-w-[120px] items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition ${
-              openPanel === "components"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <FaThLarge />
-            Components
-          </button>
-
-          <button
-            type="button"
-            onClick={() => togglePanel("properties")}
-            className={`flex min-w-[120px] items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition ${
-              openPanel === "properties"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <FaSlidersH />
-            Properties
-          </button>
-        </div>
-      )}
-
-      {/* CODE PREVIEW / EXPORT */}
+      {/* Code Export Modal */}
       <CodePreview
         isOpen={showCodePreview}
         onClose={() => setShowCodePreview(false)}
@@ -796,35 +532,68 @@ function Build() {
         pages={savedPages}
       />
 
-      {/* EXIT CONFIRMATION MODAL */}
+      {/* Page Deletion Confirmation Modal */}
+      {pageToDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <FaTrash className="text-lg" />
+            </div>
+            <div className="mt-4 text-center">
+              <h3 className="text-lg font-bold text-gray-900">Delete Page?</h3>
+              <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                Are you sure you want to delete <strong>{pageToDelete.name}</strong>? All elements on this page will be removed.
+              </p>
+            </div>
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPageToDelete(null)}
+                className="w-full rounded-lg border border-gray-300 bg-white py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeletePage}
+                className="w-full rounded-lg bg-red-600 py-2.5 text-xs font-semibold text-white hover:bg-red-700 shadow-sm transition"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Exit Modal */}
       {showExitModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4 backdrop-blur-xs">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
               <FaExclamationTriangle className="text-xl" />
             </div>
-
             <div className="mt-4 text-center">
               <h3 className="text-lg font-bold text-gray-900">Unsaved Changes</h3>
-              <p className="mt-2 text-sm leading-relaxed text-gray-500">
-                You have unsaved changes in your project. If you leave now, all
-                recent edits will be discarded.
+              <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                You have unsaved changes in your project. Discard and leave?
               </p>
             </div>
-
             <div className="mt-6 flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setShowExitModal(false)}
-                className="w-full rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                className="w-full rounded-lg border border-gray-300 py-2 text-xs font-semibold"
               >
-                Stay & Save
+                Stay
               </button>
-
               <button
                 type="button"
-                onClick={confirmDiscardAndExit}
-                className="w-full rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
+                onClick={() => {
+                  setIsDirty(false);
+                  setShowExitModal(false);
+                  navigate("/", { replace: true });
+                }}
+                className="w-full rounded-lg bg-red-600 py-2 text-xs font-semibold text-white"
               >
                 Discard & Leave
               </button>

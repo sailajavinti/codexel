@@ -10,6 +10,14 @@ const SHADOW_MAP = {
   xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
 };
 
+const HOVER_CLASS_MAP = {
+  none: "",
+  lift: "transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg",
+  scale: "transition-transform duration-200 hover:scale-[1.02]",
+  glow: "transition-all duration-200 hover:ring-2 hover:ring-blue-500/50 hover:shadow-lg",
+  dim: "transition-opacity duration-200 hover:opacity-85",
+};
+
 function formatComponentName(name) {
   const cleaned = (name || "Page").replace(/[^a-zA-Z0-9]/g, "");
   if (!cleaned) return "Page";
@@ -28,10 +36,9 @@ function generateComponentJSX(comp, pages = []) {
   };
 
   const widthClass = widthClassMap[comp.width] || "w-full";
+  const hoverClass = HOVER_CLASS_MAP[comp.hoverEffect || "none"] || "";
   const hasShadow = comp.boxShadow && comp.boxShadow !== "none";
   const zClass = hasShadow ? "relative z-10" : "relative";
-  const customFontSize = comp.fontSize ? Number(comp.fontSize) : null;
-  const customWeight = comp.fontWeight || null;
 
   const buildStyles = (extraStyles = {}) => {
     const combined = {
@@ -56,289 +63,211 @@ function generateComponentJSX(comp, pages = []) {
     return entries.length > 0 ? `style={{ ${entries.join(", ")} }}` : "";
   };
 
+  const resolveHref = (pageId) => {
+    if (!pageId) return "#";
+    const found = pages.find((p) => p.id === pageId);
+    return found ? `/${formatComponentName(found.name).toLowerCase()}` : "#";
+  };
+
   switch (comp.type) {
     case "navbar": {
-      const styleAttr = buildStyles();
-      const brandStyle = `style={{ color: '${comp.brandColor || "#0f172a"}'${
-        customFontSize ? `, fontSize: '${Math.round(customFontSize * 1.25)}px'` : ""
-      }${customWeight ? `, fontWeight: '${customWeight}'` : "" } }}`;
-
-      const linkStyle = `style={{ color: '${comp.navLinkColor || "#475569"}'${
-        customFontSize ? `, fontSize: '${customFontSize}px'` : ""
-      }${customWeight ? `, fontWeight: '${customWeight}'` : "" } }}`;
-
-      const navLinks = comp.navLinks || [
-        { id: "link-1", label: comp.home || "Home", targetPageId: comp.homePageId || "" },
-        { id: "link-2", label: comp.about || "About", targetPageId: comp.aboutPageId || "" },
-        { id: "link-3", label: comp.contact || "Contact", targetPageId: comp.contactPageId || "" },
-      ];
-
-      const resolveHref = (pageId) => {
-        if (!pageId) return "#";
-        const found = pages.find((p) => p.id === pageId);
-        return found ? `/${formatComponentName(found.name).toLowerCase()}` : "#";
-      };
-
-      const linksJSX = navLinks
-        .map(
-          (l, i) =>
-            `          <a href="${resolveHref(l.targetPageId)}" className="hover:opacity-80">${l.label || `Link ${i + 1}`}</a>`
-        )
-        .join("\n");
-
+      const navLinks = comp.navLinks || [];
       return `      {/* Navbar */}
       <nav className="${widthClass} ${zClass} flex items-center justify-between px-8 py-4 ${
         !comp.backgroundColor ? "bg-white border-b border-gray-100" : ""
-      }" ${styleAttr}>
-        <span className="font-bold tracking-tight" ${brandStyle}>
+      } ${hoverClass}" ${buildStyles()}>
+        <span className="font-bold tracking-tight whitespace-pre-line" style={{ color: '${comp.brandColor || "#0f172a"}' }}>
           ${comp.brand || "Brand"}
         </span>
-        <div className="flex flex-wrap gap-6 opacity-90 items-center" ${linkStyle}>
-${linksJSX}
+        <div className="flex flex-wrap gap-6 items-center opacity-90" style={{ color: '${comp.navLinkColor || "#475569"}' }}>
+${navLinks.map((l) => `          <a href="${resolveHref(l.targetPageId)}" className="hover:opacity-80">${l.label}</a>`).join("\n")}
         </div>
+        ${
+          comp.showNavCta
+            ? `<a href="${resolveHref(comp.navCtaPageId)}" style={{ backgroundColor: '${comp.navCtaBg || "#2563eb"}', color: '${comp.navCtaColor || "#ffffff"}' }} className="px-4 py-2 rounded-lg text-xs font-semibold shadow-xs hover:opacity-90 transition">${comp.navCtaText || "Get Started"}</a>`
+            : ""
+        }
       </nav>`;
     }
 
     case "hero": {
-      const hasCustomBg = Boolean(comp.backgroundColor);
-      const bgClass = hasCustomBg ? "" : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white";
-      const defaultTextColor = hasCustomBg && !comp.textColor ? { color: "'#0f172a'" } : {};
-      const styleAttr = buildStyles(defaultTextColor);
-
-      const align = comp.textAlign || "left";
-      const alignClasses =
-        align === "center"
-          ? "items-center text-center mx-auto"
-          : align === "right"
-          ? "items-end text-right ml-auto"
-          : "items-start text-left";
-
-      const headingStyle = customFontSize || customWeight
-        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 2)}px', ` : ""}${
-            customWeight ? `fontWeight: '${customWeight}'` : ""
-          } }}`
-        : "";
-
-      const descStyle = customFontSize || customWeight
-        ? `style={{ ${customFontSize ? `fontSize: '${customFontSize}px', ` : ""}${
-            customWeight ? `fontWeight: '${customWeight}'` : ""
-          } }}`
-        : "";
+      const bgClass = comp.backgroundColor ? "" : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white";
 
       return `      {/* Hero Section */}
-      <section className="${widthClass} ${zClass} p-12 ${bgClass}" ${styleAttr}>
-        <div className="flex flex-col w-full ${alignClasses}">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight" ${headingStyle}>
-            ${comp.heading || "Build Modern Web Experiences"}
-          </h1>
-          <p className="mt-4 max-w-2xl text-lg opacity-90 leading-relaxed" ${descStyle}>
-            ${comp.description || "Design and export responsive interfaces visually in minutes."}
-          </p>
-          <div className="mt-6">
-            <a
-              href="${comp.heroButtonLink || "#"}"
-              style={{ backgroundColor: '${comp.heroButtonBg || "#ffffff"}', color: '${comp.heroButtonTextColor || "#2563eb"}'${
-                customFontSize ? `, fontSize: '${customFontSize}px'` : ""
-              } }}
-              className="inline-block px-6 py-3 rounded-md font-semibold shadow-xs hover:opacity-95 transition"
-            >
-              ${comp.buttonText || "Get Started"}
-            </a>
+      <section className="${widthClass} ${zClass} p-12 ${bgClass} ${hoverClass}" ${buildStyles()}>
+        <div className="flex flex-col w-full max-w-3xl mx-auto text-center items-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight whitespace-pre-line leading-tight" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.heading || "Hero Heading")} }} />
+          <p className="mt-4 max-w-2xl text-lg opacity-90 leading-relaxed whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.description || "Hero description text.")} }} />
+          <div className="mt-8 flex flex-wrap gap-3 items-center justify-center">
+            ${
+              comp.showHeroButton !== false
+                ? `<a href="${resolveHref(comp.heroButtonPageId)}" style={{ backgroundColor: '${comp.heroButtonBg || "#ffffff"}', color: '${comp.heroButtonTextColor || "#2563eb"}' }} className="px-6 py-3 rounded-md font-semibold shadow-xs hover:opacity-95 transition text-sm">${comp.buttonText || "Get Started"}</a>`
+                : ""
+            }
+            ${
+              comp.showSecondaryButton !== false
+                ? `<a href="${resolveHref(comp.secondaryButtonPageId)}" className="px-6 py-3 rounded-md font-semibold border border-white/40 bg-white/10 text-white backdrop-blur-xs hover:bg-white/20 transition text-sm">${comp.secondaryButtonText || "Learn More"}</a>`
+                : ""
+            }
           </div>
         </div>
       </section>`;
     }
 
-    case "section": {
-      const styleAttr = buildStyles();
-      const headingStyle = customFontSize || customWeight
-        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 1.5)}px', ` : ""}${
-            customWeight ? `fontWeight: '${customWeight}'` : ""
-          } }}`
-        : "";
+    case "paragraph":
+      return `      {/* Paragraph */}
+      <div className="${widthClass} ${zClass} p-6 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildStyles()}>
+        <p className="whitespace-pre-line leading-relaxed" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.content || "")} }} />
+      </div>`;
 
-      return `      {/* Content Section */}
-      <section className="${widthClass} ${zClass} p-10 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
-        ${comp.heading ? `<h2 className="text-2xl font-bold mb-3" ${headingStyle}>${comp.heading}</h2>` : ""}
-        <p className="opacity-90 leading-relaxed">
-          ${comp.content || "This is a customizable content section."}
-        </p>
+    case "heading":
+      return `      {/* Heading */}
+      <div className="${widthClass} ${zClass} p-6 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildStyles()}>
+        <h2 className="text-2xl font-bold whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.title || "Custom Heading")} }} />
+        ${comp.subtitle ? `<p className="mt-2 opacity-80 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.subtitle)} }} />` : ""}
+      </div>`;
+
+    case "section":
+      return `      {/* Section */}
+      <section className="${widthClass} ${zClass} p-10 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildStyles()}>
+        ${comp.heading ? `<h2 className="text-2xl font-bold mb-3 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.heading)} }} />` : ""}
+        <p className="opacity-90 leading-relaxed whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.content || "")} }} />
       </section>`;
-    }
 
-    case "heading": {
-      const styleAttr = buildStyles();
-      const headingStyle = customFontSize || customWeight
-        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 1.5)}px', ` : ""}${
-            customWeight ? `fontWeight: '${customWeight}'` : ""
-          } }}`
-        : "";
-
-      return `      {/* Heading / Text */}
-      <div className="${widthClass} ${zClass} p-6 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
-        <h2 className="text-2xl font-bold" ${headingStyle}>${comp.title || "Custom Heading"}</h2>
-        ${comp.subtitle ? `<p className="mt-2 opacity-80 leading-relaxed">${comp.subtitle}</p>` : ""}
+    case "image":
+      return `      {/* Image Block */}
+      <div className="${widthClass} ${zClass} overflow-hidden ${hoverClass}" ${buildStyles()}>
+        <img
+          src="${comp.src || "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1000"}"
+          alt="${comp.alt || "Visual"}"
+          style={{
+            width: '${comp.imageWidth ? `${comp.imageWidth}%` : "100%"}',
+            height: '${comp.imageHeight ? `${comp.imageHeight}px` : "auto"}',
+            objectFit: '${comp.objectFit || "cover"}'
+          }}
+          className="block mx-auto"
+        />
       </div>`;
-    }
-
-    case "card": {
-      const styleAttr = buildStyles();
-      const cardTitleStyle = customFontSize || customWeight
-        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 1.25)}px', ` : ""}${
-            customWeight ? `fontWeight: '${customWeight}'` : ""
-          } }}`
-        : "";
-
-      return `      {/* Card */}
-      <div className="${widthClass} ${zClass} p-6 ${!comp.backgroundColor ? "bg-white border border-gray-100" : ""}" ${styleAttr}>
-        <h3 className="text-xl font-bold" ${cardTitleStyle}>${comp.cardTitle || comp.title || "Card Title"}</h3>
-        <p className="mt-2 opacity-80 leading-relaxed">${comp.cardContent || comp.content || "Card content."}</p>
-      </div>`;
-    }
 
     case "features": {
-      const styleAttr = buildStyles();
-      const titleStyle = customFontSize || customWeight
-        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 1.15)}px', ` : ""}${
-            customWeight ? `fontWeight: '${customWeight}'` : ""
-          } }}`
-        : "";
+      const features = comp.featuresList || [];
+      const boxHover = HOVER_CLASS_MAP[comp.boxHoverEffect || "none"] || "";
 
       return `      {/* Features Grid */}
-      <section className="${widthClass} ${zClass} p-10 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
+      <section className="${widthClass} ${zClass} p-10 ${!comp.backgroundColor ? "bg-white" : ""}" ${buildStyles()}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 bg-black/5 border border-black/10 rounded-lg">
-            <h4 className="font-bold" ${titleStyle}>${comp.featureTitle1 || "Feature 1"}</h4>
-            <p className="mt-2 text-sm opacity-80 leading-relaxed">${comp.featureDesc1 || "Feature description text."}</p>
-          </div>
-          <div className="p-6 bg-black/5 border border-black/10 rounded-lg">
-            <h4 className="font-bold" ${titleStyle}>${comp.featureTitle2 || "Feature 2"}</h4>
-            <p className="mt-2 text-sm opacity-80 leading-relaxed">${comp.featureDesc2 || "Feature description text."}</p>
-          </div>
-          <div className="p-6 bg-black/5 border border-black/10 rounded-lg">
-            <h4 className="font-bold" ${titleStyle}>${comp.featureTitle3 || "Feature 3"}</h4>
-            <p className="mt-2 text-sm opacity-80 leading-relaxed">${comp.featureDesc3 || "Feature description text."}</p>
-          </div>
+${features.map((f) => `          <div className="p-6 bg-black/5 border border-black/10 rounded-xl ${boxHover}">
+            <h4 className="font-bold whitespace-pre-line">${f.title}</h4>
+            <p className="mt-2 text-xs opacity-80 leading-relaxed whitespace-pre-line">${f.desc}</p>
+          </div>`).join("\n")}
         </div>
       </section>`;
     }
 
     case "pricing": {
-      const styleAttr = buildStyles();
-      const priceStyle = customFontSize || customWeight
-        ? `style={{ ${customFontSize ? `fontSize: '${Math.round(customFontSize * 2.25)}px', ` : ""}${
-            customWeight ? `fontWeight: '${customWeight}'` : ""
-          } }}`
-        : "";
-
+      const features = comp.pricingFeaturesList || [];
       return `      {/* Pricing Card */}
-      <section className="${widthClass} ${zClass} p-8 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
-        <div className="max-w-xs mx-auto border border-gray-200 p-6 rounded-lg text-center shadow-xs">
-          <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-            ${comp.pricingPlan || "Pro"}
-          </span>
-          <div className="mt-4 flex items-baseline justify-center gap-1">
-            <span className="text-4xl font-extrabold" ${priceStyle}>${comp.pricingPrice || "$29"}</span>
-            <span className="text-sm opacity-70">${comp.pricingPeriod || "/ mo"}</span>
+      <section className="${widthClass} ${zClass} p-8 ${!comp.backgroundColor ? "bg-slate-50" : ""}" ${buildStyles()}>
+        <div className="border border-gray-200 p-8 text-center shadow-md rounded-2xl max-w-sm mx-auto bg-white ${hoverClass}">
+          ${comp.pricingBadge ? `<span className="font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-xs">${comp.pricingBadge}</span>` : ""}
+          <h3 className="mt-4 text-xl font-bold text-gray-900">${comp.pricingPlan}</h3>
+          <div className="mt-3 flex items-baseline justify-center gap-1">
+            <span className="text-4xl font-extrabold text-gray-900">${comp.pricingPrice}</span>
+            <span className="text-sm text-gray-500">${comp.pricingPeriod}</span>
           </div>
-          <ul className="mt-5 space-y-2 text-xs opacity-90 text-left border-t border-b border-gray-100 py-4">
-            ${(comp.pricingFeatures || "Feature 1\nFeature 2")
-              .split("\n")
-              .map((f) => `<li className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> ${f}</li>`)
-              .join("\n            ")}
-          </ul>
-          <button
-            style={{ backgroundColor: '${comp.pricingButtonBg || "#2563eb"}', color: '${comp.pricingButtonTextColor || "#ffffff"}'${
-              customFontSize ? `, fontSize: '${customFontSize}px'` : ""
-            } }}
-            className="mt-5 w-full py-2.5 rounded-md font-semibold shadow-xs hover:opacity-90 transition"
-          >
+          <div className="mt-6 space-y-2.5 text-left border-t border-b border-gray-100 py-6 text-xs">
+${features.map((f) => `            <div className="flex items-center gap-2.5 ${f.included ? "text-gray-700" : "text-gray-400 line-through"}">
+              <span>${f.included ? "✓" : "✕"}</span>
+              <span>${f.text}</span>
+            </div>`).join("\n")}
+          </div>
+          <a href="${resolveHref(comp.pricingButtonPageId)}" style={{ backgroundColor: '${comp.pricingButtonBg || "#2563eb"}', color: '${comp.pricingButtonTextColor || "#ffffff"}' }} className="mt-6 block w-full py-3 rounded-xl font-semibold shadow-xs hover:opacity-90 transition text-sm">
             ${comp.pricingButtonText || "Choose Plan"}
-          </button>
+          </a>
         </div>
       </section>`;
     }
 
-    case "button": {
-      const alignMap = {
-        left: "justify-start",
-        center: "justify-center",
-        right: "justify-end",
-        full: "w-full",
-      };
-      const buttonShadow = hasShadow ? `boxShadow: '${SHADOW_MAP[comp.boxShadow]}',` : "";
+    case "authForm": {
+      const fields = comp.authFields || [];
+      return `      {/* Authentication Form */}
+      <div className="${widthClass} ${zClass} flex w-full justify-center items-center py-8">
+        <div className="p-8 w-full max-w-md ${!comp.backgroundColor ? "bg-white border border-gray-100 shadow-xl rounded-2xl" : ""} ${hoverClass}" ${buildStyles()}>
+          <div className="text-center mb-6">
+            <h3 className="text-2xl font-bold tracking-tight text-gray-900">${comp.authTitle}</h3>
+            ${comp.authSubtitle ? `<p className="mt-1 text-xs text-gray-500 whitespace-pre-line">${comp.authSubtitle}</p>` : ""}
+          </div>
+          <form className="space-y-3.5">
+${fields.map((f) => `            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">${f.label} ${f.required ? "*" : ""}</label>
+              <input type="${f.type}" placeholder="${f.placeholder}" ${f.required ? "required" : ""} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white" />
+            </div>`).join("\n")}
+            <button type="submit" className="w-full py-2.5 rounded-lg bg-blue-600 font-semibold text-xs text-white shadow-xs hover:bg-blue-700 transition mt-2">
+              ${comp.submitButtonText || "Continue"}
+            </button>
+          </form>
+        </div>
+      </div>`;
+    }
 
+    case "form": {
+      const fields = comp.formFields || [];
+      return `      {/* Dynamic Form */}
+      <form className="${widthClass} ${zClass} p-8 space-y-4 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildStyles()}>
+        ${comp.formTitle ? `<h3 className="text-xl font-bold whitespace-pre-line">${comp.formTitle}</h3>` : ""}
+${fields.map((f) => f.type === "textarea"
+    ? `        <div>
+          <label className="block text-xs font-medium mb-1">${f.label}</label>
+          <textarea rows={3} placeholder="${f.placeholder}" className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white" />
+        </div>`
+    : `        <div>
+          <label className="block text-xs font-medium mb-1">${f.label}</label>
+          <input type="${f.type}" placeholder="${f.placeholder}" className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white" />
+        </div>`).join("\n")}
+        <button type="submit" className="px-5 py-2.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition">
+          ${comp.submitButtonText || "Send"}
+        </button>
+      </form>`;
+    }
+
+    case "footer": {
+      const columns = comp.footerColumns || [];
+      return `      {/* Footer */}
+      <footer className="${widthClass} ${zClass} px-8 py-10 ${!comp.backgroundColor ? "bg-slate-950 text-slate-400" : ""} ${hoverClass}" ${buildStyles()}>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+          <div className="md:col-span-1">
+            <h3 className="text-base font-bold text-white tracking-tight">${comp.brand || "Brand"}</h3>
+            <p className="mt-2 text-xs opacity-75 leading-relaxed whitespace-pre-line">${comp.footerAbout || ""}</p>
+          </div>
+${columns.map((col) => `          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">${col.title}</h4>
+            <ul className="mt-3 space-y-2 text-xs">
+${(col.items || []).map((it) => `              <li><a href="${resolveHref(it.targetPageId)}" className="hover:text-blue-400 transition">${it.label}</a></li>`).join("\n")}
+            </ul>
+          </div>`).join("\n")}
+        </div>
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+          <span className="whitespace-pre-line">${comp.copyright || ""}</span>
+        </div>
+      </footer>`;
+    }
+
+    case "button":
       return `      {/* Button */}
-      <div className="${widthClass} ${zClass} flex ${alignMap[comp.btnAlign || "left"]} p-3">
+      <div className="${widthClass} ${zClass} flex justify-${comp.btnAlign || "left"} p-2">
         <a
-          href="${comp.link || "#"}"
+          href="${resolveHref(comp.targetPageId) || comp.link || "#"}"
           style={{
             backgroundColor: '${comp.btnBgColor || "#2563eb"}',
             color: '${comp.btnTextColor || "#ffffff"}',
             padding: '${comp.btnPaddingY ?? 10}px ${comp.btnPaddingX ?? 20}px',
             borderRadius: '${comp.borderRadius ?? 6}px',
-            fontSize: '${comp.fontSize || 16}px',
-            fontWeight: '${comp.fontWeight || "600"}',
-            ${buttonShadow}
           }}
-          className="inline-flex items-center justify-center font-semibold hover:opacity-90 transition ${comp.btnAlign === "full" ? "w-full" : ""}"
+          className="font-semibold shadow-xs hover:opacity-90 transition ${hoverClass}"
         >
           ${comp.text || "Click Me"}
         </a>
       </div>`;
-    }
-
-    case "image":
-      return `      {/* Image */}
-      <div className="${widthClass} ${zClass} overflow-hidden bg-gray-100">
-        <img
-          src="${comp.src || "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800"}"
-          alt="${comp.alt || "Uploaded visual"}"
-          className="w-full h-auto object-cover block"
-        />
-      </div>`;
-
-    case "footer": {
-      const hasCustomBg = Boolean(comp.backgroundColor);
-      const bgClass = hasCustomBg ? "" : "bg-slate-900 text-slate-400";
-      const styleAttr = buildStyles();
-
-      return `      {/* Footer */}
-      <footer className="${widthClass} ${zClass} flex flex-col sm:flex-row items-center justify-between px-8 py-6 text-sm gap-4 ${bgClass}" ${styleAttr}>
-        <span>${comp.copyright || "© 2026 CodeXel Inc."}</span>
-        <div className="flex gap-6">
-          <a href="#" className="hover:opacity-80">${comp.footerLink1 || "Privacy"}</a>
-          <a href="#" className="hover:opacity-80">${comp.footerLink2 || "Terms"}</a>
-        </div>
-      </footer>`;
-    }
-
-    case "form": {
-      const styleAttr = buildStyles();
-      return `      {/* Contact Form */}
-      <form className="${widthClass} ${zClass} p-8 space-y-4 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
-        ${comp.formTitle ? `<h3 className="text-xl font-bold">${comp.formTitle}</h3>` : ""}
-        <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
-          <input
-            type="text"
-            placeholder="${comp.namePlaceholder || "Enter your name"}"
-            className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500 bg-white text-gray-900"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
-          <input
-            type="email"
-            placeholder="${comp.emailPlaceholder || "Enter your email"}"
-            className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500 bg-white text-gray-900"
-          />
-        </div>
-        <button type="submit" className="px-5 py-2.5 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">
-          Submit
-        </button>
-      </form>`;
-    }
 
     case "divider":
       return `      {/* Divider */}
@@ -346,13 +275,8 @@ ${linksJSX}
         <hr className="w-full" style={{ borderColor: '${comp.dividerColor || "#e2e8f0"}', borderWidth: '${comp.dividerThickness || 1}px' }} />
       </div>`;
 
-    default: {
-      const styleAttr = buildStyles();
-      return `      {/* Generic Block */}
-      <div className="${widthClass} ${zClass} p-6 border border-gray-100 ${!comp.backgroundColor ? "bg-white" : ""}" ${styleAttr}>
-        <p className="opacity-80">${comp.name || comp.type}</p>
-      </div>`;
-    }
+    default:
+      return `      <div className="${widthClass} p-6 bg-white border border-gray-100">${comp.type}</div>`;
   }
 }
 
@@ -377,11 +301,8 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
   const [isZipping, setIsZipping] = useState(false);
 
   useEffect(() => {
-    if (activePage?.id) {
-      setSelectedPageId(activePage.id);
-    } else if (pages.length > 0) {
-      setSelectedPageId(pages[0].id);
-    }
+    if (activePage?.id) setSelectedPageId(activePage.id);
+    else if (pages.length > 0) setSelectedPageId(pages[0].id);
   }, [activePage, pages, isOpen]);
 
   if (!isOpen) return null;
@@ -389,12 +310,6 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
   const validPages = pages.length > 0 ? pages : [activePage];
   const currentPageToView = validPages.find((p) => p.id === selectedPageId) || validPages[0];
   const currentCode = generatePageCode(currentPageToView.name, currentPageToView.canvasData || [], validPages);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(currentCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const handleDownload = async () => {
     if (validPages.length <= 1) {
@@ -428,7 +343,7 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Failed to generate zip:", err);
+      console.error("Failed to bundle files into a zip:", err);
       alert("Failed to bundle files into a zip. Please try again.");
     } finally {
       setIsZipping(false);
@@ -440,7 +355,6 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
       <div className="flex h-[85vh] w-full max-w-4xl flex-col rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden">
-        {/* Header */}
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800 px-6 bg-slate-950">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600/20 text-blue-400">
@@ -449,94 +363,67 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
             <div>
               <h3 className="text-sm font-bold text-white">Export Code</h3>
               <p className="text-[11px] text-slate-400">
-                React + Tailwind CSS Output ({validPages.length} {validPages.length === 1 ? "page" : "pages"})
+                React + Tailwind Output ({validPages.length} {validPages.length === 1 ? "page" : "pages"})
               </p>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-400 hover:text-white transition p-1"
-          >
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition p-1">
             <FaTimes />
           </button>
         </div>
 
-        {/* Multi-Page Tabs Bar */}
         {isMultiPage && (
           <div className="flex items-center gap-1.5 border-b border-slate-800 bg-slate-950/70 px-6 py-2 overflow-x-auto no-scrollbar">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-2">
-              Select Page to View / Copy:
-            </span>
-            {validPages.map((page) => {
-              const isSelected = page.id === selectedPageId;
-              const formattedName = formatComponentName(page.name);
-
-              return (
-                <button
-                  key={page.id}
-                  type="button"
-                  onClick={() => setSelectedPageId(page.id)}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                    isSelected
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white"
-                  }`}
-                >
-                  <FaFileCode className="text-[10px]" />
-                  <span>{formattedName}.jsx</span>
-                </button>
-              );
-            })}
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-2">Select Page:</span>
+            {validPages.map((page) => (
+              <button
+                key={page.id}
+                type="button"
+                onClick={() => setSelectedPageId(page.id)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition ${
+                  page.id === selectedPageId
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`}
+              >
+                <FaFileCode className="text-[10px]" />
+                <span>{formatComponentName(page.name)}.jsx</span>
+              </button>
+            ))}
           </div>
         )}
 
-        {/* Details Bar */}
-        <div className="flex items-center justify-between px-6 py-2 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400 font-mono">
-          <span>File: src/pages/{formatComponentName(currentPageToView.name)}.jsx</span>
-          <span>{currentPageToView.canvasData?.length || 0} Components</span>
-        </div>
-
-        {/* Code Content */}
         <div className="flex-1 overflow-auto bg-slate-900 p-6 font-mono text-xs text-slate-200 selection:bg-blue-600">
           <pre className="leading-relaxed">
             <code>{currentCode}</code>
           </pre>
         </div>
 
-        {/* Footer */}
         <div className="flex h-16 shrink-0 items-center justify-between border-t border-slate-800 px-6 bg-slate-950">
           <span className="text-xs text-slate-500">
-            {isMultiPage
-              ? `Multi-page project: Downloads a .zip folder containing all ${validPages.length} page files.`
-              : "Single-page project: Downloads as an individual .jsx component file."}
+            {isMultiPage ? `Bundles all ${validPages.length} pages into a .zip archive.` : "Downloads a clean .jsx file."}
           </span>
-
           <div className="flex items-center gap-3">
             <button
               type="button"
               disabled={isZipping}
               onClick={handleDownload}
-              className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 transition disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 transition"
             >
-              {isMultiPage ? <FaFolder className="text-[11px] text-amber-400" /> : <FaDownload className="text-[11px]" />}
-              {isZipping
-                ? "Creating Zip..."
-                : isMultiPage
-                ? `Download All as .ZIP (${validPages.length} files)`
-                : `Download ${formatComponentName(currentPageToView.name)}.jsx`}
+              {isMultiPage ? <FaFolder className="text-amber-400" /> : <FaDownload />}
+              {isZipping ? "Zipping..." : isMultiPage ? "Download All as .ZIP" : "Download File"}
             </button>
-
             <button
               type="button"
-              onClick={handleCopy}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-500 transition"
+              onClick={() => {
+                navigator.clipboard.writeText(currentCode);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 transition"
             >
-              {copied ? <FaCheck className="text-xs text-emerald-300" /> : <FaCopy className="text-xs" />}
-              {copied
-                ? `Copied ${formatComponentName(currentPageToView.name)}.jsx!`
-                : `Copy ${formatComponentName(currentPageToView.name)}.jsx`}
+              {copied ? <FaCheck className="text-emerald-300" /> : <FaCopy />}
+              {copied ? "Copied!" : "Copy Code"}
             </button>
           </div>
         </div>

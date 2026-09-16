@@ -1,7 +1,14 @@
-import { useState } from "react";
+import React from "react";
 import { FaCopy, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 
 const WIDTH_OPTIONS = ["Auto", "25%", "33.33%", "50%", "66.67%", "75%", "100%"];
+const HOVER_OPTIONS = [
+  { label: "None", value: "none" },
+  { label: "Lift Card (-4px & Shadow)", value: "lift" },
+  { label: "Scale Up (102%)", value: "scale" },
+  { label: "Outer Glow", value: "glow" },
+  { label: "Soft Dim", value: "dim" },
+];
 
 function PropertiesPanel({
   components = [],
@@ -11,16 +18,11 @@ function PropertiesPanel({
   onDuplicateComponent,
   pages = [],
 }) {
-  const selected = components.find(
-    (component) => (component.id || component._id) === selectedComponent
-  );
+  const selected = components.find((c) => (c.id || c._id) === selectedComponent);
 
-  const updateProperty = (property, value) => {
+  const updateProperty = (prop, val) => {
     if (!selected || !onUpdateComponent) return;
-
-    onUpdateComponent(selected.id || selected._id, {
-      [property]: value,
-    });
+    onUpdateComponent(selected.id || selected._id, { [prop]: val });
   };
 
   if (!selected) {
@@ -29,82 +31,39 @@ function PropertiesPanel({
         <h2 className="text-lg font-bold text-slate-800">Properties</h2>
         <div className="mt-8 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
           <p className="text-sm text-gray-500">
-            Select a component on the canvas to edit its properties, width, and styles.
+            Select an element on the canvas to configure content, layout, interactions, and styles.
           </p>
         </div>
       </aside>
     );
   }
 
-  const isButton = selected.type === "button";
   const compId = selected.id || selected._id;
-
-  // Normalize navLinks for backwards compatibility
-  const navLinks = selected.navLinks || [
-    { id: "link-1", label: selected.home || "Home", targetPageId: selected.homePageId || "" },
-    { id: "link-2", label: selected.about || "About", targetPageId: selected.aboutPageId || "" },
-    { id: "link-3", label: selected.contact || "Contact", targetPageId: selected.contactPageId || "" },
-  ];
-
-  const handleAddNavLink = () => {
-    const newLink = {
-      id: `link-${Date.now()}`,
-      label: `Page ${navLinks.length + 1}`,
-      targetPageId: "",
-    };
-    updateProperty("navLinks", [...navLinks, newLink]);
-  };
-
-  const handleUpdateNavLink = (index, updates) => {
-    const updated = navLinks.map((item, i) => (i === index ? { ...item, ...updates } : item));
-    updateProperty("navLinks", updated);
-  };
-
-  const handleRemoveNavLink = (index) => {
-    if (navLinks.length <= 1) {
-      alert("Navbar must have at least one link.");
-      return;
-    }
-    const filtered = navLinks.filter((_, i) => i !== index);
-    updateProperty("navLinks", filtered);
-  };
+  const isButton = selected.type === "button";
 
   return (
     <aside className="w-80 h-full min-h-0 flex flex-col border-l border-gray-200 bg-white">
-      {/* Pinned Header */}
+      {/* Header */}
       <div className="border-b border-gray-200 p-5 shrink-0">
-        <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
-          Selected Component
-        </p>
-        <h2 className="mt-1 text-xl font-bold capitalize text-slate-800">
-          {selected.type}
-        </h2>
+        <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Selected Component</p>
+        <h2 className="mt-1 text-xl font-bold capitalize text-slate-800">{selected.type}</h2>
       </div>
 
-      {/* Scrollable Container */}
+      {/* Main Scrollable Content */}
       <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
-        {/* ================= LAYOUT & SIZING ================= */}
+        {/* ================= 1. LAYOUT & SIZING ================= */}
         <section>
           <h3 className="mb-3 text-sm font-bold text-slate-800">Layout & Width</h3>
-
           <div>
-            <label className="mb-2 block text-xs font-semibold text-gray-600">
-              Width (% of Row)
-            </label>
+            <label className="mb-2 block text-xs font-semibold text-gray-600">Width (% of Row)</label>
             <div className="grid grid-cols-4 gap-1.5">
               {WIDTH_OPTIONS.map((w) => {
-                const isCurrent =
-                  w === "Auto"
-                    ? selected.width === "auto"
-                    : (selected.width || "100%") === w;
-
+                const isCurrent = w === "Auto" ? selected.width === "auto" : (selected.width || "100%") === w;
                 return (
                   <button
                     key={w}
                     type="button"
-                    onClick={() =>
-                      updateProperty("width", w === "Auto" ? "auto" : w)
-                    }
+                    onClick={() => updateProperty("width", w === "Auto" ? "auto" : w)}
                     className={`py-1.5 text-xs font-semibold rounded border transition ${
                       isCurrent
                         ? "border-blue-600 bg-blue-50 text-blue-600 shadow-xs"
@@ -117,7 +76,6 @@ function PropertiesPanel({
               })}
             </div>
           </div>
-
           <div className="mt-3">
             <NumberField
               label="Min Height"
@@ -129,82 +87,106 @@ function PropertiesPanel({
           </div>
         </section>
 
-        {/* ================= CONTENT ================= */}
+        {/* ================= 2. CONTENT CONFIGURATION ================= */}
         <section className="border-t border-gray-200 pt-6">
-          <h3 className="mb-4 text-sm font-bold text-slate-800">Content</h3>
+          <h3 className="mb-4 text-sm font-bold text-slate-800">Content Configuration</h3>
 
-          {/* NAVBAR: DYNAMIC LINKS EDITOR */}
+          {/* NAVBAR (Clean Horizontal Navigation Bar) */}
           {selected.type === "navbar" && (
             <div className="space-y-4">
-              <Field
-                label="Brand Name"
-                value={selected.brand || ""}
-                onChange={(value) => updateProperty("brand", value)}
-                placeholder="Your Brand"
-              />
-              <ColorField
-                label="Brand Text Color"
-                value={selected.brandColor || "#0f172a"}
-                onChange={(v) => updateProperty("brandColor", v)}
-              />
-              <ColorField
-                label="Nav Links Color"
-                value={selected.navLinkColor || "#475569"}
-                onChange={(v) => updateProperty("navLinkColor", v)}
-              />
+              <Field label="Brand Name" value={selected.brand || ""} onChange={(v) => updateProperty("brand", v)} />
+              <ColorField label="Brand Text Color" value={selected.brandColor || "#0f172a"} onChange={(v) => updateProperty("brandColor", v)} />
+              <ColorField label="Nav Link Color" value={selected.navLinkColor || "#475569"} onChange={(v) => updateProperty("navLinkColor", v)} />
 
+              {/* Dynamic Navbar Links */}
               <div className="pt-2">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                    Navigation Links ({navLinks.length})
-                  </label>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    Nav Links ({(selected.navLinks || []).length})
+                  </span>
                   <button
                     type="button"
-                    onClick={handleAddNavLink}
-                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 transition"
+                    onClick={() => {
+                      const next = [
+                        ...(selected.navLinks || []),
+                        { id: `link-${Date.now()}`, label: `Page ${(selected.navLinks || []).length + 1}`, targetPageId: "" },
+                      ];
+                      updateProperty("navLinks", next);
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
                   >
                     <FaPlus className="text-[9px]" /> Add Link
                   </button>
                 </div>
 
-                <div className="space-y-2.5">
-                  {navLinks.map((link, index) => (
-                    <div
-                      key={link.id || index}
-                      className="rounded-xl border border-gray-200/80 bg-gray-50/80 p-3 space-y-2 relative group"
-                    >
+                <div className="space-y-2">
+                  {(selected.navLinks || []).map((link, idx) => (
+                    <div key={link.id || idx} className="rounded-xl border border-gray-200 bg-gray-50 p-2.5 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-gray-400 uppercase">
-                          Item #{index + 1}
-                        </span>
-                        {navLinks.length > 1 && (
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">Link #{idx + 1}</span>
+                        {(selected.navLinks || []).length > 1 && (
                           <button
                             type="button"
-                            onClick={() => handleRemoveNavLink(index)}
-                            className="text-gray-400 hover:text-red-500 transition p-1"
-                            title="Remove link"
+                            onClick={() => updateProperty("navLinks", selected.navLinks.filter((_, i) => i !== idx))}
+                            className="text-gray-400 hover:text-red-500"
                           >
                             <FaTimes className="text-[10px]" />
                           </button>
                         )}
                       </div>
-
                       <Field
                         label="Label"
                         value={link.label || ""}
-                        onChange={(val) => handleUpdateNavLink(index, { label: val })}
-                        placeholder="Link Name"
+                        onChange={(v) =>
+                          updateProperty(
+                            "navLinks",
+                            selected.navLinks.map((l, i) => (i === idx ? { ...l, label: v } : l))
+                          )
+                        }
                       />
-
                       <PageSelectField
                         label="Target Page"
                         value={link.targetPageId || ""}
                         pages={pages}
-                        onChange={(val) => handleUpdateNavLink(index, { targetPageId: val })}
+                        onChange={(v) =>
+                          updateProperty(
+                            "navLinks",
+                            selected.navLinks.map((l, i) => (i === idx ? { ...l, targetPageId: v } : l))
+                          )
+                        }
                       />
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Nav CTA Button Toggle */}
+              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-700 uppercase">Navbar Action Button</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={selected.showNavCta !== false}
+                      onChange={(e) => updateProperty("showNavCta", e.target.checked)}
+                      className="accent-blue-600 rounded"
+                    />
+                    Enable
+                  </label>
+                </div>
+                {selected.showNavCta !== false && (
+                  <>
+                    <Field label="Button Text" value={selected.navCtaText || ""} onChange={(v) => updateProperty("navCtaText", v)} />
+                    <PageSelectField
+                      label="Target Project Page"
+                      value={selected.navCtaPageId || ""}
+                      pages={pages}
+                      onChange={(v) => updateProperty("navCtaPageId", v)}
+                    />
+                    <ColorField label="Button Background" value={selected.navCtaBg || "#2563eb"} onChange={(v) => updateProperty("navCtaBg", v)} />
+                    <ColorField label="Button Text Color" value={selected.navCtaColor || "#ffffff"} onChange={(v) => updateProperty("navCtaColor", v)} />
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -212,45 +194,55 @@ function PropertiesPanel({
           {/* HERO */}
           {selected.type === "hero" && (
             <div className="space-y-4">
-              <Field
-                label="Heading"
-                value={selected.heading || ""}
-                onChange={(value) => updateProperty("heading", value)}
-                placeholder="Enter heading"
-              />
-              <TextArea
-                label="Description"
-                value={selected.description || ""}
-                onChange={(value) => updateProperty("description", value)}
-                placeholder="Enter description"
-              />
+              <TextArea label="Heading (supports line breaks)" value={selected.heading || ""} onChange={(v) => updateProperty("heading", v)} rows={2} />
+              <TextArea label="Description (supports line breaks)" value={selected.description || ""} onChange={(v) => updateProperty("description", v)} rows={3} />
 
-              <div className="rounded-lg bg-blue-50/50 p-3 border border-blue-100 space-y-3">
-                <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                  Hero CTA Button
-                </span>
-                <Field
-                  label="Button Text"
-                  value={selected.buttonText || ""}
-                  onChange={(v) => updateProperty("buttonText", v)}
-                  placeholder="Get Started"
-                />
-                <Field
-                  label="Button Link"
-                  value={selected.heroButtonLink || ""}
-                  onChange={(v) => updateProperty("heroButtonLink", v)}
-                  placeholder="#"
-                />
-                <ColorField
-                  label="Button Background"
-                  value={selected.heroButtonBg || "#ffffff"}
-                  onChange={(v) => updateProperty("heroButtonBg", v)}
-                />
-                <ColorField
-                  label="Button Text Color"
-                  value={selected.heroButtonTextColor || "#2563eb"}
-                  onChange={(v) => updateProperty("heroButtonTextColor", v)}
-                />
+              {/* Primary Button */}
+              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-700 uppercase">Primary CTA Button</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={selected.showHeroButton !== false}
+                      onChange={(e) => updateProperty("showHeroButton", e.target.checked)}
+                      className="accent-blue-600 rounded"
+                    />
+                    Enable
+                  </label>
+                </div>
+                {selected.showHeroButton !== false && (
+                  <>
+                    <Field label="Button Text" value={selected.buttonText || ""} onChange={(v) => updateProperty("buttonText", v)} />
+                    <Field label="External URL or #" value={selected.heroButtonLink || ""} onChange={(v) => updateProperty("heroButtonLink", v)} />
+                    <PageSelectField label="Target Page" value={selected.heroButtonPageId || ""} pages={pages} onChange={(v) => updateProperty("heroButtonPageId", v)} />
+                    <ColorField label="Background Color" value={selected.heroButtonBg || "#ffffff"} onChange={(v) => updateProperty("heroButtonBg", v)} />
+                    <ColorField label="Text Color" value={selected.heroButtonTextColor || "#2563eb"} onChange={(v) => updateProperty("heroButtonTextColor", v)} />
+                  </>
+                )}
+              </div>
+
+              {/* Secondary Button */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-700 uppercase">Secondary CTA Button</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={selected.showSecondaryButton !== false}
+                      onChange={(e) => updateProperty("showSecondaryButton", e.target.checked)}
+                      className="accent-blue-600 rounded"
+                    />
+                    Enable
+                  </label>
+                </div>
+                {selected.showSecondaryButton !== false && (
+                  <>
+                    <Field label="Button Text" value={selected.secondaryButtonText || ""} onChange={(v) => updateProperty("secondaryButtonText", v)} />
+                    <Field label="External URL or #" value={selected.secondaryButtonLink || ""} onChange={(v) => updateProperty("secondaryButtonLink", v)} />
+                    <PageSelectField label="Target Page" value={selected.secondaryButtonPageId || ""} pages={pages} onChange={(v) => updateProperty("secondaryButtonPageId", v)} />
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -258,547 +250,650 @@ function PropertiesPanel({
           {/* SECTION */}
           {selected.type === "section" && (
             <div className="space-y-4">
-              <Field
-                label="Heading"
-                value={selected.heading || ""}
-                onChange={(value) => updateProperty("heading", value)}
-                placeholder="Section heading"
-              />
+              <TextArea label="Heading (supports line breaks)" value={selected.heading || ""} onChange={(v) => updateProperty("heading", v)} rows={2} />
+              <TextArea label="Content (supports line breaks)" value={selected.content || ""} onChange={(v) => updateProperty("content", v)} rows={4} />
+            </div>
+          )}
+
+          {/* PARAGRAPH */}
+          {selected.type === "paragraph" && (
+            <div className="space-y-4">
               <TextArea
-                label="Content"
+                label="Paragraph Content (supports line breaks)"
                 value={selected.content || ""}
-                onChange={(value) => updateProperty("content", value)}
-                placeholder="Enter section content"
+                onChange={(v) => updateProperty("content", v)}
+                rows={6}
               />
+            </div>
+          )}
+
+          {/* HEADING */}
+          {selected.type === "heading" && (
+            <div className="space-y-4">
+              <TextArea label="Title (supports line breaks)" value={selected.title || ""} onChange={(v) => updateProperty("title", v)} rows={2} />
+              <TextArea label="Subtitle (supports line breaks)" value={selected.subtitle || ""} onChange={(v) => updateProperty("subtitle", v)} rows={3} />
             </div>
           )}
 
           {/* FEATURES GRID */}
           {selected.type === "features" && (
             <div className="space-y-4">
-              <Field
-                label="Feature 1 Title"
-                value={selected.featureTitle1 || ""}
-                onChange={(v) => updateProperty("featureTitle1", v)}
-              />
-              <Field
-                label="Feature 1 Description"
-                value={selected.featureDesc1 || ""}
-                onChange={(v) => updateProperty("featureDesc1", v)}
-              />
-              <Field
-                label="Feature 2 Title"
-                value={selected.featureTitle2 || ""}
-                onChange={(v) => updateProperty("featureTitle2", v)}
-              />
-              <Field
-                label="Feature 2 Description"
-                value={selected.featureDesc2 || ""}
-                onChange={(v) => updateProperty("featureDesc2", v)}
-              />
-              <Field
-                label="Feature 3 Title"
-                value={selected.featureTitle3 || ""}
-                onChange={(v) => updateProperty("featureTitle3", v)}
-              />
-              <Field
-                label="Feature 3 Description"
-                value={selected.featureDesc3 || ""}
-                onChange={(v) => updateProperty("featureDesc3", v)}
-              />
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-gray-600">Box Hover Animation</label>
+                <select
+                  value={selected.boxHoverEffect || "none"}
+                  onChange={(e) => updateProperty("boxHoverEffect", e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs outline-none"
+                >
+                  {HOVER_OPTIONS.map((h) => (
+                    <option key={h.value} value={h.value}>{h.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Feature Boxes ({(selected.featuresList || []).length})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = [
+                      ...(selected.featuresList || []),
+                      { id: `feat-${Date.now()}`, title: "New Feature", desc: "Description here..." },
+                    ];
+                    updateProperty("featuresList", next);
+                  }}
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  <FaPlus className="text-[9px]" /> Add Box
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {(selected.featuresList || []).map((box, idx) => (
+                  <div key={box.id || idx} className="p-3 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">Box #{idx + 1}</span>
+                      {(selected.featuresList || []).length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => updateProperty("featuresList", selected.featuresList.filter((_, i) => i !== idx))}
+                          className="text-gray-400 hover:text-red-500"
+                        >
+                          <FaTimes className="text-[10px]" />
+                        </button>
+                      )}
+                    </div>
+                    <Field
+                      label="Title"
+                      value={box.title}
+                      onChange={(v) =>
+                        updateProperty(
+                          "featuresList",
+                          selected.featuresList.map((b, i) => (i === idx ? { ...b, title: v } : b))
+                        )
+                      }
+                    />
+                    <TextArea
+                      label="Description"
+                      value={box.desc}
+                      rows={2}
+                      onChange={(v) =>
+                        updateProperty(
+                          "featuresList",
+                          selected.featuresList.map((b, i) => (i === idx ? { ...b, desc: v } : b))
+                        )
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ADVANCED FOOTER */}
+          {selected.type === "footer" && (
+            <div className="space-y-4">
+              <Field label="Brand / Company" value={selected.brand || ""} onChange={(v) => updateProperty("brand", v)} />
+              <TextArea label="Bio / About Text" value={selected.footerAbout || ""} onChange={(v) => updateProperty("footerAbout", v)} rows={2} />
+              <Field label="Copyright Line" value={selected.copyright || ""} onChange={(v) => updateProperty("copyright", v)} />
+
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    Footer Columns ({(selected.footerColumns || []).length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = [
+                        ...(selected.footerColumns || []),
+                        { id: `col-${Date.now()}`, title: "New Column", items: [{ label: "Link 1", link: "#", targetPageId: "" }] },
+                      ];
+                      updateProperty("footerColumns", next);
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    <FaPlus className="text-[9px]" /> Add Column
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {(selected.footerColumns || []).map((col, cIdx) => (
+                    <div key={col.id || cIdx} className="p-3 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Field
+                          label="Column Title"
+                          value={col.title}
+                          onChange={(v) =>
+                            updateProperty(
+                              "footerColumns",
+                              selected.footerColumns.map((c, i) => (i === cIdx ? { ...c, title: v } : c))
+                            )
+                          }
+                        />
+                        {(selected.footerColumns || []).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => updateProperty("footerColumns", selected.footerColumns.filter((_, i) => i !== cIdx))}
+                            className="text-gray-400 hover:text-red-500 ml-2"
+                          >
+                            <FaTimes className="text-xs" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="pt-1">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">Sub Links</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextItems = [...(col.items || []), { label: "New Link", link: "#", targetPageId: "" }];
+                              updateProperty(
+                                "footerColumns",
+                                selected.footerColumns.map((c, i) => (i === cIdx ? { ...c, items: nextItems } : c))
+                              );
+                            }}
+                            className="text-[10px] text-blue-600 font-bold"
+                          >
+                            + Add Link
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                          {(col.items || []).map((item, iIdx) => (
+                            <div key={iIdx} className="p-2 border border-gray-200 rounded bg-white space-y-1 relative">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-bold text-gray-400">Link #{iIdx + 1}</span>
+                                {(col.items || []).length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const filtered = col.items.filter((_, idx) => idx !== iIdx);
+                                      updateProperty(
+                                        "footerColumns",
+                                        selected.footerColumns.map((c, i) => (i === cIdx ? { ...c, items: filtered } : c))
+                                      );
+                                    }}
+                                    className="text-gray-400 hover:text-red-500 text-[9px]"
+                                  >
+                                    <FaTimes />
+                                  </button>
+                                )}
+                              </div>
+                              <input
+                                type="text"
+                                value={item.label}
+                                placeholder="Label"
+                                onChange={(e) => {
+                                  const updated = col.items.map((it, idx) => (idx === iIdx ? { ...it, label: e.target.value } : it));
+                                  updateProperty(
+                                    "footerColumns",
+                                    selected.footerColumns.map((c, i) => (i === cIdx ? { ...c, items: updated } : c))
+                                  );
+                                }}
+                                className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
+                              />
+                              <PageSelectField
+                                label="Target Page"
+                                value={item.targetPageId || ""}
+                                pages={pages}
+                                onChange={(v) => {
+                                  const updated = col.items.map((it, idx) => (idx === iIdx ? { ...it, targetPageId: v } : it));
+                                  updateProperty(
+                                    "footerColumns",
+                                    selected.footerColumns.map((c, i) => (i === cIdx ? { ...c, items: updated } : c))
+                                  );
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* DYNAMIC CONTACT FORM */}
+          {selected.type === "form" && (
+            <div className="space-y-4">
+              <Field label="Form Title" value={selected.formTitle || ""} onChange={(v) => updateProperty("formTitle", v)} />
+              <Field label="Submit Button Label" value={selected.submitButtonText || "Send Message"} onChange={(v) => updateProperty("submitButtonText", v)} />
+
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    Form Fields ({(selected.formFields || []).length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = [
+                        ...(selected.formFields || []),
+                        { id: `f-${Date.now()}`, label: "New Input", type: "text", placeholder: "Enter value", required: false },
+                      ];
+                      updateProperty("formFields", next);
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    <FaPlus className="text-[9px]" /> Add Field
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {(selected.formFields || []).map((f, idx) => (
+                    <div key={f.id || idx} className="p-2.5 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">Field #{idx + 1}</span>
+                        {(selected.formFields || []).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => updateProperty("formFields", selected.formFields.filter((_, i) => i !== idx))}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <FaTimes className="text-[10px]" />
+                          </button>
+                        )}
+                      </div>
+                      <Field
+                        label="Label"
+                        value={f.label}
+                        onChange={(v) => updateProperty("formFields", selected.formFields.map((it, i) => (i === idx ? { ...it, label: v } : it)))}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">Type</label>
+                          <select
+                            value={f.type}
+                            onChange={(e) => updateProperty("formFields", selected.formFields.map((it, i) => (i === idx ? { ...it, type: e.target.value } : it)))}
+                            className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs"
+                          >
+                            <option value="text">Text</option>
+                            <option value="email">Email</option>
+                            <option value="number">Number</option>
+                            <option value="tel">Phone</option>
+                            <option value="textarea">Textarea</option>
+                          </select>
+                        </div>
+                        <Field
+                          label="Placeholder"
+                          value={f.placeholder}
+                          onChange={(v) => updateProperty("formFields", selected.formFields.map((it, i) => (i === idx ? { ...it, placeholder: v } : it)))}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* AUTH FORM */}
+          {selected.type === "authForm" && (
+            <div className="space-y-4">
+              <Field label="Form Title" value={selected.authTitle || ""} onChange={(v) => updateProperty("authTitle", v)} />
+              <TextArea label="Subtitle" value={selected.authSubtitle || ""} onChange={(v) => updateProperty("authSubtitle", v)} rows={2} />
+              <Field label="Submit Button Text" value={selected.submitButtonText || "Sign In"} onChange={(v) => updateProperty("submitButtonText", v)} />
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-2">
+                <span className="text-xs font-bold text-gray-700 uppercase">Features & Toggles</span>
+                <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selected.showSocialLogin !== false}
+                    onChange={(e) => updateProperty("showSocialLogin", e.target.checked)}
+                    className="accent-blue-600 rounded"
+                  />
+                  Social Login Buttons (Google / GitHub)
+                </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selected.showRememberMe !== false}
+                    onChange={(e) => updateProperty("showRememberMe", e.target.checked)}
+                    className="accent-blue-600 rounded"
+                  />
+                  "Remember Me" Checkbox
+                </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selected.showForgotPassword !== false}
+                    onChange={(e) => updateProperty("showForgotPassword", e.target.checked)}
+                    className="accent-blue-600 rounded"
+                  />
+                  "Forgot Password?" Link
+                </label>
+              </div>
+
+              {/* Dynamic Auth Fields */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    Input Fields ({(selected.authFields || []).length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = [
+                        ...(selected.authFields || []),
+                        { id: `af-${Date.now()}`, label: "Username", type: "text", placeholder: "username", required: true },
+                      ];
+                      updateProperty("authFields", next);
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    <FaPlus className="text-[9px]" /> Add Field
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {(selected.authFields || []).map((field, idx) => (
+                    <div key={field.id || idx} className="p-2.5 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">Field #{idx + 1}</span>
+                        {(selected.authFields || []).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => updateProperty("authFields", selected.authFields.filter((_, i) => i !== idx))}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <FaTimes className="text-[10px]" />
+                          </button>
+                        )}
+                      </div>
+                      <Field
+                        label="Label"
+                        value={field.label}
+                        onChange={(v) => updateProperty("authFields", selected.authFields.map((f, i) => (i === idx ? { ...f, label: v } : f)))}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">Type</label>
+                          <select
+                            value={field.type}
+                            onChange={(e) => updateProperty("authFields", selected.authFields.map((f, i) => (i === idx ? { ...f, type: e.target.value } : f)))}
+                            className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs"
+                          >
+                            <option value="text">Text</option>
+                            <option value="email">Email</option>
+                            <option value="password">Password</option>
+                            <option value="tel">Phone</option>
+                          </select>
+                        </div>
+                        <Field
+                          label="Placeholder"
+                          value={field.placeholder}
+                          onChange={(v) => updateProperty("authFields", selected.authFields.map((f, i) => (i === idx ? { ...f, placeholder: v } : f)))}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
           {/* PRICING TABLE */}
           {selected.type === "pricing" && (
             <div className="space-y-4">
-              <Field
-                label="Plan Name"
-                value={selected.pricingPlan || ""}
-                onChange={(v) => updateProperty("pricingPlan", v)}
-              />
-              <Field
-                label="Price"
-                value={selected.pricingPrice || ""}
-                onChange={(v) => updateProperty("pricingPrice", v)}
-              />
-              <Field
-                label="Billing Cycle"
-                value={selected.pricingPeriod || ""}
-                onChange={(v) => updateProperty("pricingPeriod", v)}
-              />
-              <TextArea
-                label="Features (one per line)"
-                value={selected.pricingFeatures || ""}
-                onChange={(v) => updateProperty("pricingFeatures", v)}
-              />
-
-              <div className="rounded-lg bg-blue-50/50 p-3 border border-blue-100 space-y-3">
-                <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                  Plan Button
-                </span>
-                <Field
-                  label="Button Text"
-                  value={selected.pricingButtonText || ""}
-                  onChange={(v) => updateProperty("pricingButtonText", v)}
-                />
-                <ColorField
-                  label="Button Background"
-                  value={selected.pricingButtonBg || "#2563eb"}
-                  onChange={(v) => updateProperty("pricingButtonBg", v)}
-                />
-                <ColorField
-                  label="Button Text Color"
-                  value={selected.pricingButtonTextColor || "#ffffff"}
-                  onChange={(v) => updateProperty("pricingButtonTextColor", v)}
-                />
+              <Field label="Plan Name" value={selected.pricingPlan || ""} onChange={(v) => updateProperty("pricingPlan", v)} />
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Price" value={selected.pricingPrice || ""} onChange={(v) => updateProperty("pricingPrice", v)} />
+                <Field label="Frequency" value={selected.pricingPeriod || ""} onChange={(v) => updateProperty("pricingPeriod", v)} />
               </div>
-            </div>
-          )}
+              <Field label="Header Badge" value={selected.pricingBadge || ""} onChange={(v) => updateProperty("pricingBadge", v)} />
+              <Field label="Button Label" value={selected.pricingButtonText || ""} onChange={(v) => updateProperty("pricingButtonText", v)} />
+              <PageSelectField
+                label="Button Target Page"
+                value={selected.pricingButtonPageId || ""}
+                pages={pages}
+                onChange={(v) => updateProperty("pricingButtonPageId", v)}
+              />
 
-          {/* FOOTER */}
-          {selected.type === "footer" && (
-            <div className="space-y-4">
-              <Field
-                label="Copyright Text"
-                value={selected.copyright || ""}
-                onChange={(v) => updateProperty("copyright", v)}
-              />
-              <Field
-                label="Link 1"
-                value={selected.footerLink1 || ""}
-                onChange={(v) => updateProperty("footerLink1", v)}
-              />
-              <Field
-                label="Link 2"
-                value={selected.footerLink2 || ""}
-                onChange={(v) => updateProperty("footerLink2", v)}
-              />
-            </div>
-          )}
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    Features Checklist ({(selected.pricingFeaturesList || []).length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = [
+                        ...(selected.pricingFeaturesList || []),
+                        { id: `pf-${Date.now()}`, text: "New Plan Benefit", included: true },
+                      ];
+                      updateProperty("pricingFeaturesList", next);
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    <FaPlus className="text-[9px]" /> Add Item
+                  </button>
+                </div>
 
-          {/* HEADING / TYPOGRAPHY */}
-          {selected.type === "heading" && (
-            <div className="space-y-4">
-              <Field
-                label="Heading Text"
-                value={selected.title || ""}
-                onChange={(v) => updateProperty("title", v)}
-              />
-              <TextArea
-                label="Subtitle / Description"
-                value={selected.subtitle || ""}
-                onChange={(v) => updateProperty("subtitle", v)}
-              />
-            </div>
-          )}
-
-          {/* DIVIDER */}
-          {selected.type === "divider" && (
-            <div className="space-y-4">
-              <ColorField
-                label="Line Color"
-                value={selected.dividerColor || "#e2e8f0"}
-                onChange={(v) => updateProperty("dividerColor", v)}
-              />
-              <NumberField
-                label="Thickness"
-                value={selected.dividerThickness || "1"}
-                onChange={(v) => updateProperty("dividerThickness", v)}
-                unit="px"
-              />
+                <div className="space-y-2">
+                  {(selected.pricingFeaturesList || []).map((item, idx) => (
+                    <div key={item.id || idx} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                      <input
+                        type="checkbox"
+                        checked={item.included}
+                        onChange={(e) =>
+                          updateProperty(
+                            "pricingFeaturesList",
+                            selected.pricingFeaturesList.map((it, i) => (i === idx ? { ...it, included: e.target.checked } : it))
+                          )
+                        }
+                        className="accent-blue-600 rounded"
+                        title="Included?"
+                      />
+                      <input
+                        type="text"
+                        value={item.text}
+                        onChange={(e) =>
+                          updateProperty(
+                            "pricingFeaturesList",
+                            selected.pricingFeaturesList.map((it, i) => (i === idx ? { ...it, text: e.target.value } : it))
+                          )
+                        }
+                        className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateProperty(
+                            "pricingFeaturesList",
+                            selected.pricingFeaturesList.filter((_, i) => i !== idx)
+                          )
+                        }
+                        className="text-gray-400 hover:text-red-500"
+                      >
+                        <FaTimes className="text-[10px]" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
           {/* BUTTON */}
           {isButton && (
             <div className="space-y-4">
-              <Field
-                label="Button Label"
-                value={selected.text || ""}
-                onChange={(value) => updateProperty("text", value)}
-                placeholder="Click Me"
-              />
-              <Field
-                label="Link URL"
-                value={selected.link || ""}
-                onChange={(value) => updateProperty("link", value)}
-                placeholder="https://example.com"
-              />
-
-              <ColorField
-                label="Button Background"
-                value={selected.btnBgColor || "#2563eb"}
-                onChange={(value) => updateProperty("btnBgColor", value)}
-              />
-
-              <ColorField
-                label="Button Text Color"
-                value={selected.btnTextColor || "#ffffff"}
-                onChange={(value) => updateProperty("btnTextColor", value)}
-              />
-
-              <div>
-                <label className="mb-2 block text-xs font-semibold text-gray-600">
-                  Button Alignment
-                </label>
-                <div className="grid grid-cols-4 gap-1">
-                  {["left", "center", "right", "full"].map((pos) => (
-                    <button
-                      key={pos}
-                      type="button"
-                      onClick={() => updateProperty("btnAlign", pos)}
-                      className={`capitalize py-1 text-xs font-medium rounded border transition ${
-                        (selected.btnAlign || "left") === pos
-                          ? "border-blue-600 bg-blue-50 text-blue-600"
-                          : "border-gray-200 bg-white text-gray-600"
-                      }`}
-                    >
-                      {pos}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
+              <Field label="Button Text" value={selected.text || ""} onChange={(v) => updateProperty("text", v)} />
+              <Field label="External URL or #" value={selected.link || ""} onChange={(v) => updateProperty("link", v)} />
+              <PageSelectField label="Target Project Page" value={selected.targetPageId || ""} pages={pages} onChange={(v) => updateProperty("targetPageId", v)} />
+              <ColorField label="Background Color" value={selected.btnBgColor || "#2563eb"} onChange={(v) => updateProperty("btnBgColor", v)} />
+              <ColorField label="Text Color" value={selected.btnTextColor || "#ffffff"} onChange={(v) => updateProperty("btnTextColor", v)} />
               <div className="grid grid-cols-2 gap-2">
-                <NumberField
-                  label="Pad X"
-                  value={selected.btnPaddingX !== undefined ? selected.btnPaddingX : 20}
-                  onChange={(v) => updateProperty("btnPaddingX", v)}
-                  unit="px"
-                />
-                <NumberField
-                  label="Pad Y"
-                  value={selected.btnPaddingY !== undefined ? selected.btnPaddingY : 10}
-                  onChange={(v) => updateProperty("btnPaddingY", v)}
-                  unit="px"
-                />
+                <NumberField label="Pad X" value={selected.btnPaddingX ?? 20} onChange={(v) => updateProperty("btnPaddingX", v)} unit="px" />
+                <NumberField label="Pad Y" value={selected.btnPaddingY ?? 10} onChange={(v) => updateProperty("btnPaddingY", v)} unit="px" />
               </div>
             </div>
           )}
 
           {/* IMAGE */}
           {selected.type === "image" && (
-            <div className="space-y-5">
-              <div>
-                <label className="mb-2 block text-xs font-semibold text-gray-600">
-                  Upload Image
-                </label>
-                <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center transition hover:border-blue-400 hover:bg-blue-50">
-                  <div className="text-2xl text-blue-500">🖼️</div>
-                  <p className="mt-2 text-sm font-semibold text-gray-700">Choose an image</p>
-                  <p className="mt-1 text-xs text-gray-400">PNG, JPG, JPEG, WEBP</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      if (!file.type.startsWith("image/")) {
-                        alert("Please select an image file.");
-                        return;
-                      }
-
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        const img = new Image();
-                        img.onload = () => {
-                          const MAX_WIDTH = 1200;
-                          const MAX_HEIGHT = 1200;
-                          let width = img.width;
-                          let height = img.height;
-
-                          if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-                            const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
-                            width = Math.round(width * ratio);
-                            height = Math.round(height * ratio);
-                          }
-
-                          const canvas = document.createElement("canvas");
-                          canvas.width = width;
-                          canvas.height = height;
-                          const ctx = canvas.getContext("2d");
-                          if (!ctx) return;
-
-                          ctx.drawImage(img, 0, 0, width, height);
-                          const compressedImage = canvas.toDataURL("image/jpeg", 0.7);
-
-                          updateProperty("src", compressedImage);
-                          updateProperty("imageName", file.name);
-                        };
-                        img.src = reader.result;
-                      };
-                      reader.readAsDataURL(file);
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
-              </div>
-
-              {selected.imageName && (
-                <div className="rounded-lg bg-green-50 p-3">
-                  <p className="text-xs font-semibold text-green-700">Uploaded Image</p>
-                  <p className="mt-1 truncate text-xs text-green-600">{selected.imageName}</p>
-                </div>
-              )}
-
-              <Field
-                label="Image URL"
-                value={selected.src && !selected.src.startsWith("data:") ? selected.src : ""}
-                onChange={(value) => updateProperty("src", value)}
-                placeholder="https://example.com/image.jpg"
-              />
-              <Field
-                label="Alt Text"
-                value={selected.alt || ""}
-                onChange={(value) => updateProperty("alt", value)}
-                placeholder="Describe the image"
-              />
-              <NumberField
-                label="Image Width"
-                value={selected.imageWidth || ""}
-                onChange={(value) => updateProperty("imageWidth", value)}
-                placeholder="100"
-                unit="%"
-              />
-              <NumberField
-                label="Image Height"
-                value={selected.imageHeight || ""}
-                onChange={(value) => updateProperty("imageHeight", value)}
-                placeholder="300"
-                unit="px"
-              />
-            </div>
-          )}
-
-          {/* CARD */}
-          {selected.type === "card" && (
             <div className="space-y-4">
-              <Field
-                label="Title"
-                value={selected.cardTitle || selected.title || ""}
-                onChange={(value) => updateProperty("cardTitle", value)}
-                placeholder="Card Title"
-              />
-              <TextArea
-                label="Description"
-                value={selected.cardContent || selected.content || ""}
-                onChange={(value) => updateProperty("cardContent", value)}
-                placeholder="Card description"
-              />
-            </div>
-          )}
-
-          {/* FORM */}
-          {selected.type === "form" && (
-            <div className="space-y-4">
-              <Field
-                label="Form Title"
-                value={selected.formTitle || selected.title || ""}
-                onChange={(value) => updateProperty("formTitle", value)}
-                placeholder="Contact Form"
-              />
-              <Field
-                label="Name Placeholder"
-                value={selected.namePlaceholder || ""}
-                onChange={(value) => updateProperty("namePlaceholder", value)}
-                placeholder="Your Name"
-              />
-              <Field
-                label="Email Placeholder"
-                value={selected.emailPlaceholder || ""}
-                onChange={(value) => updateProperty("emailPlaceholder", value)}
-                placeholder="Your Email"
-              />
+              <Field label="Image Source URL" value={selected.src || ""} onChange={(v) => updateProperty("src", v)} />
+              <Field label="Alt Text" value={selected.alt || ""} onChange={(v) => updateProperty("alt", v)} />
+              <NumberField label="Width (%)" value={selected.imageWidth || "100"} onChange={(v) => updateProperty("imageWidth", v)} unit="%" />
+              <NumberField label="Height (px)" value={selected.imageHeight || ""} onChange={(v) => updateProperty("imageHeight", v)} placeholder="Auto" unit="px" />
             </div>
           )}
         </section>
 
-        {/* ================= STYLING ================= */}
+        {/* ================= 3. HOVER & INTERACTION ================= */}
         <section className="border-t border-gray-200 pt-6">
-          <h3 className="mb-4 text-sm font-bold text-slate-800">Styling</h3>
+          <h3 className="mb-2 text-sm font-bold text-slate-800">Interactivity & Hover Animation</h3>
+          <select
+            value={selected.hoverEffect || "none"}
+            onChange={(e) => updateProperty("hoverEffect", e.target.value)}
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none"
+          >
+            {HOVER_OPTIONS.map((h) => (
+              <option key={h.value} value={h.value}>{h.label}</option>
+            ))}
+          </select>
+        </section>
 
-          <div className="space-y-4">
-            {!isButton && (
-              <>
-                <ColorField
-                  label="Background Color"
-                  value={selected.backgroundColor || "#ffffff"}
-                  onChange={(value) => updateProperty("backgroundColor", value)}
-                />
+        {/* ================= 4. COMPLETE CSS STYLING CONTROLS ================= */}
+        <section className="border-t border-gray-200 pt-6 space-y-4">
+          <h3 className="text-sm font-bold text-slate-800">Visual Styling</h3>
 
-                <ColorField
-                  label="Text Color"
-                  value={selected.textColor || "#1e293b"}
-                  onChange={(value) => updateProperty("textColor", value)}
-                />
+          {!isButton && (
+            <>
+              <ColorField label="Background Color" value={selected.backgroundColor || "#ffffff"} onChange={(v) => updateProperty("backgroundColor", v)} />
+              <ColorField label="Text Color" value={selected.textColor || "#1e293b"} onChange={(v) => updateProperty("textColor", v)} />
+              <NumberField label="Padding" value={selected.padding ?? ""} onChange={(v) => updateProperty("padding", v)} placeholder="20" unit="px" />
+            </>
+          )}
 
-                <NumberField
-                  label="Padding"
-                  value={selected.padding !== undefined ? selected.padding : ""}
-                  onChange={(value) => updateProperty("padding", value)}
-                  placeholder="20"
-                  unit="px"
-                />
-              </>
-            )}
+          <NumberField label="Margin" value={selected.margin ?? ""} onChange={(v) => updateProperty("margin", v)} placeholder="0" unit="px" />
+          <NumberField label="Font Size" value={selected.fontSize || ""} onChange={(v) => updateProperty("fontSize", v)} placeholder="16" unit="px" />
 
-            <NumberField
-              label="Font Size"
-              value={selected.fontSize || ""}
-              onChange={(value) => updateProperty("fontSize", value)}
-              placeholder="16"
-              unit="px"
-            />
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Font Weight</label>
+            <select
+              value={selected.fontWeight || "normal"}
+              onChange={(e) => updateProperty("fontWeight", e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none"
+            >
+              <option value="normal">Normal</option>
+              <option value="500">Medium</option>
+              <option value="600">Semi Bold</option>
+              <option value="700">Bold</option>
+              <option value="800">Extra Bold</option>
+            </select>
+          </div>
 
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Text Alignment</label>
+            <select
+              value={selected.textAlign || "left"}
+              onChange={(e) => updateProperty("textAlign", e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none"
+            >
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </div>
+
+          <NumberField label="Border Radius" value={selected.borderRadius ?? ""} onChange={(v) => updateProperty("borderRadius", v)} placeholder="0" unit="px" />
+
+          {/* Border Settings */}
+          <div className="border-t border-gray-100 pt-3 space-y-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Border & Line</span>
+            <NumberField label="Border Width" value={selected.borderWidth || ""} onChange={(v) => updateProperty("borderWidth", v)} placeholder="0" unit="px" />
+            <ColorField label="Border Color" value={selected.borderColor || "#e2e8f0"} onChange={(v) => updateProperty("borderColor", v)} />
             <div>
-              <label className="mb-2 block text-xs font-semibold text-gray-600">
-                Font Weight
-              </label>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Border Style</label>
               <select
-                value={selected.fontWeight || "normal"}
-                onChange={(e) => updateProperty("fontWeight", e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                value={selected.borderStyle || "solid"}
+                onChange={(e) => updateProperty("borderStyle", e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none"
               >
-                <option value="normal">Normal</option>
-                <option value="500">Medium</option>
-                <option value="600">Semi Bold</option>
-                <option value="700">Bold</option>
-                <option value="800">Extra Bold</option>
+                <option value="none">None</option>
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+                <option value="dotted">Dotted</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Box Shadow & Opacity */}
+          <div className="border-t border-gray-100 pt-3 space-y-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Effects</span>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Box Shadow</label>
+              <select
+                value={selected.boxShadow || "none"}
+                onChange={(e) => updateProperty("boxShadow", e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none"
+              >
+                <option value="none">None</option>
+                <option value="sm">Small</option>
+                <option value="md">Medium</option>
+                <option value="lg">Large</option>
+                <option value="xl">Extra Large</option>
               </select>
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-semibold text-gray-600">
-                Text Alignment
-              </label>
-              <select
-                value={selected.textAlign || "left"}
-                onChange={(e) => updateProperty("textAlign", e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-              >
-                <option value="left">Left</option>
-                <option value="center">Center</option>
-                <option value="right">Right</option>
-              </select>
-            </div>
-
-            <NumberField
-              label="Margin"
-              value={selected.margin !== undefined ? selected.margin : ""}
-              onChange={(value) => updateProperty("margin", value)}
-              placeholder="0"
-              unit="px"
-            />
-
-            <NumberField
-              label="Border Radius"
-              value={selected.borderRadius !== undefined ? selected.borderRadius : ""}
-              onChange={(value) => updateProperty("borderRadius", value)}
-              placeholder="0"
-              unit="px"
-            />
-
-            {/* BORDER SETTINGS */}
-            <div className="border-t border-gray-100 pt-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                Border & Line
-              </span>
-              <div className="mt-3 space-y-4">
-                <NumberField
-                  label="Border Width"
-                  value={selected.borderWidth || ""}
-                  onChange={(value) => updateProperty("borderWidth", value)}
-                  placeholder="0"
-                  unit="px"
-                />
-
-                <ColorField
-                  label="Border Color"
-                  value={selected.borderColor || "#e2e8f0"}
-                  onChange={(value) => updateProperty("borderColor", value)}
-                />
-
-                <div>
-                  <label className="mb-2 block text-xs font-semibold text-gray-600">
-                    Border Style
-                  </label>
-                  <select
-                    value={selected.borderStyle || "solid"}
-                    onChange={(e) => updateProperty("borderStyle", e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  >
-                    <option value="none">None</option>
-                    <option value="solid">Solid</option>
-                    <option value="dashed">Dashed</option>
-                    <option value="dotted">Dotted</option>
-                  </select>
-                </div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-semibold text-gray-600">Opacity</label>
+                <span className="text-xs text-gray-400">{selected.opacity !== undefined ? selected.opacity : 100}%</span>
               </div>
-            </div>
-
-            {/* EFFECTS */}
-            <div className="border-t border-gray-100 pt-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                Effects
-              </span>
-              <div className="mt-3 space-y-4">
-                <div>
-                  <label className="mb-2 block text-xs font-semibold text-gray-600">
-                    Box Shadow
-                  </label>
-                  <select
-                    value={selected.boxShadow || "none"}
-                    onChange={(e) => updateProperty("boxShadow", e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  >
-                    <option value="none">None</option>
-                    <option value="sm">Small</option>
-                    <option value="md">Medium</option>
-                    <option value="lg">Large</option>
-                    <option value="xl">Extra Large</option>
-                  </select>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-xs font-semibold text-gray-600">
-                      Opacity
-                    </label>
-                    <span className="text-xs text-gray-400">
-                      {selected.opacity !== undefined ? selected.opacity : 100}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    step="5"
-                    value={selected.opacity !== undefined ? selected.opacity : 100}
-                    onChange={(e) => updateProperty("opacity", Number(e.target.value))}
-                    className="w-full accent-blue-600 cursor-pointer"
-                  />
-                </div>
-              </div>
+              <input
+                type="range"
+                min="10"
+                max="100"
+                step="5"
+                value={selected.opacity !== undefined ? selected.opacity : 100}
+                onChange={(e) => updateProperty("opacity", Number(e.target.value))}
+                className="w-full accent-blue-600 cursor-pointer"
+              />
             </div>
           </div>
         </section>
 
-        {/* QUICK ACTIONS: DUPLICATE & DELETE */}
+        {/* Actions */}
         <section className="border-t border-gray-200 pt-6 space-y-2">
           <button
             type="button"
             onClick={() => onDuplicateComponent && onDuplicateComponent(compId)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-100"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-100 transition"
           >
-            <FaCopy className="text-xs" /> Duplicate Component (Ctrl+D)
+            <FaCopy className="text-xs" /> Duplicate (Ctrl+D)
           </button>
-
           <button
             type="button"
             onClick={() => onDeleteComponent && onDeleteComponent(compId)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 transition"
           >
             <FaTrash className="text-xs" /> Delete Component
           </button>
@@ -811,19 +906,15 @@ function PropertiesPanel({
 function PageSelectField({ label, value, pages = [], onChange }) {
   return (
     <div>
-      <label className="mb-1 block text-[11px] font-semibold text-gray-600">
-        {label}
-      </label>
+      <label className="mb-1 block text-[11px] font-semibold text-gray-600">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-blue-500"
+        className="w-full rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none"
       >
-        <option value="">None (Static link / #)</option>
+        <option value="">None (External URL or #)</option>
         {pages.map((p) => (
-          <option key={p.id} value={p.id}>
-            Navigate to: {p.name}
-          </option>
+          <option key={p.id} value={p.id}>Navigate to: {p.name}</option>
         ))}
       </select>
     </div>
@@ -833,32 +924,28 @@ function PageSelectField({ label, value, pages = [], onChange }) {
 function Field({ label, value, onChange, placeholder = "" }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold text-gray-600">
-        {label}
-      </label>
+      <label className="mb-1 block text-xs font-semibold text-gray-600">{label}</label>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs outline-none bg-white text-gray-900"
       />
     </div>
   );
 }
 
-function TextArea({ label, value, onChange, placeholder = "" }) {
+function TextArea({ label, value, onChange, rows = 3, placeholder = "" }) {
   return (
     <div>
-      <label className="mb-2 block text-xs font-semibold text-gray-600">
-        {label}
-      </label>
+      <label className="mb-1 block text-xs font-semibold text-gray-600">{label}</label>
       <textarea
+        rows={rows}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        rows={4}
-        className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-xs outline-none bg-white text-gray-900"
       />
     </div>
   );
@@ -867,21 +954,16 @@ function TextArea({ label, value, onChange, placeholder = "" }) {
 function NumberField({ label, value, onChange, placeholder, unit }) {
   return (
     <div>
-      <label className="mb-2 block text-xs font-semibold text-gray-600">
-        {label}
-      </label>
-      <div className="flex overflow-hidden rounded-lg border border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+      <label className="mb-1 block text-xs font-semibold text-gray-600">{label}</label>
+      <div className="flex rounded-lg border border-gray-300 focus-within:border-blue-500">
         <input
           type="number"
-          min="0"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="min-w-0 flex-1 px-3 py-2 text-sm outline-none"
+          className="min-w-0 flex-1 px-3 py-1.5 text-xs outline-none"
         />
-        <span className="flex items-center bg-gray-50 px-3 text-xs text-gray-500">
-          {unit}
-        </span>
+        {unit && <span className="flex items-center bg-gray-50 px-2.5 text-[11px] text-gray-500">{unit}</span>}
       </div>
     </div>
   );
@@ -890,21 +972,19 @@ function NumberField({ label, value, onChange, placeholder, unit }) {
 function ColorField({ label, value, onChange }) {
   return (
     <div>
-      <label className="mb-2 block text-xs font-semibold text-gray-600">
-        {label}
-      </label>
+      <label className="mb-1 block text-xs font-semibold text-gray-600">{label}</label>
       <div className="flex items-center gap-2">
         <input
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 w-12 cursor-pointer rounded-lg border border-gray-300 bg-white p-1"
+          className="h-8 w-10 cursor-pointer rounded border border-gray-300 bg-white p-1"
         />
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase outline-none focus:border-blue-500"
+          className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs uppercase outline-none focus:border-blue-500"
         />
       </div>
     </div>
