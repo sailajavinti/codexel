@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   FaBars,
   FaHeading,
@@ -11,6 +12,7 @@ import {
   FaFont,
   FaMinus,
   FaRegWindowMinimize,
+  FaChevronDown,
 } from "react-icons/fa";
 
 const AVAILABLE_COMPONENTS = [
@@ -29,100 +31,92 @@ const AVAILABLE_COMPONENTS = [
 ];
 
 function ComponentsPanel({ onAddComponent }) {
+  // Track open state for each category independently
+  const [openCategories, setOpenCategories] = useState({
+    LAYOUT: true,
+    ELEMENTS: false,
+    FORMS: false,
+  });
+
+  const toggleCategory = (cat) => {
+    setOpenCategories((prev) => ({
+      ...prev,
+      [cat]: !prev[cat],
+    }));
+  };
+
   const handleDragStart = (e, comp) => {
     e.dataTransfer.setData("application/json", JSON.stringify(comp));
     e.dataTransfer.effectAllowed = "copy";
   };
 
-  const layoutItems = AVAILABLE_COMPONENTS.filter((c) => c.category === "LAYOUT");
-  const elementItems = AVAILABLE_COMPONENTS.filter((c) => c.category === "ELEMENTS");
-  const formItems = AVAILABLE_COMPONENTS.filter((c) => c.category === "FORMS");
+  const categories = [
+    { key: "LAYOUT", title: "Layout", items: AVAILABLE_COMPONENTS.filter((c) => c.category === "LAYOUT") },
+    { key: "ELEMENTS", title: "Elements", items: AVAILABLE_COMPONENTS.filter((c) => c.category === "ELEMENTS") },
+    { key: "FORMS", title: "Forms", items: AVAILABLE_COMPONENTS.filter((c) => c.category === "FORMS") },
+  ];
 
   return (
-    <aside className="w-64 shrink-0 overflow-y-auto border-r border-gray-200 bg-white p-4">
-      <div className="mb-4">
+    <aside className="w-64 h-full min-h-0 flex flex-col border-r border-gray-200 bg-white">
+      {/* Pinned Header */}
+      <div className="p-4 border-b border-gray-100 shrink-0">
         <h2 className="text-sm font-bold text-gray-900">Components</h2>
         <p className="text-xs text-gray-400">Drag components to your canvas</p>
       </div>
 
-      <div className="space-y-6">
-        {/* Layout */}
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-            Layout
-          </span>
-          <div className="mt-2 space-y-2">
-            {layoutItems.map((comp) => {
-              const Icon = comp.icon;
-              return (
-                <div
-                  key={comp.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, comp)}
-                  onClick={() => onAddComponent(comp)}
-                  className="flex cursor-grab items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-600 active:cursor-grabbing"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-xs">
-                    <Icon className="text-gray-500" />
-                  </div>
-                  <span>{comp.name}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {/* Scrollable Category Accordions */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
+        {categories.map(({ key, title, items }) => {
+          const isOpen = Boolean(openCategories[key]);
 
-        {/* Elements */}
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-            Elements
-          </span>
-          <div className="mt-2 space-y-2">
-            {elementItems.map((comp) => {
-              const Icon = comp.icon;
-              return (
-                <div
-                  key={comp.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, comp)}
-                  onClick={() => onAddComponent(comp)}
-                  className="flex cursor-grab items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-600 active:cursor-grabbing"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-xs">
-                    <Icon className="text-gray-500" />
-                  </div>
-                  <span>{comp.name}</span>
+          return (
+            <div key={key} className="rounded-xl border border-gray-100 bg-gray-50/50 overflow-hidden">
+              {/* Toggle Header Button */}
+              <button
+                type="button"
+                onClick={() => toggleCategory(key)}
+                className="w-full flex items-center justify-between px-3 py-2.5 text-left transition hover:bg-gray-100/70"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                    {title}
+                  </span>
+                  <span className="rounded-full bg-gray-200 px-1.5 py-0.2 text-[10px] font-semibold text-gray-600">
+                    {items.length}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+                <FaChevronDown
+                  className={`text-[10px] text-gray-400 transition-transform duration-200 ${
+                    isOpen ? "rotate-180" : "rotate-0"
+                  }`}
+                />
+              </button>
 
-        {/* Forms */}
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-            Forms
-          </span>
-          <div className="mt-2 space-y-2">
-            {formItems.map((comp) => {
-              const Icon = comp.icon;
-              return (
-                <div
-                  key={comp.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, comp)}
-                  onClick={() => onAddComponent(comp)}
-                  className="flex cursor-grab items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-600 active:cursor-grabbing"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-xs">
-                    <Icon className="text-gray-500" />
-                  </div>
-                  <span>{comp.name}</span>
+              {/* Collapsible List */}
+              {isOpen && (
+                <div className="p-2 pt-0 space-y-1.5">
+                  {items.map((comp) => {
+                    const Icon = comp.icon;
+                    return (
+                      <div
+                        key={comp.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, comp)}
+                        onClick={() => onAddComponent(comp)}
+                        className="flex cursor-grab items-center gap-3 rounded-lg border border-gray-200/60 bg-white p-2.5 text-xs font-semibold text-gray-700 transition hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-600 active:cursor-grabbing select-none"
+                      >
+                        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-50 shadow-xs">
+                          <Icon className="text-gray-500 text-xs" />
+                        </div>
+                        <span>{comp.name}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </aside>
   );

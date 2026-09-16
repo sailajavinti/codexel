@@ -25,7 +25,7 @@ function PropertiesPanel({
 
   if (!selected) {
     return (
-      <aside className="w-80 shrink-0 overflow-y-auto border-l border-gray-200 bg-white p-5">
+      <aside className="w-80 h-full min-h-0 flex flex-col border-l border-gray-200 bg-white p-5">
         <h2 className="text-lg font-bold text-slate-800">Properties</h2>
         <div className="mt-8 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
           <p className="text-sm text-gray-500">
@@ -40,9 +40,9 @@ function PropertiesPanel({
   const compId = selected.id || selected._id;
 
   return (
-    <aside className="w-80 shrink-0 overflow-y-auto border-l border-gray-200 bg-white">
-      {/* HEADER */}
-      <div className="border-b border-gray-200 p-5">
+    <aside className="w-80 h-full min-h-0 flex flex-col border-l border-gray-200 bg-white">
+      {/* Pinned Header */}
+      <div className="border-b border-gray-200 p-5 shrink-0">
         <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
           Selected Component
         </p>
@@ -51,7 +51,8 @@ function PropertiesPanel({
         </h2>
       </div>
 
-      <div className="space-y-6 p-5">
+      {/* Scrollable Container */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
         {/* ================= LAYOUT & SIZING ================= */}
         <section>
           <h3 className="mb-3 text-sm font-bold text-slate-800">Layout & Width</h3>
