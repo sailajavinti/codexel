@@ -6,7 +6,13 @@ import ComponentsPanel from "./ComponentsPanel";
 import PropertiesPanel from "./PropertiesPanel";
 import CodePreview from "./CodePreview";
 import api from "../../api/axios";
-import { FaExclamationTriangle, FaPlus, FaTimes } from "react-icons/fa";
+import {
+  FaExclamationTriangle,
+  FaPlus,
+  FaTimes,
+  FaThLarge,
+  FaSlidersH,
+} from "react-icons/fa";
 
 const DEFAULT_PAGE = {
   id: "page-home",
@@ -31,26 +37,39 @@ function Build() {
   const [showCodePreview, setShowCodePreview] = useState(false);
 
   // Viewport & Live Preview
-  const [viewportMode, setViewportMode] = useState("desktop"); // 'desktop' | 'tablet' | 'mobile'
+  const [viewportMode, setViewportMode] = useState("desktop");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
-  // Undo / Redo History Stacks
+  // Responsive editor panels
+  // "components" | "properties" | null
+  const [openPanel, setOpenPanel] = useState(null);
+
+  // Undo / Redo History
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const isUndoRedoAction = useRef(false);
 
   const activePage =
     pages.find((p) => p.id === activePageId) || pages[0] || DEFAULT_PAGE;
+
   const components = activePage.canvasData || [];
 
   const activeSavedPage =
     savedPages.find((p) => p.id === activePageId) ||
-    savedPages[0] || { id: "empty", name: activePage.name, canvasData: [] };
+    savedPages[0] || {
+      id: "empty",
+      name: activePage.name,
+      canvasData: [],
+    };
 
-  // Beforeunload warning
+  // ------------------------------------------------------------
+  // Before unload warning
+  // ------------------------------------------------------------
+
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       const isAuthenticated = Boolean(localStorage.getItem("token"));
+
       if (isDirty && isAuthenticated) {
         e.preventDefault();
         e.returnValue = "";
@@ -58,62 +77,88 @@ function Build() {
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+
+    return () =>
+      window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
 
-  // Keyboard Shortcuts: Delete, Duplicate (Ctrl+D), Undo (Ctrl+Z), Redo (Ctrl+Y / Ctrl+Shift+Z)
+  // ------------------------------------------------------------
+  // Keyboard shortcuts
+  // ------------------------------------------------------------
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
+
       if (tag === "input" || tag === "textarea") return;
 
-      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const isMac =
+        navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+
       const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
 
-      // Undo: Ctrl+Z / Cmd+Z (without Shift)
+      // Undo
       if (cmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === "z") {
         e.preventDefault();
         undo();
         return;
       }
 
-      // Redo: Ctrl+Y OR Cmd+Shift+Z / Ctrl+Shift+Z
+      // Redo
       if (
         (cmdOrCtrl && e.key.toLowerCase() === "y") ||
-        (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === "z")
+        (cmdOrCtrl &&
+          e.shiftKey &&
+          e.key.toLowerCase() === "z")
       ) {
         e.preventDefault();
         redo();
         return;
       }
 
-      // Duplicate: Ctrl+D / Cmd+D
-      if (cmdOrCtrl && e.key.toLowerCase() === "d" && selectedComponent) {
+      // Duplicate
+      if (
+        cmdOrCtrl &&
+        e.key.toLowerCase() === "d" &&
+        selectedComponent
+      ) {
         e.preventDefault();
         duplicateComponent(selectedComponent);
         return;
       }
 
-      // Delete / Backspace
-      if (selectedComponent && (e.key === "Delete" || e.key === "Backspace")) {
+      // Delete
+      if (
+        selectedComponent &&
+        (e.key === "Delete" || e.key === "Backspace")
+      ) {
         e.preventDefault();
         deleteComponent(selectedComponent);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    return () =>
+      window.removeEventListener("keydown", handleKeyDown);
   }, [selectedComponent, historyIndex, history]);
 
-  // Load project on mount / query change
+  // ------------------------------------------------------------
+  // Load project
+  // ------------------------------------------------------------
+
   useEffect(() => {
     const projectId = searchParams.get("id");
+
     if (projectId) {
       loadProjectById(projectId);
     }
   }, [searchParams]);
 
-  // Push to undo stack whenever pages change, unless triggered by undo/redo
+  // ------------------------------------------------------------
+  // Undo / Redo
+  // ------------------------------------------------------------
+
   const commitToHistory = (newPages) => {
     if (isUndoRedoAction.current) {
       isUndoRedoAction.current = false;
@@ -121,24 +166,37 @@ function Build() {
     }
 
     setHistory((prevHistory) => {
-      const truncated = prevHistory.slice(0, historyIndex + 1);
-      const updated = [...truncated, JSON.parse(JSON.stringify(newPages))];
+      const truncated = prevHistory.slice(
+        0,
+        historyIndex + 1
+      );
+
+      const updated = [
+        ...truncated,
+        JSON.parse(JSON.stringify(newPages)),
+      ];
+
       if (updated.length > MAX_HISTORY_STEPS) {
         updated.shift();
       }
+
       return updated;
     });
 
     setHistoryIndex((prevIndex) => {
-      const nextIndex = Math.min(prevIndex + 1, MAX_HISTORY_STEPS - 1);
-      return nextIndex;
+      return Math.min(
+        prevIndex + 1,
+        MAX_HISTORY_STEPS - 1
+      );
     });
   };
 
   const undo = () => {
     if (historyIndex > 0) {
       isUndoRedoAction.current = true;
+
       const targetState = history[historyIndex - 1];
+
       setPages(JSON.parse(JSON.stringify(targetState)));
       setHistoryIndex(historyIndex - 1);
       setIsDirty(true);
@@ -148,19 +206,33 @@ function Build() {
   const redo = () => {
     if (historyIndex < history.length - 1) {
       isUndoRedoAction.current = true;
+
       const targetState = history[historyIndex + 1];
+
       setPages(JSON.parse(JSON.stringify(targetState)));
       setHistoryIndex(historyIndex + 1);
       setIsDirty(true);
     }
   };
 
+  // ------------------------------------------------------------
+  // Normalize components
+  // ------------------------------------------------------------
+
   const normalizeComponents = (list = []) => {
     return list.map((item, index) => ({
       ...item,
-      width: item.width || (item.type === "button" ? "auto" : "100%"),
+
+      width:
+        item.width ||
+        (item.type === "button" ? "auto" : "100%"),
+
       minHeight: item.minHeight || "",
-      borderRadius: item.borderRadius ?? (item.type === "button" ? 6 : 0),
+
+      borderRadius:
+        item.borderRadius ??
+        (item.type === "button" ? 6 : 0),
+
       id:
         item.id ||
         item._id ||
@@ -169,11 +241,16 @@ function Build() {
   };
 
   const parseProjectPages = (project) => {
-    if (Array.isArray(project.pages) && project.pages.length > 0) {
+    if (
+      Array.isArray(project.pages) &&
+      project.pages.length > 0
+    ) {
       return project.pages.map((p, idx) => ({
         id: p.id || `page-${idx}`,
         name: p.name || `Page ${idx + 1}`,
-        canvasData: normalizeComponents(p.canvasData || []),
+        canvasData: normalizeComponents(
+          p.canvasData || []
+        ),
       }));
     }
 
@@ -181,15 +258,25 @@ function Build() {
       {
         id: "page-home",
         name: "Home",
-        canvasData: normalizeComponents(project.canvasData || []),
+        canvasData: normalizeComponents(
+          project.canvasData || []
+        ),
       },
     ];
   };
 
+  // ------------------------------------------------------------
+  // Load project
+  // ------------------------------------------------------------
+
   const loadProjectById = async (id) => {
     try {
       const res = await api.get("/projects/history");
-      const found = res.data.find((p) => p._id === id);
+
+      const found = res.data.find(
+        (p) => p._id === id
+      );
+
       if (found) {
         handleSelectProject(found);
       }
@@ -200,46 +287,82 @@ function Build() {
 
   const handleSelectProject = (project) => {
     setCurrentProject(project);
+
     const parsedPages = parseProjectPages(project);
+
     setPages(parsedPages);
     setSavedPages(parsedPages);
 
-    // Reset history stack for the loaded project
-    setHistory([JSON.parse(JSON.stringify(parsedPages))]);
+    // Reset history
+    setHistory([
+      JSON.parse(JSON.stringify(parsedPages)),
+    ]);
+
     setHistoryIndex(0);
 
-    setActivePageId(parsedPages[0]?.id || "page-home");
+    setActivePageId(
+      parsedPages[0]?.id || "page-home"
+    );
+
     setEditingPageId(null);
     setSelectedComponent(null);
     setIsDirty(false);
 
-    if (searchParams.get("id") !== project._id) {
-      setSearchParams({ id: project._id }, { replace: true });
+    setOpenPanel(null);
+
+    if (
+      searchParams.get("id") !== project._id
+    ) {
+      setSearchParams(
+        { id: project._id },
+        { replace: true }
+      );
     }
   };
 
+  // ------------------------------------------------------------
+  // New project
+  // ------------------------------------------------------------
+
   const handleNewProject = () => {
     setCurrentProject(null);
+
     setPages([DEFAULT_PAGE]);
     setSavedPages([]);
-    setHistory([JSON.parse(JSON.stringify([DEFAULT_PAGE]))]);
+
+    setHistory([
+      JSON.parse(
+        JSON.stringify([DEFAULT_PAGE])
+      ),
+    ]);
+
     setHistoryIndex(0);
 
     setActivePageId("page-home");
     setEditingPageId(null);
     setSelectedComponent(null);
     setIsDirty(false);
+
+    setOpenPanel(null);
+
     setSearchParams({}, { replace: true });
   };
 
+  // ------------------------------------------------------------
+  // Pages
+  // ------------------------------------------------------------
+
   const handleAddPage = () => {
     const pageNum = pages.length + 1;
+
     const newPage = {
       id: `page-${Date.now()}`,
       name: `Page ${pageNum}`,
       canvasData: [],
     };
+
     const nextPages = [...pages, newPage];
+
     setPages(nextPages);
     commitToHistory(nextPages);
 
@@ -247,64 +370,112 @@ function Build() {
     setEditingPageId(null);
     setSelectedComponent(null);
     setIsDirty(true);
+
+    setOpenPanel(null);
   };
 
-  const handleDeletePage = (e, pageIdToDelete) => {
+  const handleDeletePage = (
+    e,
+    pageIdToDelete
+  ) => {
     e.stopPropagation();
+
     if (pages.length <= 1) {
-      alert("Projects must contain at least one page.");
+      alert(
+        "Projects must contain at least one page."
+      );
       return;
     }
 
-    const filtered = pages.filter((p) => p.id !== pageIdToDelete);
+    const filtered = pages.filter(
+      (p) => p.id !== pageIdToDelete
+    );
+
     setPages(filtered);
     commitToHistory(filtered);
 
     if (activePageId === pageIdToDelete) {
-      setActivePageId(filtered[0]?.id || "page-home");
+      setActivePageId(
+        filtered[0]?.id || "page-home"
+      );
+
       setSelectedComponent(null);
     }
+
     setEditingPageId(null);
     setIsDirty(true);
   };
 
-  const handleRenamePage = (pageId, newName) => {
+  const handleRenamePage = (
+    pageId,
+    newName
+  ) => {
     const nextPages = pages.map((p) =>
-      p.id === pageId ? { ...p, name: newName } : p
+      p.id === pageId
+        ? { ...p, name: newName }
+        : p
     );
+
     setPages(nextPages);
     commitToHistory(nextPages);
     setIsDirty(true);
   };
 
-  const setComponentsForActivePage = (updater) => {
+  // ------------------------------------------------------------
+  // Component updates
+  // ------------------------------------------------------------
+
+  const setComponentsForActivePage = (
+    updater
+  ) => {
     setPages((prevPages) => {
       const nextPages = prevPages.map((page) => {
         if (page.id === activePageId) {
           const updatedCanvas =
-            typeof updater === "function" ? updater(page.canvasData || []) : updater;
-          return { ...page, canvasData: updatedCanvas };
+            typeof updater === "function"
+              ? updater(page.canvasData || [])
+              : updater;
+
+          return {
+            ...page,
+            canvasData: updatedCanvas,
+          };
         }
+
         return page;
       });
 
       commitToHistory(nextPages);
+
       return nextPages;
     });
+
     setIsDirty(true);
   };
 
   const addComponent = (component) => {
-    const componentType = component.type || component.id;
+    const componentType =
+      component.type || component.id;
 
     const newComponent = {
-      id: `${componentType}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      type: componentType,
-      name: component.name || componentType,
+      id: `${componentType}-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 7)}`,
 
-      width: componentType === "button" ? "auto" : "100%",
+      type: componentType,
+      name:
+        component.name || componentType,
+
+      width:
+        componentType === "button"
+          ? "auto"
+          : "100%",
+
       minHeight: "",
-      borderRadius: componentType === "button" ? 6 : 0,
+
+      borderRadius:
+        componentType === "button" ? 6 : 0,
+
       margin: 0,
 
       brand: "CodeXel",
@@ -314,42 +485,80 @@ function Build() {
       about: "About",
       contact: "Contact",
 
-      heading: "Build Modern Web Experiences",
-      description: "Design and export responsive interfaces visually in minutes.",
+      heading:
+        "Build Modern Web Experiences",
+
+      description:
+        "Design and export responsive interfaces visually in minutes.",
+
       buttonText: "Get Started",
+
       heroButtonBg: "#ffffff",
+
       heroButtonTextColor: "#2563eb",
+
       heroButtonLink: "#",
 
-      content: "This is a customizable content section.",
+      content:
+        "This is a customizable content section.",
 
-      featureTitle1: "Fast & Lightweight",
-      featureDesc1: "Optimized for speed and minimal build sizes.",
-      featureTitle2: "Component-Driven",
-      featureDesc2: "Flexible layout primitives built for reusable design.",
-      featureTitle3: "Export Ready",
-      featureDesc3: "Download clean React and Tailwind CSS output.",
+      featureTitle1:
+        "Fast & Lightweight",
+
+      featureDesc1:
+        "Optimized for speed and minimal build sizes.",
+
+      featureTitle2:
+        "Component-Driven",
+
+      featureDesc2:
+        "Flexible layout primitives built for reusable design.",
+
+      featureTitle3:
+        "Export Ready",
+
+      featureDesc3:
+        "Download clean React and Tailwind CSS output.",
 
       pricingPlan: "Pro Plan",
       pricingPrice: "$29",
       pricingPeriod: "/ month",
-      pricingFeatures: "Unlimited Projects\nCode Export\nPriority Support",
-      pricingButtonText: "Choose Plan",
-      pricingButtonBg: "#2563eb",
-      pricingButtonTextColor: "#ffffff",
 
-      copyright: "© 2026 CodeXel Inc. All rights reserved.",
-      footerLink1: "Privacy Policy",
-      footerLink2: "Terms of Service",
+      pricingFeatures:
+        "Unlimited Projects\nCode Export\nPriority Support",
 
-      title: "Clean Headings & Copy",
-      subtitle: "Add engaging subtitles or body content to support your sections.",
+      pricingButtonText:
+        "Choose Plan",
+
+      pricingButtonBg:
+        "#2563eb",
+
+      pricingButtonTextColor:
+        "#ffffff",
+
+      copyright:
+        "© 2026 CodeXel Inc. All rights reserved.",
+
+      footerLink1:
+        "Privacy Policy",
+
+      footerLink2:
+        "Terms of Service",
+
+      title:
+        "Clean Headings & Copy",
+
+      subtitle:
+        "Add engaging subtitles or body content to support your sections.",
 
       text: "Click Me",
       link: "#",
+
       btnBgColor: "#2563eb",
       btnTextColor: "#ffffff",
+
       btnAlign: "left",
+
       btnPaddingX: 20,
       btnPaddingY: 10,
 
@@ -358,83 +567,171 @@ function Build() {
       imageName: "",
       imageWidth: "",
       imageHeight: "",
+
       objectFit: "cover",
       imageAlign: "left",
 
       cardTitle: "Feature Card",
-      cardContent: "Cards are ideal for grouping summaries, specs, or quick highlights.",
+
+      cardContent:
+        "Cards are ideal for grouping summaries, specs, or quick highlights.",
 
       dividerColor: "#e2e8f0",
       dividerThickness: "1",
 
       formTitle: "Contact Us",
-      namePlaceholder: "Enter your name",
-      emailPlaceholder: "Enter your email",
+
+      namePlaceholder:
+        "Enter your name",
+
+      emailPlaceholder:
+        "Enter your email",
     };
 
-    setComponentsForActivePage((prev) => [...prev, newComponent]);
-    setSelectedComponent(newComponent.id);
+    setComponentsForActivePage(
+      (prev) => [...prev, newComponent]
+    );
+
+    setSelectedComponent(
+      newComponent.id
+    );
   };
 
-  const updateComponent = (id, updates) => {
-    setComponentsForActivePage((prev) =>
-      prev.map((comp) =>
-        (comp.id || comp._id) === id ? { ...comp, ...updates } : comp
-      )
+  const updateComponent = (
+    id,
+    updates
+  ) => {
+    setComponentsForActivePage(
+      (prev) =>
+        prev.map((comp) =>
+          (comp.id || comp._id) === id
+            ? { ...comp, ...updates }
+            : comp
+        )
     );
   };
 
   const deleteComponent = (id) => {
-    setComponentsForActivePage((prev) =>
-      prev.filter((comp) => (comp.id || comp._id) !== id)
+    setComponentsForActivePage(
+      (prev) =>
+        prev.filter(
+          (comp) =>
+            (comp.id || comp._id) !== id
+        )
     );
+
     if (selectedComponent === id) {
       setSelectedComponent(null);
     }
   };
 
-  // Component Duplication
+  // ------------------------------------------------------------
+  // Duplicate component
+  // ------------------------------------------------------------
+
   const duplicateComponent = (id) => {
-    setComponentsForActivePage((prev) => {
-      const targetIndex = prev.findIndex((c) => (c.id || c._id) === id);
-      if (targetIndex === -1) return prev;
+    setComponentsForActivePage(
+      (prev) => {
+        const targetIndex =
+          prev.findIndex(
+            (c) =>
+              (c.id || c._id) === id
+          );
 
-      const targetComp = prev[targetIndex];
-      const clonedComp = {
-        ...JSON.parse(JSON.stringify(targetComp)),
-        id: `${targetComp.type || "comp"}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        _id: undefined,
-      };
+        if (targetIndex === -1) {
+          return prev;
+        }
 
-      const updated = [...prev];
-      updated.splice(targetIndex + 1, 0, clonedComp);
-      setSelectedComponent(clonedComp.id);
-      return updated;
-    });
+        const targetComp =
+          prev[targetIndex];
+
+        const clonedComp = {
+          ...JSON.parse(
+            JSON.stringify(targetComp)
+          ),
+
+          id: `${targetComp.type || "comp"}-${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 6)}`,
+
+          _id: undefined,
+        };
+
+        const updated = [...prev];
+
+        updated.splice(
+          targetIndex + 1,
+          0,
+          clonedComp
+        );
+
+        setSelectedComponent(
+          clonedComp.id
+        );
+
+        return updated;
+      }
+    );
   };
 
-  const reorderComponents = (startIndex, endIndex) => {
+  // ------------------------------------------------------------
+  // Reorder
+  // ------------------------------------------------------------
+
+  const reorderComponents = (
+    startIndex,
+    endIndex
+  ) => {
     if (startIndex === endIndex) return;
 
-    setComponentsForActivePage((prev) => {
-      const updated = [...prev];
-      const [movedItem] = updated.splice(startIndex, 1);
-      updated.splice(endIndex, 0, movedItem);
-      return updated;
-    });
+    setComponentsForActivePage(
+      (prev) => {
+        const updated = [...prev];
+
+        const [movedItem] =
+          updated.splice(
+            startIndex,
+            1
+          );
+
+        updated.splice(
+          endIndex,
+          0,
+          movedItem
+        );
+
+        return updated;
+      }
+    );
   };
 
+  // ------------------------------------------------------------
+  // Navigation
+  // ------------------------------------------------------------
+
   const performBackNavigation = () => {
-    if (window.history.state && window.history.state.idx > 0) {
+    if (
+      window.history.state &&
+      window.history.state.idx > 0
+    ) {
       navigate(-1);
     } else {
-      navigate("/", { replace: true });
+      navigate("/", {
+        replace: true,
+      });
     }
   };
 
   const handleBackRequest = () => {
-    const isAuthenticated = Boolean(localStorage.getItem("token"));
-    if (isDirty && isAuthenticated) {
+    const isAuthenticated =
+      Boolean(
+        localStorage.getItem("token")
+      );
+
+    if (
+      isDirty &&
+      isAuthenticated
+    ) {
       setShowExitModal(true);
     } else {
       performBackNavigation();
@@ -444,19 +741,44 @@ function Build() {
   const confirmDiscardAndExit = () => {
     setIsDirty(false);
     setShowExitModal(false);
+
     performBackNavigation();
   };
 
+  // ------------------------------------------------------------
+  // Export
+  // ------------------------------------------------------------
+
   const handleOpenExport = () => {
     if (savedPages.length === 0) {
-      alert("Please save your project first before exporting code.");
+      alert(
+        "Please save your project first before exporting code."
+      );
+
       return;
     }
+
     setShowCodePreview(true);
   };
 
+  // ------------------------------------------------------------
+  // Toggle responsive panel
+  // ------------------------------------------------------------
+
+  const togglePanel = (panel) => {
+    setOpenPanel((current) =>
+      current === panel
+        ? null
+        : panel
+    );
+  };
+
   return (
-    <div className="h-screen overflow-hidden bg-slate-100 flex flex-col">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
+
       <BuildHeader
         currentProject={currentProject}
         onSelectProject={handleSelectProject}
@@ -464,94 +786,187 @@ function Build() {
         pages={pages}
         components={components}
         onBackClick={handleBackRequest}
-        onMarkDirty={() => setIsDirty(true)}
+        onMarkDirty={() =>
+          setIsDirty(true)
+        }
         onExportClick={handleOpenExport}
         viewportMode={viewportMode}
-        onChangeViewport={setViewportMode}
+        onChangeViewport={
+          setViewportMode
+        }
         isPreviewMode={isPreviewMode}
-        onTogglePreviewMode={() => setIsPreviewMode((prev) => !prev)}
+        onTogglePreviewMode={() => {
+          setOpenPanel(null);
+          setIsPreviewMode(
+            (prev) => !prev
+          );
+        }}
         onProjectSaved={(savedDoc) => {
-          setCurrentProject(savedDoc);
-          const parsed = parseProjectPages(savedDoc);
+          setCurrentProject(
+            savedDoc
+          );
+
+          const parsed =
+            parseProjectPages(
+              savedDoc
+            );
+
           setPages(parsed);
           setSavedPages(parsed);
+
           setIsDirty(false);
 
-          // Reset Undo / Redo history to fresh snapshot on save
-          setHistory([JSON.parse(JSON.stringify(parsed))]);
+          // Reset Undo / Redo
+          setHistory([
+            JSON.parse(
+              JSON.stringify(parsed)
+            ),
+          ]);
+
           setHistoryIndex(0);
 
-          if (searchParams.get("id") !== savedDoc._id) {
-            setSearchParams({ id: savedDoc._id }, { replace: true });
+          if (
+            searchParams.get("id") !==
+            savedDoc._id
+          ) {
+            setSearchParams(
+              {
+                id: savedDoc._id,
+              },
+              {
+                replace: true,
+              }
+            );
           }
         }}
       />
 
-      {/* Page Tabs Bar (Hidden in Live Preview Mode) */}
+      {/* ======================================================
+          PAGE TABS
+      ====================================================== */}
+
       {!isPreviewMode && (
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
+        <div className="flex h-10 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-2 sm:px-4 lg:px-6">
+          <div className="flex min-w-0 items-center gap-1 overflow-x-auto py-1 no-scrollbar">
             {pages.map((page) => {
-              const isActive = page.id === activePageId;
-              const isEditing = editingPageId === page.id;
+              const isActive =
+                page.id ===
+                activePageId;
+
+              const isEditing =
+                editingPageId ===
+                page.id;
 
               return (
                 <div
                   key={page.id}
                   onClick={() => {
                     if (!isActive) {
-                      setActivePageId(page.id);
-                      setEditingPageId(null);
-                      setSelectedComponent(null);
+                      setActivePageId(
+                        page.id
+                      );
+
+                      setEditingPageId(
+                        null
+                      );
+
+                      setSelectedComponent(
+                        null
+                      );
+
+                      setOpenPanel(
+                        null
+                      );
                     }
                   }}
-                  className={`group flex items-center gap-2 rounded-lg px-3 py-1 text-xs font-semibold cursor-pointer transition select-none ${
+                  className={`group flex shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold transition sm:gap-2 sm:px-3 ${
                     isActive
                       ? "bg-blue-50 text-blue-600 shadow-xs"
                       : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
-                  {isActive && isEditing ? (
+                  {isActive &&
+                  isEditing ? (
                     <input
                       type="text"
                       autoFocus
                       value={page.name}
-                      onChange={(e) => handleRenamePage(page.id, e.target.value)}
+                      onChange={(e) =>
+                        handleRenamePage(
+                          page.id,
+                          e.target.value
+                        )
+                      }
                       onBlur={() => {
-                        if (!page.name.trim()) {
-                          handleRenamePage(page.id, "Untitled Page");
+                        if (
+                          !page.name.trim()
+                        ) {
+                          handleRenamePage(
+                            page.id,
+                            "Untitled Page"
+                          );
                         }
-                        setEditingPageId(null);
+
+                        setEditingPageId(
+                          null
+                        );
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === "Escape") {
-                          if (!page.name.trim()) {
-                            handleRenamePage(page.id, "Untitled Page");
+                        if (
+                          e.key ===
+                            "Enter" ||
+                          e.key ===
+                            "Escape"
+                        ) {
+                          if (
+                            !page.name.trim()
+                          ) {
+                            handleRenamePage(
+                              page.id,
+                              "Untitled Page"
+                            );
                           }
-                          setEditingPageId(null);
+
+                          setEditingPageId(
+                            null
+                          );
                         }
                       }}
-                      className="bg-white border border-blue-300 rounded px-1.5 py-0.5 outline-none w-24 text-blue-700"
+                      className="w-20 rounded border border-blue-300 bg-white px-1.5 py-0.5 text-blue-700 outline-none sm:w-24"
                     />
                   ) : (
                     <span
                       onDoubleClick={() => {
-                        if (isActive) {
-                          setEditingPageId(page.id);
+                        if (
+                          isActive
+                        ) {
+                          setEditingPageId(
+                            page.id
+                          );
                         }
                       }}
-                      title={isActive ? "Double-click to rename" : "Click to view page"}
-                      className="truncate max-w-[120px]"
+                      title={
+                        isActive
+                          ? "Double-click to rename"
+                          : "Click to view page"
+                      }
+                      className="max-w-[90px] truncate sm:max-w-[120px]"
                     >
                       {page.name}
                     </span>
                   )}
 
-                  {pages.length > 1 && (
+                  {pages.length >
+                    1 && (
                     <button
                       type="button"
-                      onClick={(e) => handleDeletePage(e, page.id)}
-                      className="text-gray-400 hover:text-red-500 transition"
+                      onClick={(e) =>
+                        handleDeletePage(
+                          e,
+                          page.id
+                        )
+                      }
+                      className="text-gray-400 transition hover:text-red-500"
                       title="Delete page"
                     >
                       <FaTimes className="text-[10px]" />
@@ -564,82 +979,426 @@ function Build() {
             <button
               type="button"
               onClick={handleAddPage}
-              className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition"
+              className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-blue-600 sm:px-2.5"
               title="Add new page"
             >
-              <FaPlus className="text-[9px]" /> New Page
+              <FaPlus className="text-[9px]" />
+
+              <span className="hidden sm:inline">
+                New Page
+              </span>
             </button>
           </div>
 
-          <span className="text-[11px] font-medium text-gray-400">
-            Page: <strong className="text-gray-700">{activePage.name}</strong>
+          <span className="ml-2 hidden shrink-0 text-[11px] font-medium text-gray-400 sm:inline">
+            Page:{" "}
+            <strong className="text-gray-700">
+              {activePage.name}
+            </strong>
           </span>
         </div>
       )}
 
-      {/* Main Workspace (Panels auto-hide when in Live Preview Mode) */}
-      <div className="flex flex-1 min-h-0">
-        {!isPreviewMode && <ComponentsPanel onAddComponent={addComponent} />}
+      {/* ======================================================
+          MAIN WORKSPACE
+      ====================================================== */}
+
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        {/* ----------------------------------------------------
+            DESKTOP COMPONENTS PANEL
+            ---------------------------------------------------- */}
+
+        {!isPreviewMode && (
+          <div className="hidden shrink-0 lg:block">
+            <ComponentsPanel
+              onAddComponent={
+                addComponent
+              }
+            />
+          </div>
+        )}
+
+        {/* ----------------------------------------------------
+            CANVAS
+            ---------------------------------------------------- */}
 
         <Canvas
           components={components}
-          selectedComponent={selectedComponent}
-          setSelectedComponent={setSelectedComponent}
-          onDropComponent={addComponent}
-          onDeleteComponent={deleteComponent}
-          onDuplicateComponent={duplicateComponent}
-          onReorderComponents={reorderComponents}
-          onUpdateComponent={updateComponent}
-          viewportMode={viewportMode}
-          isPreviewMode={isPreviewMode}
+          selectedComponent={
+            selectedComponent
+          }
+          setSelectedComponent={
+            setSelectedComponent
+          }
+          onDropComponent={
+            addComponent
+          }
+          onDeleteComponent={
+            deleteComponent
+          }
+          onDuplicateComponent={
+            duplicateComponent
+          }
+          onReorderComponents={
+            reorderComponents
+          }
+          onUpdateComponent={
+            updateComponent
+          }
+          viewportMode={
+            viewportMode
+          }
+          isPreviewMode={
+            isPreviewMode
+          }
         />
 
+        {/* ----------------------------------------------------
+            DESKTOP PROPERTIES PANEL
+            ---------------------------------------------------- */}
+
         {!isPreviewMode && (
-          <PropertiesPanel
-            components={components}
-            selectedComponent={selectedComponent}
-            onUpdateComponent={updateComponent}
-            onDeleteComponent={deleteComponent}
-            onDuplicateComponent={duplicateComponent}
-          />
+          <div className="hidden shrink-0 lg:block">
+            <PropertiesPanel
+              components={
+                components
+              }
+              selectedComponent={
+                selectedComponent
+              }
+              onUpdateComponent={
+                updateComponent
+              }
+              onDeleteComponent={
+                deleteComponent
+              }
+              onDuplicateComponent={
+                duplicateComponent
+              }
+            />
+          </div>
         )}
+
+        {/* ====================================================
+            TABLET COMPONENTS DRAWER
+            768px - 1023px
+            ==================================================== */}
+
+        {!isPreviewMode &&
+          openPanel ===
+            "components" && (
+            <div className="absolute inset-y-0 left-0 z-50 hidden w-72 border-r border-gray-200 bg-white shadow-2xl md:block lg:hidden">
+              <ComponentsPanel
+                onAddComponent={(
+                  component
+                ) => {
+                  addComponent(
+                    component
+                  );
+
+                  setOpenPanel(
+                    null
+                  );
+                }}
+              />
+            </div>
+          )}
+
+        {/* ====================================================
+            TABLET PROPERTIES DRAWER
+            ==================================================== */}
+
+        {!isPreviewMode &&
+          openPanel ===
+            "properties" && (
+            <div className="absolute inset-y-0 right-0 z-50 hidden w-80 border-l border-gray-200 bg-white shadow-2xl md:block lg:hidden">
+              <PropertiesPanel
+                components={
+                  components
+                }
+                selectedComponent={
+                  selectedComponent
+                }
+                onUpdateComponent={
+                  updateComponent
+                }
+                onDeleteComponent={
+                  deleteComponent
+                }
+                onDuplicateComponent={
+                  duplicateComponent
+                }
+              />
+            </div>
+          )}
+
+        {/* ====================================================
+            MOBILE BACKDROP
+            ==================================================== */}
+
+        {!isPreviewMode &&
+          openPanel &&
+          (
+            <button
+              type="button"
+              aria-label="Close panel"
+              onClick={() =>
+                setOpenPanel(null)
+              }
+              className="absolute inset-0 z-40 bg-black/25 md:hidden"
+            />
+          )}
+
+        {/* ====================================================
+            MOBILE BOTTOM SHEET
+            ==================================================== */}
+
+        {!isPreviewMode &&
+          openPanel ===
+            "components" && (
+            <div className="absolute inset-x-0 bottom-0 z-50 max-h-[72%] overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:hidden">
+              <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900">
+                    Components
+                  </h2>
+
+                  <p className="text-[11px] text-gray-400">
+                    Tap a component to add it
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenPanel(
+                      null
+                    )
+                  }
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200"
+                  aria-label="Close components"
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+              </div>
+
+              <div className="max-h-[calc(72vh-65px)] overflow-y-auto">
+                <ComponentsPanel
+                  onAddComponent={(
+                    component
+                  ) => {
+                    addComponent(
+                      component
+                    );
+
+                    setOpenPanel(
+                      null
+                    );
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+        {!isPreviewMode &&
+          openPanel ===
+            "properties" && (
+            <div className="absolute inset-x-0 bottom-0 z-50 max-h-[78%] overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:hidden">
+              <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900">
+                    Properties
+                  </h2>
+
+                  <p className="text-[11px] text-gray-400">
+                    Edit the selected component
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenPanel(
+                      null
+                    )
+                  }
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200"
+                  aria-label="Close properties"
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+              </div>
+
+              <div className="max-h-[calc(78vh-65px)] overflow-y-auto">
+                <PropertiesPanel
+                  components={
+                    components
+                  }
+                  selectedComponent={
+                    selectedComponent
+                  }
+                  onUpdateComponent={
+                    updateComponent
+                  }
+                  onDeleteComponent={
+                    deleteComponent
+                  }
+                  onDuplicateComponent={
+                    duplicateComponent
+                  }
+                />
+              </div>
+            </div>
+          )}
       </div>
 
-      {/* Code Export & Preview Modal */}
+      {/* ======================================================
+          TABLET CONTROLS
+          ====================================================== */}
+
+      {!isPreviewMode && (
+        <div className="hidden h-14 shrink-0 items-center justify-center gap-3 border-t border-gray-200 bg-white px-4 shadow-sm md:flex lg:hidden">
+          <button
+            type="button"
+            onClick={() =>
+              togglePanel(
+                "components"
+              )
+            }
+            className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
+              openPanel ===
+              "components"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <FaThLarge />
+            Components
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              togglePanel(
+                "properties"
+              )
+            }
+            className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
+              openPanel ===
+              "properties"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <FaSlidersH />
+            Properties
+          </button>
+        </div>
+      )}
+
+      {/* ======================================================
+          MOBILE CONTROLS
+          ====================================================== */}
+
+      {!isPreviewMode && (
+        <div className="flex h-14 shrink-0 items-center justify-around border-t border-gray-200 bg-white px-2 shadow-sm md:hidden">
+          <button
+            type="button"
+            onClick={() =>
+              togglePanel(
+                "components"
+              )
+            }
+            className={`flex min-w-[120px] items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition ${
+              openPanel ===
+              "components"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <FaThLarge />
+            Components
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              togglePanel(
+                "properties"
+              )
+            }
+            className={`flex min-w-[120px] items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition ${
+              openPanel ===
+              "properties"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <FaSlidersH />
+            Properties
+          </button>
+        </div>
+      )}
+
+      {/* ======================================================
+          CODE PREVIEW / EXPORT
+          ====================================================== */}
+
       <CodePreview
-        isOpen={showCodePreview}
-        onClose={() => setShowCodePreview(false)}
-        activePage={activeSavedPage}
+        isOpen={
+          showCodePreview
+        }
+        onClose={() =>
+          setShowCodePreview(false)
+        }
+        activePage={
+          activeSavedPage
+        }
         pages={savedPages}
       />
 
-      {/* Exit Confirmation Modal */}
+      {/* ======================================================
+          EXIT CONFIRMATION MODAL
+          ====================================================== */}
+
       {showExitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
               <FaExclamationTriangle className="text-xl" />
             </div>
 
             <div className="mt-4 text-center">
-              <h3 className="text-lg font-bold text-gray-900">Unsaved Changes</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                Unsaved Changes
+              </h3>
+
               <p className="mt-2 text-sm leading-relaxed text-gray-500">
-                You have unsaved changes in your project. If you leave now, all
-                recent edits will be discarded.
+                You have unsaved changes in
+                your project. If you leave
+                now, all recent edits will be
+                discarded.
               </p>
             </div>
 
             <div className="mt-6 flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setShowExitModal(false)}
+                onClick={() =>
+                  setShowExitModal(
+                    false
+                  )
+                }
                 className="w-full rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
                 Stay & Save
               </button>
+
               <button
                 type="button"
-                onClick={confirmDiscardAndExit}
+                onClick={
+                  confirmDiscardAndExit
+                }
                 className="w-full rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
               >
                 Discard & Leave

@@ -71,9 +71,17 @@ function Header() {
           {/* Logo */}
           <Link
             to="/"
-            className="text-2xl sm:text-4xl font-extrabold text-blue-600 tracking-tight"
+            className="flex items-center gap-0"
           >
-            CodeXel
+            <img
+              src="/codexel.jpeg"
+              alt="CodeXel Logo"
+              className="h-8 w-8 object-contain sm:h-9 sm:w-9"
+            />
+
+            <span className="text-2xl sm:text-4xl font-extrabold text-blue-600 tracking-tight">
+              odeXel
+            </span>
           </Link>
         </div>
 
@@ -88,10 +96,9 @@ function Header() {
                 to="/"
                 end
                 className={({ isActive }) =>
-                  `transition ${
-                    isActive
-                      ? "text-blue-600 font-semibold"
-                      : "text-gray-700 hover:text-blue-600"
+                  `transition ${isActive
+                    ? "text-blue-600 font-semibold"
+                    : "text-gray-700 hover:text-blue-600"
                   }`
                 }
               >
@@ -104,10 +111,9 @@ function Header() {
               <NavLink
                 to="/about"
                 className={({ isActive }) =>
-                  `transition ${
-                    isActive
-                      ? "text-blue-600 font-semibold"
-                      : "text-gray-700 hover:text-blue-600"
+                  `transition ${isActive
+                    ? "text-blue-600 font-semibold"
+                    : "text-gray-700 hover:text-blue-600"
                   }`
                 }
               >
@@ -120,10 +126,9 @@ function Header() {
               <NavLink
                 to="/build"
                 className={({ isActive }) =>
-                  `transition ${
-                    isActive
-                      ? "text-blue-600 font-semibold"
-                      : "text-gray-700 hover:text-blue-600"
+                  `transition ${isActive
+                    ? "text-blue-600 font-semibold"
+                    : "text-gray-700 hover:text-blue-600"
                   }`
                 }
               >
@@ -137,10 +142,9 @@ function Header() {
                 <NavLink
                   to="/auth"
                   className={({ isActive }) =>
-                    `rounded-xl px-6 py-2.5 text-white font-semibold transition ${
-                      isActive
-                        ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
-                        : "bg-blue-600 hover:bg-blue-700"
+                    `rounded-xl px-6 py-2.5 text-white font-semibold transition ${isActive
+                      ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
+                      : "bg-blue-600 hover:bg-blue-700"
                     }`
                   }
                 >
@@ -178,19 +182,17 @@ function Header() {
 
       <div
         onClick={() => setIsOpen(false)}
-        className={`fixed inset-0 z-40 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
-          isOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-40 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${isOpen
+          ? "opacity-100 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
+          }`}
       />
 
       {/* ================= MOBILE SIDE DRAWER ================= */}
 
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-50 w-72 max-w-[80vw] bg-white border-r border-gray-200 shadow-2xl p-6 transition-transform duration-300 ease-in-out md:hidden ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 bottom-0 z-50 w-72 max-w-[80vw] bg-white border-r border-gray-200 shadow-2xl p-6 transition-transform duration-300 ease-in-out md:hidden ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
 
         {/* Drawer Header */}
@@ -198,10 +200,17 @@ function Header() {
 
           <Link
             to="/"
-            onClick={() => setIsOpen(false)}
-            className="text-2xl font-extrabold text-blue-600 tracking-tight"
+            className="flex items-center gap-0"
           >
-            CodeXel
+            <img
+              src="/codexel.jpeg"
+              alt="CodeXel Logo"
+              className="h-8 w-8 object-contain sm:h-9 sm:w-9"
+            />
+
+            <span className="text-2xl sm:text-4xl font-extrabold text-blue-600 tracking-tight">
+              odeXel
+            </span>
           </Link>
 
           {/* Close Button */}
@@ -239,10 +248,9 @@ function Header() {
                 end
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
-                  `block px-3 py-2.5 rounded-lg transition ${
-                    isActive
-                      ? "bg-blue-50 text-blue-600 font-semibold"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  `block px-3 py-2.5 rounded-lg transition ${isActive
+                    ? "bg-blue-50 text-blue-600 font-semibold"
+                    : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                   }`
                 }
               >
@@ -256,10 +264,9 @@ function Header() {
                 to="/about"
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
-                  `block px-3 py-2.5 rounded-lg transition ${
-                    isActive
-                      ? "bg-blue-50 text-blue-600 font-semibold"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  `block px-3 py-2.5 rounded-lg transition ${isActive
+                    ? "bg-blue-50 text-blue-600 font-semibold"
+                    : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                   }`
                 }
               >
@@ -273,10 +280,9 @@ function Header() {
                 to="/build"
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
-                  `block px-3 py-2.5 rounded-lg transition ${
-                    isActive
-                      ? "bg-blue-50 text-blue-600 font-semibold"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  `block px-3 py-2.5 rounded-lg transition ${isActive
+                    ? "bg-blue-50 text-blue-600 font-semibold"
+                    : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                   }`
                 }
               >
@@ -291,10 +297,9 @@ function Header() {
                   to="/auth"
                   onClick={() => setIsOpen(false)}
                   className={({ isActive }) =>
-                    `block text-center rounded-xl px-6 py-2.5 text-white font-semibold transition shadow-md shadow-blue-500/20 ${
-                      isActive
-                        ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
-                        : "bg-blue-600 hover:bg-blue-700"
+                    `block text-center rounded-xl px-6 py-2.5 text-white font-semibold transition shadow-md shadow-blue-500/20 ${isActive
+                      ? "bg-blue-700 ring-2 ring-blue-600 ring-offset-2"
+                      : "bg-blue-600 hover:bg-blue-700"
                     }`
                   }
                 >
