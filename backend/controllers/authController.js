@@ -657,6 +657,52 @@ const changePassword = async (req, res) => {
   }
 };
 
+const deleteAccount = async (req, res) => {
+  try {
+    const rawUserId = req.userId;
+
+    const { currentPassword } = req.body;
+
+    if (!currentPassword) {
+      return res.status(400).json({
+        message: "Current password is required",
+      });
+    }
+
+    const user = await User.findById(rawUserId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: "Current password is incorrect",
+        code: "CURRENT_PASSWORD_INCORRECT",
+      });
+    }
+
+    await User.findByIdAndDelete(rawUserId);
+
+    return res.status(200).json({
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete account error:", error);
+
+    return res.status(500).json({
+      message: "Unable to delete account",
+    });
+  }
+};
+
 export {
   signup,
   login,
@@ -667,4 +713,5 @@ export {
   updateProfile,
   verifyEmail,
   resendVerificationEmail,
+  deleteAccount
 };

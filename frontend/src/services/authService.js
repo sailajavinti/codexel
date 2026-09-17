@@ -51,3 +51,13 @@ export const changePassword = async (currentPassword, newPassword) => {
 
   return response.data;
 };
+
+export const deleteAccount = async (currentPassword) => {
+  const response = await api.delete("/auth/delete-account", {
+    data: {
+      currentPassword,
+    },
+  });
+
+  return response.data;
+};

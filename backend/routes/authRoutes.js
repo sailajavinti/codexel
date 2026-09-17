@@ -9,8 +9,8 @@ import {
   changePassword,
   updateProfile,
   verifyEmail,
-  resendVerificationEmail
-
+  resendVerificationEmail,
+  deleteAccount
 } from "../controllers/authController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -28,5 +28,7 @@ router.put("/change-password", authMiddleware, changePassword);
 router.get("/me", authMiddleware, getMe);
 router.put("/update-profile", authMiddleware, updateProfile);
 router.post("/resend-verification", resendVerificationEmail);
+
+router.delete("/delete-account", authMiddleware, deleteAccount);
 
 export default router;
