@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ProfileSidebar from "./ProfileSidebar";
 import ProfileOverview from "./ProfileOverview";
 import ProfileHistory from "./ProfileHistory";
+import ProfilePassword from "./ProfilePassword";
 
 import {
   getProfile,
@@ -77,6 +78,7 @@ function Profile() {
         )}
 
         {activeSection === "history" && <ProfileHistory />}
+        {activeSection === "password" && <ProfilePassword />}
       </main>
     </div>
   );
