@@ -1,5 +1,5 @@
 import React from "react";
-import { FaCopy, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
+import { FaCopy, FaTrash, FaPlus, FaTimes, FaArrowUp, FaArrowDown } from "react-icons/fa";
 
 const WIDTH_OPTIONS = ["Auto", "25%", "33.33%", "50%", "66.67%", "75%", "100%"];
 const HOVER_OPTIONS = [
@@ -23,6 +23,15 @@ function PropertiesPanel({
   const updateProperty = (prop, val) => {
     if (!selected || !onUpdateComponent) return;
     onUpdateComponent(selected.id || selected._id, { [prop]: val });
+  };
+
+  const moveArrayItem = (listKey, index, direction) => {
+    const list = [...(selected[listKey] || [])];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+    const [movedItem] = list.splice(index, 1);
+    list.splice(targetIndex, 0, movedItem);
+    updateProperty(listKey, list);
   };
 
   if (!selected) {
@@ -91,14 +100,13 @@ function PropertiesPanel({
         <section className="border-t border-gray-200 pt-6">
           <h3 className="mb-4 text-sm font-bold text-slate-800">Content Configuration</h3>
 
-          {/* NAVBAR (Clean Horizontal Navigation Bar) */}
+          {/* NAVBAR */}
           {selected.type === "navbar" && (
             <div className="space-y-4">
               <Field label="Brand Name" value={selected.brand || ""} onChange={(v) => updateProperty("brand", v)} />
               <ColorField label="Brand Text Color" value={selected.brandColor || "#0f172a"} onChange={(v) => updateProperty("brandColor", v)} />
               <ColorField label="Nav Link Color" value={selected.navLinkColor || "#475569"} onChange={(v) => updateProperty("navLinkColor", v)} />
 
-              {/* Dynamic Navbar Links */}
               <div className="pt-2">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -109,7 +117,7 @@ function PropertiesPanel({
                     onClick={() => {
                       const next = [
                         ...(selected.navLinks || []),
-                        { id: `link-${Date.now()}`, label: `Page ${(selected.navLinks || []).length + 1}`, targetPageId: "" },
+                        { id: `link-${Date.now()}`, label: `Link ${(selected.navLinks || []).length + 1}`, targetPageId: "" },
                       ];
                       updateProperty("navLinks", next);
                     }}
@@ -124,15 +132,36 @@ function PropertiesPanel({
                     <div key={link.id || idx} className="rounded-xl border border-gray-200 bg-gray-50 p-2.5 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-gray-400 uppercase">Link #{idx + 1}</span>
-                        {(selected.navLinks || []).length > 1 && (
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={() => updateProperty("navLinks", selected.navLinks.filter((_, i) => i !== idx))}
-                            className="text-gray-400 hover:text-red-500"
+                            disabled={idx === 0}
+                            onClick={() => moveArrayItem("navLinks", idx, "up")}
+                            className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                            title="Move Up"
                           >
-                            <FaTimes className="text-[10px]" />
+                            <FaArrowUp className="text-[10px]" />
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            disabled={idx === selected.navLinks.length - 1}
+                            onClick={() => moveArrayItem("navLinks", idx, "down")}
+                            className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                            title="Move Down"
+                          >
+                            <FaArrowDown className="text-[10px]" />
+                          </button>
+                          {(selected.navLinks || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => updateProperty("navLinks", selected.navLinks.filter((_, i) => i !== idx))}
+                              className="text-gray-400 hover:text-red-500 ml-1"
+                              title="Delete Link"
+                            >
+                              <FaTimes className="text-[10px]" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <Field
                         label="Label"
@@ -160,21 +189,21 @@ function PropertiesPanel({
                 </div>
               </div>
 
-              {/* Nav CTA Button Toggle */}
+              {/* Navbar CTA */}
               <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-blue-700 uppercase">Navbar Action Button</span>
                   <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-gray-700">
                     <input
                       type="checkbox"
-                      checked={selected.showNavCta !== false}
+                      checked={selected.showNavCta === true}
                       onChange={(e) => updateProperty("showNavCta", e.target.checked)}
                       className="accent-blue-600 rounded"
                     />
                     Enable
                   </label>
                 </div>
-                {selected.showNavCta !== false && (
+                {selected.showNavCta === true && (
                   <>
                     <Field label="Button Text" value={selected.navCtaText || ""} onChange={(v) => updateProperty("navCtaText", v)} />
                     <PageSelectField
@@ -197,7 +226,6 @@ function PropertiesPanel({
               <TextArea label="Heading (supports line breaks)" value={selected.heading || ""} onChange={(v) => updateProperty("heading", v)} rows={2} />
               <TextArea label="Description (supports line breaks)" value={selected.description || ""} onChange={(v) => updateProperty("description", v)} rows={3} />
 
-              {/* Primary Button */}
               <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-blue-700 uppercase">Primary CTA Button</span>
@@ -222,7 +250,6 @@ function PropertiesPanel({
                 )}
               </div>
 
-              {/* Secondary Button */}
               <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-gray-700 uppercase">Secondary CTA Button</span>
@@ -258,20 +285,15 @@ function PropertiesPanel({
           {/* PARAGRAPH */}
           {selected.type === "paragraph" && (
             <div className="space-y-4">
-              <TextArea
-                label="Paragraph Content (supports line breaks)"
-                value={selected.content || ""}
-                onChange={(v) => updateProperty("content", v)}
-                rows={6}
-              />
+              <TextArea label="Paragraph Content" value={selected.content || ""} onChange={(v) => updateProperty("content", v)} rows={6} />
             </div>
           )}
 
           {/* HEADING */}
           {selected.type === "heading" && (
             <div className="space-y-4">
-              <TextArea label="Title (supports line breaks)" value={selected.title || ""} onChange={(v) => updateProperty("title", v)} rows={2} />
-              <TextArea label="Subtitle (supports line breaks)" value={selected.subtitle || ""} onChange={(v) => updateProperty("subtitle", v)} rows={3} />
+              <TextArea label="Title" value={selected.title || ""} onChange={(v) => updateProperty("title", v)} rows={2} />
+              <TextArea label="Subtitle" value={selected.subtitle || ""} onChange={(v) => updateProperty("subtitle", v)} rows={3} />
             </div>
           )}
 
@@ -315,15 +337,36 @@ function PropertiesPanel({
                   <div key={box.id || idx} className="p-3 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-gray-400 uppercase">Box #{idx + 1}</span>
-                      {(selected.featuresList || []).length > 1 && (
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          onClick={() => updateProperty("featuresList", selected.featuresList.filter((_, i) => i !== idx))}
-                          className="text-gray-400 hover:text-red-500"
+                          disabled={idx === 0}
+                          onClick={() => moveArrayItem("featuresList", idx, "up")}
+                          className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                          title="Move Up"
                         >
-                          <FaTimes className="text-[10px]" />
+                          <FaArrowUp className="text-[10px]" />
                         </button>
-                      )}
+                        <button
+                          type="button"
+                          disabled={idx === selected.featuresList.length - 1}
+                          onClick={() => moveArrayItem("featuresList", idx, "down")}
+                          className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                          title="Move Down"
+                        >
+                          <FaArrowDown className="text-[10px]" />
+                        </button>
+                        {(selected.featuresList || []).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => updateProperty("featuresList", selected.featuresList.filter((_, i) => i !== idx))}
+                            className="text-gray-400 hover:text-red-500 ml-1"
+                            title="Delete Box"
+                          >
+                            <FaTimes className="text-[10px]" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <Field
                       label="Title"
@@ -393,15 +436,36 @@ function PropertiesPanel({
                             )
                           }
                         />
-                        {(selected.footerColumns || []).length > 1 && (
+                        <div className="flex items-center gap-1 ml-2">
                           <button
                             type="button"
-                            onClick={() => updateProperty("footerColumns", selected.footerColumns.filter((_, i) => i !== cIdx))}
-                            className="text-gray-400 hover:text-red-500 ml-2"
+                            disabled={cIdx === 0}
+                            onClick={() => moveArrayItem("footerColumns", cIdx, "up")}
+                            className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                            title="Move Column Up"
                           >
-                            <FaTimes className="text-xs" />
+                            <FaArrowUp className="text-[10px]" />
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            disabled={cIdx === selected.footerColumns.length - 1}
+                            onClick={() => moveArrayItem("footerColumns", cIdx, "down")}
+                            className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                            title="Move Column Down"
+                          >
+                            <FaArrowDown className="text-[10px]" />
+                          </button>
+                          {(selected.footerColumns || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => updateProperty("footerColumns", selected.footerColumns.filter((_, i) => i !== cIdx))}
+                              className="text-gray-400 hover:text-red-500 text-xs ml-1"
+                              title="Delete Column"
+                            >
+                              <FaTimes />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="pt-1">
@@ -426,21 +490,58 @@ function PropertiesPanel({
                             <div key={iIdx} className="p-2 border border-gray-200 rounded bg-white space-y-1 relative">
                               <div className="flex items-center justify-between">
                                 <span className="text-[9px] font-bold text-gray-400">Link #{iIdx + 1}</span>
-                                {(col.items || []).length > 1 && (
+                                <div className="flex items-center gap-1">
                                   <button
                                     type="button"
+                                    disabled={iIdx === 0}
                                     onClick={() => {
-                                      const filtered = col.items.filter((_, idx) => idx !== iIdx);
+                                      const items = [...col.items];
+                                      const [moved] = items.splice(iIdx, 1);
+                                      items.splice(iIdx - 1, 0, moved);
                                       updateProperty(
                                         "footerColumns",
-                                        selected.footerColumns.map((c, i) => (i === cIdx ? { ...c, items: filtered } : c))
+                                        selected.footerColumns.map((c, i) => (i === cIdx ? { ...c, items } : c))
                                       );
                                     }}
-                                    className="text-gray-400 hover:text-red-500 text-[9px]"
+                                    className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                                    title="Move Link Up"
                                   >
-                                    <FaTimes />
+                                    <FaArrowUp className="text-[9px]" />
                                   </button>
-                                )}
+                                  <button
+                                    type="button"
+                                    disabled={iIdx === col.items.length - 1}
+                                    onClick={() => {
+                                      const items = [...col.items];
+                                      const [moved] = items.splice(iIdx, 1);
+                                      items.splice(iIdx + 1, 0, moved);
+                                      updateProperty(
+                                        "footerColumns",
+                                        selected.footerColumns.map((c, i) => (i === cIdx ? { ...c, items } : c))
+                                      );
+                                    }}
+                                    className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                                    title="Move Link Down"
+                                  >
+                                    <FaArrowDown className="text-[9px]" />
+                                  </button>
+                                  {(col.items || []).length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const filtered = col.items.filter((_, idx) => idx !== iIdx);
+                                        updateProperty(
+                                          "footerColumns",
+                                          selected.footerColumns.map((c, i) => (i === cIdx ? { ...c, items: filtered } : c))
+                                        );
+                                      }}
+                                      className="text-gray-400 hover:text-red-500 text-[9px] ml-1"
+                                      title="Delete Link"
+                                    >
+                                      <FaTimes />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               <input
                                 type="text"
@@ -478,7 +579,7 @@ function PropertiesPanel({
             </div>
           )}
 
-          {/* DYNAMIC CONTACT FORM */}
+          {/* CONTACT FORM */}
           {selected.type === "form" && (
             <div className="space-y-4">
               <Field label="Form Title" value={selected.formTitle || ""} onChange={(v) => updateProperty("formTitle", v)} />
@@ -509,20 +610,41 @@ function PropertiesPanel({
                     <div key={f.id || idx} className="p-2.5 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-gray-400 uppercase">Field #{idx + 1}</span>
-                        {(selected.formFields || []).length > 1 && (
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={() => updateProperty("formFields", selected.formFields.filter((_, i) => i !== idx))}
-                            className="text-gray-400 hover:text-red-500"
+                            disabled={idx === 0}
+                            onClick={() => moveArrayItem("formFields", idx, "up")}
+                            className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                            title="Move Up"
                           >
-                            <FaTimes className="text-[10px]" />
+                            <FaArrowUp className="text-[10px]" />
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            disabled={idx === selected.formFields.length - 1}
+                            onClick={() => moveArrayItem("formFields", idx, "down")}
+                            className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                            title="Move Down"
+                          >
+                            <FaArrowDown className="text-[10px]" />
+                          </button>
+                          {(selected.formFields || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => updateProperty("formFields", selected.formFields.filter((_, i) => i !== idx))}
+                              className="text-gray-400 hover:text-red-500 ml-1"
+                              title="Delete Field"
+                            >
+                              <FaTimes className="text-[10px]" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <Field
                         label="Label"
                         value={f.label}
-                        onChange={(v) => updateProperty("formFields", selected.formFields.map((it, i) => (i === idx ? { ...it, label: v } : it)))}
+                        onChange={(v) => updateProperty("formFields", selected.formFields.map((it, i) => (i === idx ? { ...it, label: v } : i)))}
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -590,7 +712,6 @@ function PropertiesPanel({
                 </label>
               </div>
 
-              {/* Dynamic Auth Fields */}
               <div className="pt-2">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -616,15 +737,36 @@ function PropertiesPanel({
                     <div key={field.id || idx} className="p-2.5 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-gray-400 uppercase">Field #{idx + 1}</span>
-                        {(selected.authFields || []).length > 1 && (
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={() => updateProperty("authFields", selected.authFields.filter((_, i) => i !== idx))}
-                            className="text-gray-400 hover:text-red-500"
+                            disabled={idx === 0}
+                            onClick={() => moveArrayItem("authFields", idx, "up")}
+                            className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                            title="Move Up"
                           >
-                            <FaTimes className="text-[10px]" />
+                            <FaArrowUp className="text-[10px]" />
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            disabled={idx === selected.authFields.length - 1}
+                            onClick={() => moveArrayItem("authFields", idx, "down")}
+                            className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                            title="Move Down"
+                          >
+                            <FaArrowDown className="text-[10px]" />
+                          </button>
+                          {(selected.authFields || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => updateProperty("authFields", selected.authFields.filter((_, i) => i !== idx))}
+                              className="text-gray-400 hover:text-red-500 ml-1"
+                              title="Delete Field"
+                            >
+                              <FaTimes className="text-[10px]" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <Field
                         label="Label"
@@ -721,21 +863,232 @@ function PropertiesPanel({
                         }
                         className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs"
                       />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateProperty(
-                            "pricingFeaturesList",
-                            selected.pricingFeaturesList.filter((_, i) => i !== idx)
-                          )
-                        }
-                        className="text-gray-400 hover:text-red-500"
-                      >
-                        <FaTimes className="text-[10px]" />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => moveArrayItem("pricingFeaturesList", idx, "up")}
+                          className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                          title="Move Up"
+                        >
+                          <FaArrowUp className="text-[10px]" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === selected.pricingFeaturesList.length - 1}
+                          onClick={() => moveArrayItem("pricingFeaturesList", idx, "down")}
+                          className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                          title="Move Down"
+                        >
+                          <FaArrowDown className="text-[10px]" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateProperty(
+                              "pricingFeaturesList",
+                              selected.pricingFeaturesList.filter((_, i) => i !== idx)
+                            )
+                          }
+                          className="text-gray-400 hover:text-red-500 ml-1"
+                          title="Delete Item"
+                        >
+                          <FaTimes className="text-[10px]" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TESTIMONIALS */}
+          {selected.type === "testimonials" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Testimonials ({(selected.testimonialsList || []).length})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = [
+                      ...(selected.testimonialsList || []),
+                      {
+                        id: `t-${Date.now()}`,
+                        author: "New Author",
+                        role: "Product Manager",
+                        quote: "Amazing experience using this product!",
+                        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+                        rating: 5,
+                      },
+                    ];
+                    updateProperty("testimonialsList", next);
+                  }}
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  <FaPlus className="text-[9px]" /> Add Testimonial
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {(selected.testimonialsList || []).map((t, idx) => (
+                  <div key={t.id || idx} className="p-3 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">Testimonial #{idx + 1}</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => moveArrayItem("testimonialsList", idx, "up")}
+                          className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                          title="Move Up"
+                        >
+                          <FaArrowUp className="text-[10px]" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === selected.testimonialsList.length - 1}
+                          onClick={() => moveArrayItem("testimonialsList", idx, "down")}
+                          className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                          title="Move Down"
+                        >
+                          <FaArrowDown className="text-[10px]" />
+                        </button>
+                        {(selected.testimonialsList || []).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => updateProperty("testimonialsList", selected.testimonialsList.filter((_, i) => i !== idx))}
+                            className="text-gray-400 hover:text-red-500 ml-1"
+                            title="Delete"
+                          >
+                            <FaTimes className="text-[10px]" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <Field
+                      label="Author"
+                      value={t.author}
+                      onChange={(v) =>
+                        updateProperty(
+                          "testimonialsList",
+                          selected.testimonialsList.map((item, i) => (i === idx ? { ...item, author: v } : item))
+                        )
+                      }
+                    />
+                    <Field
+                      label="Role / Company"
+                      value={t.role}
+                      onChange={(v) =>
+                        updateProperty(
+                          "testimonialsList",
+                          selected.testimonialsList.map((item, i) => (i === idx ? { ...item, role: v } : item))
+                        )
+                      }
+                    />
+                    <TextArea
+                      label="Quote"
+                      value={t.quote}
+                      rows={2}
+                      onChange={(v) =>
+                        updateProperty(
+                          "testimonialsList",
+                          selected.testimonialsList.map((item, i) => (i === idx ? { ...item, quote: v } : item))
+                        )
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* FAQ */}
+          {selected.type === "faq" && (
+            <div className="space-y-4">
+              <Field label="Section Title" value={selected.faqTitle || ""} onChange={(v) => updateProperty("faqTitle", v)} />
+              <Field label="Section Subtitle" value={selected.faqSubtitle || ""} onChange={(v) => updateProperty("faqSubtitle", v)} />
+
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Questions ({(selected.faqList || []).length})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = [
+                      ...(selected.faqList || []),
+                      { id: `faq-${Date.now()}`, question: "New Question?", answer: "Answer goes here." },
+                    ];
+                    updateProperty("faqList", next);
+                  }}
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  <FaPlus className="text-[9px]" /> Add FAQ
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {(selected.faqList || []).map((faq, idx) => (
+                  <div key={faq.id || idx} className="p-3 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">FAQ #{idx + 1}</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => moveArrayItem("faqList", idx, "up")}
+                          className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                          title="Move Up"
+                        >
+                          <FaArrowUp className="text-[10px]" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === selected.faqList.length - 1}
+                          onClick={() => moveArrayItem("faqList", idx, "down")}
+                          className="text-gray-400 hover:text-blue-600 disabled:opacity-30"
+                          title="Move Down"
+                        >
+                          <FaArrowDown className="text-[10px]" />
+                        </button>
+                        {(selected.faqList || []).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => updateProperty("faqList", selected.faqList.filter((_, i) => i !== idx))}
+                            className="text-gray-400 hover:text-red-500 ml-1"
+                            title="Delete"
+                          >
+                            <FaTimes className="text-[10px]" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <Field
+                      label="Question"
+                      value={faq.question}
+                      onChange={(v) =>
+                        updateProperty(
+                          "faqList",
+                          selected.faqList.map((item, i) => (i === idx ? { ...item, question: v } : item))
+                        )
+                      }
+                    />
+                    <TextArea
+                      label="Answer"
+                      value={faq.answer}
+                      rows={2}
+                      onChange={(v) =>
+                        updateProperty(
+                          "faqList",
+                          selected.faqList.map((item, i) => (i === idx ? { ...item, answer: v } : item))
+                        )
+                      }
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           )}

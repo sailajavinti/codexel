@@ -220,9 +220,9 @@ export function renderComponentOnCanvas({
       return (
         <section style={style} className={`h-full w-full p-6 md:p-8 ${!component.backgroundColor ? "bg-white" : ""}`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {features.map((feat) => (
+            {features.map((feat, idx) => (
               <div
-                key={feat.id}
+                key={feat.id || idx}
                 className={`bg-black/5 p-5 rounded-xl border border-black/10 ${boxHover}`}
               >
                 <h4 className="font-bold whitespace-pre-line text-sm md:text-base">{feat.title}</h4>
@@ -257,9 +257,9 @@ export function renderComponentOnCanvas({
             </div>
 
             <div className="mt-6 space-y-2.5 text-left border-t border-b border-gray-100 py-6 text-xs">
-              {features.map((feat) => (
+              {features.map((feat, idx) => (
                 <div
-                  key={feat.id}
+                  key={feat.id || idx}
                   className={`flex items-center gap-2.5 ${feat.included ? "text-gray-700" : "text-gray-400 line-through"}`}
                 >
                   {feat.included ? (
@@ -296,9 +296,9 @@ export function renderComponentOnCanvas({
           className={`h-full w-full p-6 md:p-8 ${!component.backgroundColor ? "bg-slate-50" : ""}`}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {list.map((t) => (
+            {list.map((t, idx) => (
               <div
-                key={t.id}
+                key={t.id || idx}
                 className={`p-6 rounded-2xl border border-gray-200 bg-white shadow-xs ${hoverClass}`}
               >
                 <div className="flex gap-1 text-amber-400 text-xs mb-3">
@@ -342,9 +342,9 @@ export function renderComponentOnCanvas({
                 )}
               </div>
             )}
-            {list.map((item) => (
+            {list.map((item, idx) => (
               <FaqAccordionItem
-                key={item.id}
+                key={item.id || idx}
                 item={item}
                 customFontSize={customFontSize}
               />
@@ -389,8 +389,8 @@ export function renderComponentOnCanvas({
             )}
 
             <form onSubmit={(e) => e.preventDefault()} className="space-y-3.5">
-              {fields.map((f) => (
-                <div key={f.id}>
+              {fields.map((f, idx) => (
+                <div key={f.id || idx}>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     {f.label} {f.required && <span className="text-red-500">*</span>}
                   </label>
@@ -440,8 +440,8 @@ export function renderComponentOnCanvas({
           {component.formTitle && (
             <h3 className="text-lg md:text-xl font-bold whitespace-pre-line">{component.formTitle}</h3>
           )}
-          {formFields.map((field) => (
-            <div key={field.id}>
+          {formFields.map((field, idx) => (
+            <div key={field.id || idx}>
               <label className="mb-1 block text-xs font-medium text-gray-700">
                 {field.label} {field.required && <span className="text-red-500">*</span>}
               </label>
@@ -486,8 +486,8 @@ export function renderComponentOnCanvas({
                 {component.footerAbout}
               </p>
             </div>
-            {columns.map((col) => (
-              <div key={col.id}>
+            {columns.map((col, cIdx) => (
+              <div key={col.id || cIdx}>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">{col.title}</h4>
                 <ul className="mt-3 space-y-2 text-xs">
                   {(col.items || []).map((item, i) => (

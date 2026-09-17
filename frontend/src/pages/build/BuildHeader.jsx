@@ -105,6 +105,8 @@ function BuildHeader({
     useState(false);
 
   const headerRef = useRef(null);
+  const desktopInputRef = useRef(null);
+  const mobileInputRef = useRef(null);
 
   // ------------------------------------------------------------
   // Sync project name
@@ -255,7 +257,28 @@ function BuildHeader({
   };
 
   // ------------------------------------------------------------
-  // Save
+  // Save with Unnamed Check
+  // ------------------------------------------------------------
+
+  const handleSaveClick = () => {
+    const trimmed = projectName.trim();
+    if (!trimmed || trimmed === "Untitled Project") {
+      // Focus the header title input field naturally
+      if (desktopInputRef.current) {
+        desktopInputRef.current.focus();
+        desktopInputRef.current.select();
+      } else if (mobileInputRef.current) {
+        mobileInputRef.current.focus();
+        mobileInputRef.current.select();
+      }
+      return;
+    }
+
+    handleSave();
+  };
+
+  // ------------------------------------------------------------
+  // Save Action
   // ------------------------------------------------------------
 
   const handleSave = async (
@@ -515,6 +538,7 @@ function BuildHeader({
 
           <div className="flex min-w-0 items-center gap-2">
             <input
+              ref={desktopInputRef}
               type="text"
               value={
                 projectName
@@ -540,33 +564,33 @@ function BuildHeader({
             {/* Status */}
             {status ===
               "saving" && (
-                <span className="hidden items-center gap-1 text-xs text-gray-400 lg:flex">
-                  <FaSpinner className="animate-spin text-[10px]" />
-                  Saving...
-                </span>
-              )}
+              <span className="hidden items-center gap-1 text-xs text-gray-400 lg:flex">
+                <FaSpinner className="animate-spin text-[10px]" />
+                Saving...
+              </span>
+            )}
 
             {status ===
               "saved" && (
-                <span className="hidden items-center gap-1 text-xs font-medium text-emerald-600 lg:flex">
-                  <FaCheck className="text-[10px]" />
-                  Saved
-                </span>
-              )}
+              <span className="hidden items-center gap-1 text-xs font-medium text-emerald-600 lg:flex">
+                <FaCheck className="text-[10px]" />
+                Saved
+              </span>
+            )}
 
             {status ===
               "error" && (
-                <span
-                  className="hidden max-w-[130px] truncate text-xs font-medium text-red-500 lg:inline"
-                  title={
-                    statusMessage
-                  }
-                >
-                  {
-                    statusMessage
-                  }
-                </span>
-              )}
+              <span
+                className="hidden max-w-[130px] truncate text-xs font-medium text-red-500 lg:inline"
+                title={
+                  statusMessage
+                }
+              >
+                {
+                  statusMessage
+                }
+              </span>
+            )}
           </div>
         </div>
 
@@ -610,9 +634,7 @@ function BuildHeader({
           {/* SAVE */}
           <button
             type="button"
-            onClick={() =>
-              handleSave()
-            }
+            onClick={handleSaveClick}
             className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 lg:px-4"
             title="Save Project"
           >
@@ -667,6 +689,7 @@ function BuildHeader({
           {/* PROJECT NAME */}
 
           <input
+            ref={mobileInputRef}
             type="text"
             value={
               projectName
@@ -717,9 +740,7 @@ function BuildHeader({
 
           <button
             type="button"
-            onClick={() =>
-              handleSave()
-            }
+            onClick={handleSaveClick}
             title="Save"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50"
           >

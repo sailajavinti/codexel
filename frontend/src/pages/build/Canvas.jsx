@@ -282,6 +282,7 @@ function Canvas({
                       hoverClass: HOVER_EFFECT_MAP[comp.hoverEffect || "none"] || "",
                       isPreviewMode,
                       onNavigatePage,
+                      onUpdateComponent,
                     })}
                   </div>
 
