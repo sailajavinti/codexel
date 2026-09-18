@@ -69,7 +69,7 @@ function generateComponentJSX(comp, pages = []) {
 
   const resolveReactHref = (pageId) => {
     if (!pageId) return "#";
-    const found = pages.find((p) => p.id === pageId);
+    const found = pages.find((p) => p.id === pageId || p._id === pageId);
     return found ? `/${formatFileName(found.name)}` : "#";
   };
 
@@ -201,7 +201,7 @@ ${features.map((f) => `            <div className="flex items-center gap-2.5 ${f
             ${comp.authSubtitle ? `<p className="mt-1 text-xs text-gray-500 whitespace-pre-line">${comp.authSubtitle}</p>` : ""}
           </div>
           <form className="space-y-3.5">
-${fields.map((f) => `            <div>
+${fields.map((f) => `           <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">${f.label} ${f.required ? "*" : ""}</label>
               <input type="${f.type}" placeholder="${f.placeholder}" ${f.required ? "required" : ""} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white" />
             </div>`).join("\n")}
@@ -284,7 +284,7 @@ ${(col.items || []).map((it) => `              <li><a href="${resolveReactHref(i
 }
 
 // ---------------------------------------------------------------------------
-// VANILLA HTML + TAILWIND CDN GENERATOR
+// VANILLA HTML + TAILWIND CDN GENERATOR (Fixed Styling & Inline Attributes)
 // ---------------------------------------------------------------------------
 function generateComponentHTML(comp, pages = []) {
   const widthClassMap = {
@@ -300,9 +300,33 @@ function generateComponentHTML(comp, pages = []) {
   const widthClass = widthClassMap[comp.width] || "w-full";
   const hoverClass = HOVER_CLASS_MAP[comp.hoverEffect || "none"] || "";
 
+  // Helper to construct exact inline style string for HTML elements
+  const buildHtmlStyles = (extraStyles = {}) => {
+    const combined = {
+      ...(comp.backgroundColor && { "background-color": comp.backgroundColor }),
+      ...(comp.textColor && { color: comp.textColor }),
+      ...(comp.fontSize && { "font-size": `${comp.fontSize}px` }),
+      ...(comp.fontWeight && { "font-weight": comp.fontWeight }),
+      ...(comp.textAlign && { "text-align": comp.textAlign }),
+      ...(comp.padding !== undefined && comp.padding !== "" && { padding: `${comp.padding}px` }),
+      ...(comp.margin !== undefined && comp.margin !== "" && { margin: `${comp.margin}px` }),
+      ...(comp.borderRadius !== undefined && comp.borderRadius !== "" && { "border-radius": `${comp.borderRadius}px` }),
+      ...(comp.borderWidth && { "border-width": `${comp.borderWidth}px` }),
+      ...(comp.borderStyle && comp.borderWidth && { "border-style": comp.borderStyle }),
+      ...(comp.borderColor && comp.borderWidth && { "border-color": comp.borderColor }),
+      ...(comp.boxShadow && comp.boxShadow !== "none" && { "box-shadow": SHADOW_MAP[comp.boxShadow] }),
+      ...(comp.minHeight && { "min-height": `${comp.minHeight}px` }),
+      ...(comp.opacity !== undefined && comp.opacity !== "" && comp.opacity !== 100 && { opacity: comp.opacity / 100 }),
+      ...extraStyles,
+    };
+
+    const entries = Object.entries(combined).map(([k, v]) => `${k}: ${v};`);
+    return entries.length > 0 ? `style="${entries.join(" ")}"` : "";
+  };
+
   const resolveHtmlHref = (pageId) => {
     if (!pageId) return "#";
-    const found = pages.find((p) => p.id === pageId);
+    const found = pages.find((p) => p.id === pageId || p._id === pageId);
     return found ? `${formatFileName(found.name)}.html` : "#";
   };
 
@@ -310,7 +334,7 @@ function generateComponentHTML(comp, pages = []) {
     case "navbar": {
       const navLinks = comp.navLinks || [];
       return `    <!-- Navbar -->
-    <nav class="${widthClass} relative flex items-center justify-between px-8 py-4 ${!comp.backgroundColor ? "bg-white border-b border-gray-100" : ""} ${hoverClass}">
+    <nav class="${widthClass} relative flex items-center justify-between px-8 py-4 ${!comp.backgroundColor ? "bg-white border-b border-gray-100" : ""} ${hoverClass}" ${buildHtmlStyles()}>
       <span class="font-bold tracking-tight whitespace-pre-line" style="color: ${comp.brandColor || "#0f172a"}">${comp.brand || "Brand"}</span>
       <div class="flex flex-wrap gap-6 items-center opacity-90" style="color: ${comp.navLinkColor || "#475569"}">
 ${navLinks.map((l) => `        <a href="${resolveHtmlHref(l.targetPageId)}" class="hover:opacity-80">${l.label}</a>`).join("\n")}
@@ -322,7 +346,7 @@ ${navLinks.map((l) => `        <a href="${resolveHtmlHref(l.targetPageId)}" clas
     case "hero": {
       const bgClass = comp.backgroundColor ? "" : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white";
       return `    <!-- Hero Section -->
-    <section class="${widthClass} relative p-12 ${bgClass} ${hoverClass}">
+    <section class="${widthClass} relative p-12 ${bgClass} ${hoverClass}" ${buildHtmlStyles()}>
       <div class="flex flex-col w-full max-w-3xl mx-auto text-center items-center">
         <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight whitespace-pre-line leading-tight">${comp.heading || "Hero Heading"}</h1>
         <p class="mt-4 max-w-2xl text-lg opacity-90 leading-relaxed whitespace-pre-line">${comp.description || "Hero description text."}</p>
@@ -336,27 +360,27 @@ ${navLinks.map((l) => `        <a href="${resolveHtmlHref(l.targetPageId)}" clas
 
     case "paragraph":
       return `    <!-- Paragraph -->
-    <div class="${widthClass} relative p-6 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}">
+    <div class="${widthClass} relative p-6 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildHtmlStyles()}>
       <p class="whitespace-pre-line leading-relaxed">${comp.content || ""}</p>
     </div>`;
 
     case "heading":
       return `    <!-- Heading -->
-    <div class="${widthClass} relative p-6 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}">
+    <div class="${widthClass} relative p-6 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildHtmlStyles()}>
       <h2 class="text-2xl font-bold whitespace-pre-line">${comp.title || "Custom Heading"}</h2>
       ${comp.subtitle ? `<p class="mt-2 opacity-80 whitespace-pre-line">${comp.subtitle}</p>` : ""}
     </div>`;
 
     case "section":
       return `    <!-- Section -->
-    <section class="${widthClass} relative p-10 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}">
+    <section class="${widthClass} relative p-10 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildHtmlStyles()}>
       ${comp.heading ? `<h2 class="text-2xl font-bold mb-3 whitespace-pre-line">${comp.heading}</h2>` : ""}
       <p class="opacity-90 leading-relaxed whitespace-pre-line">${comp.content || ""}</p>
     </section>`;
 
     case "image":
       return `    <!-- Image Block -->
-    <div class="${widthClass} relative overflow-hidden ${hoverClass}">
+    <div class="${widthClass} relative overflow-hidden ${hoverClass}" ${buildHtmlStyles()}>
       <img src="${comp.src || "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1000"}" alt="${comp.alt || "Visual"}" style="width: ${comp.imageWidth || 100}%; height: ${comp.imageHeight ? `${comp.imageHeight}px` : "auto"}; object-fit: ${comp.objectFit || "cover"}" class="block mx-auto" />
     </div>`;
 
@@ -364,9 +388,9 @@ ${navLinks.map((l) => `        <a href="${resolveHtmlHref(l.targetPageId)}" clas
       const features = comp.featuresList || [];
       const boxHover = HOVER_CLASS_MAP[comp.boxHoverEffect || "none"] || "";
       return `    <!-- Features Grid -->
-    <section class="${widthClass} relative p-10 ${!comp.backgroundColor ? "bg-white" : ""}">
+    <section class="${widthClass} relative p-10 ${!comp.backgroundColor ? "bg-white" : ""}" ${buildHtmlStyles()}>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-${features.map((f) => `        <div class="p-6 bg-black/5 border border-black/10 rounded-xl ${boxHover}">
+${features.map((f) => `       <div class="p-6 bg-black/5 border border-black/10 rounded-xl ${boxHover}">
           <h4 class="font-bold whitespace-pre-line">${f.title}</h4>
           <p class="mt-2 text-xs opacity-80 leading-relaxed whitespace-pre-line">${f.desc}</p>
         </div>`).join("\n")}
@@ -377,7 +401,7 @@ ${features.map((f) => `        <div class="p-6 bg-black/5 border border-black/10
     case "pricing": {
       const features = comp.pricingFeaturesList || [];
       return `    <!-- Pricing Card -->
-    <section class="${widthClass} relative p-8 ${!comp.backgroundColor ? "bg-slate-50" : ""}">
+    <section class="${widthClass} relative p-8 ${!comp.backgroundColor ? "bg-slate-50" : ""}" ${buildHtmlStyles()}>
       <div class="border border-gray-200 p-8 text-center shadow-md rounded-2xl max-w-sm mx-auto bg-white ${hoverClass}">
         ${comp.pricingBadge ? `<span class="font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-xs">${comp.pricingBadge}</span>` : ""}
         <h3 class="mt-4 text-xl font-bold text-gray-900">${comp.pricingPlan}</h3>
@@ -401,7 +425,7 @@ ${features.map((f) => `          <div class="flex items-center gap-2.5 ${f.inclu
     case "authForm": {
       const fields = comp.authFields || [];
       return `    <!-- Authentication Form -->
-    <div class="${widthClass} relative flex w-full justify-center items-center py-8">
+    <div class="${widthClass} relative flex w-full justify-center items-center py-8" ${buildHtmlStyles()}>
       <div class="p-8 w-full max-w-md ${!comp.backgroundColor ? "bg-white border border-gray-100 shadow-xl rounded-2xl" : ""} ${hoverClass}">
         <div class="text-center mb-6">
           <h3 class="text-2xl font-bold tracking-tight text-gray-900">${comp.authTitle}</h3>
@@ -423,7 +447,7 @@ ${fields.map((f) => `          <div>
     case "form": {
       const fields = comp.formFields || [];
       return `    <!-- Dynamic Form -->
-    <form onsubmit="event.preventDefault();" class="${widthClass} relative p-8 space-y-4 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}">
+    <form onsubmit="event.preventDefault();" class="${widthClass} relative p-8 space-y-4 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildHtmlStyles()}>
       ${comp.formTitle ? `<h3 class="text-xl font-bold whitespace-pre-line">${comp.formTitle}</h3>` : ""}
 ${fields.map((f) => f.type === "textarea"
     ? `      <div>
@@ -443,7 +467,7 @@ ${fields.map((f) => f.type === "textarea"
     case "footer": {
       const columns = comp.footerColumns || [];
       return `    <!-- Footer -->
-    <footer class="${widthClass} relative px-8 py-10 ${!comp.backgroundColor ? "bg-slate-950 text-slate-400" : ""} ${hoverClass}">
+    <footer class="${widthClass} relative px-8 py-10 ${!comp.backgroundColor ? "bg-slate-950 text-slate-400" : ""} ${hoverClass}" ${buildHtmlStyles()}>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
         <div class="md:col-span-1">
           <h3 class="text-base font-bold text-white tracking-tight">${comp.brand || "Brand"}</h3>
@@ -464,7 +488,7 @@ ${(col.items || []).map((it) => `            <li><a href="${resolveHtmlHref(it.t
 
     case "button":
       return `    <!-- Button -->
-    <div class="${widthClass} relative flex justify-${comp.btnAlign || "left"} p-2">
+    <div class="${widthClass} relative flex justify-${comp.btnAlign || "left"} p-2" ${buildHtmlStyles()}>
       <a href="${resolveHtmlHref(comp.targetPageId) || comp.link || "#"}" style="background-color: ${comp.btnBgColor || "#2563eb"}; color: ${comp.btnTextColor || "#ffffff"}; padding: ${comp.btnPaddingY ?? 10}px ${comp.btnPaddingX ?? 20}px; border-radius: ${comp.borderRadius ?? 6}px;" class="font-semibold shadow-xs hover:opacity-90 transition ${hoverClass}">
         ${comp.text || "Click Me"}
       </a>
@@ -472,12 +496,12 @@ ${(col.items || []).map((it) => `            <li><a href="${resolveHtmlHref(it.t
 
     case "divider":
       return `    <!-- Divider -->
-    <div class="${widthClass} relative py-4 px-6 flex items-center">
+    <div class="${widthClass} relative py-4 px-6 flex items-center" ${buildHtmlStyles()}>
       <hr class="w-full" style="border-color: ${comp.dividerColor || "#e2e8f0"}; border-width: ${comp.dividerThickness || 1}px;" />
     </div>`;
 
     default:
-      return `    <div class="${widthClass} p-6 bg-white border border-gray-100">${comp.type}</div>`;
+      return `    <div class="${widthClass} p-6 bg-white border border-gray-100" ${buildHtmlStyles()}>${comp.type}</div>`;
   }
 }
 
@@ -526,7 +550,7 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
   if (!isOpen) return null;
 
   const validPages = pages.length > 0 ? pages : [activePage];
-  const currentPageToView = validPages.find((p) => p.id === selectedPageId) || validPages[0];
+  const currentPageToView = validPages.find((p) => p.id === selectedPageId || p._id === selectedPageId) || validPages[0];
   const currentCode = generatePageCode(currentPageToView.name, currentPageToView.canvasData || [], validPages, selectedStack);
 
   const handleDownload = async () => {
@@ -548,7 +572,6 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
     try {
       setIsZipping(true);
       const zip = new JSZip();
-      // For HTML export, output pages at the root level of the zip. For React, bundle under src/pages/
       const folder = selectedStack === "html" ? zip : zip.folder("src/pages");
 
       validPages.forEach((p) => {

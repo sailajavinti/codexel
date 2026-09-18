@@ -49,11 +49,6 @@ function Build() {
 
   const activePage = pages.find((p) => p.id === activePageId) || pages[0] || DEFAULT_PAGE;
   const components = activePage.canvasData || [];
-  const activeSavedPage = savedPages.find((p) => p.id === activePageId) || savedPages[0] || {
-    id: "empty",
-    name: activePage.name,
-    canvasData: [],
-  };
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -327,10 +322,6 @@ function Build() {
         }}
         onMarkDirty={() => setIsDirty(true)}
         onExportClick={() => {
-          if (savedPages.length === 0) {
-            alert("Please save your project first before exporting code.");
-            return;
-          }
           setShowCodePreview(true);
         }}
         viewportMode={viewportMode}
@@ -524,12 +515,12 @@ function Build() {
         </div>
       )}
 
-      {/* Code Export Modal */}
+      {/* Code Export Modal - Updated to use live pages */}
       <CodePreview
         isOpen={showCodePreview}
         onClose={() => setShowCodePreview(false)}
-        activePage={activeSavedPage}
-        pages={savedPages}
+        activePage={activePage}
+        pages={pages}
       />
 
       {/* Page Deletion Confirmation Modal */}
