@@ -3,10 +3,10 @@ import AboutContent from "../components/AboutContent";
 
 function About() {
   return (
-    <>
+    <main className="min-h-screen bg-white">
       <AboutHero />
       <AboutContent />
-    </>
+    </main>
   );
 }
 

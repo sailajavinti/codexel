@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import {
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+  FaArrowLeft,
+  FaSpinner,
+  FaExclamationCircle,
+  FaCheckCircle,
+} from "react-icons/fa";
 import { resetPassword } from "../services/authService";
 
 function ResetPassword() {
@@ -61,7 +70,6 @@ function ResetPassword() {
       setTimeout(() => {
         navigate("/auth");
       }, 2000);
-
     } catch (error) {
       setError(
         error.response?.data?.message ||
@@ -73,141 +81,183 @@ function ResetPassword() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4">
+    <div className="relative min-h-screen overflow-hidden bg-slate-50 flex flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      {/* Subtle Technical Dot Grid Background */}
+      <div
+        className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-70"
+        aria-hidden="true"
+      />
 
-      {/* Background decoration */}
-      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-blue-100/60 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-indigo-100/60 blur-3xl" />
+      {/* Soft Ambient Light */}
+      <div
+        className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-blue-50/70 blur-3xl pointer-events-none rounded-full"
+        aria-hidden="true"
+      />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative w-full max-w-md"
-      >
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="relative w-full max-w-md">
+        {/* Brand Header */}
+        <div className="text-center mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 group"
+            aria-label="CodeXel Home"
+          >
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-200/80 bg-blue-600 text-white shadow-xs transition-transform group-hover:scale-105 shrink-0">
+              <img
+                src="/codexel.jpeg"
+                alt="CodeXel Logo"
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </div>
+            <span className="text-2xl font-black tracking-tight text-slate-900">
+              Code<span className="text-blue-600">Xel</span>
+            </span>
+          </Link>
+        </div>
 
-          {/* Icon */}
+        {/* Elevated Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50"
+        >
           <div className="text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
-              🔐
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100/80 shadow-2xs mb-4">
+              <FaLock className="text-xl" />
             </div>
 
-            <h1 className="mt-5 text-2xl font-bold text-slate-900">
-              Reset Password
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+              Set New Password
             </h1>
 
-            <p className="mt-2 text-sm leading-6 text-gray-500">
-              Create a new password for your CodeXel account.
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-xs mx-auto">
+              Create a strong new password for your CodeXel developer account.
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-8">
-
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {/* New Password */}
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 New Password
               </label>
-
-              <div className="relative mt-2">
+              <div className="relative">
+                <FaLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  className={`w-full rounded-lg border px-4 py-3 pr-12 text-sm outline-none transition ${error
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-blue-500"
+                  placeholder="••••••••"
+                  className={`w-full rounded-lg border bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 ${error
+                      ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                      : "border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
                     }`}
                 />
-
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 focus:outline-none transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? "Hide" : "Show"}
+                  {showPassword ? (
+                    <FaEyeSlash className="text-xs" />
+                  ) : (
+                    <FaEye className="text-xs" />
+                  )}
                 </button>
               </div>
             </div>
 
             {/* Confirm Password */}
-            <div className="mt-5">
-              <label className="text-sm font-medium text-slate-700">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Confirm Password
               </label>
-
-              <div className="relative mt-2">
+              <div className="relative">
+                <FaLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400" />
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  className={`w-full rounded-lg border px-4 py-3 pr-12 text-sm outline-none transition ${error
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-blue-500"
+                  placeholder="••••••••"
+                  className={`w-full rounded-lg border bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 ${error
+                      ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                      : "border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
                     }`}
                 />
-
                 <button
                   type="button"
                   onClick={() =>
                     setShowConfirmPassword(!showConfirmPassword)
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 focus:outline-none transition-colors"
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
                 >
-                  {showConfirmPassword ? "Hide" : "Show"}
+                  {showConfirmPassword ? (
+                    <FaEyeSlash className="text-xs" />
+                  ) : (
+                    <FaEye className="text-xs" />
+                  )}
                 </button>
               </div>
             </div>
 
-            {/* Password hint */}
-            <p className="mt-2 text-xs text-gray-400">
-              Password must contain at least 6 characters.
+            <p className="text-[11px] text-slate-400">
+              Must contain at least 6 characters.
             </p>
 
-            {/* Error */}
+            {/* Error Alert */}
             {error && (
-              <div className="mt-4 rounded-lg bg-red-50 px-4 py-3">
-                <p className="text-sm text-red-600">
-                  {error}
-                </p>
+              <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50/90 p-3 text-xs text-red-700">
+                <FaExclamationCircle className="text-red-500 shrink-0 text-sm mt-0.5" />
+                <span className="leading-relaxed">{error}</span>
               </div>
             )}
 
-            {/* Success */}
+            {/* Success Alert */}
             {message && (
-              <div className="mt-4 rounded-lg bg-green-50 px-4 py-3">
-                <p className="text-sm text-green-700">
-                  {message}
-                </p>
+              <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/90 p-3 text-xs text-emerald-800">
+                <FaCheckCircle className="text-emerald-600 shrink-0 text-sm mt-0.5" />
+                <span className="leading-relaxed">{message} (Redirecting...)</span>
               </div>
             )}
 
-            {/* Reset button */}
             <button
               type="submit"
               disabled={loading}
-              className="mt-5 w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 px-4 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              {loading ? "Resetting..." : "Reset Password"}
+              {loading ? (
+                <>
+                  <FaSpinner className="animate-spin text-sm" />
+                  <span>Updating password...</span>
+                </>
+              ) : (
+                <span>Reset Password</span>
+              )}
             </button>
           </form>
 
-          {/* Back to login */}
-          <div className="mt-6 text-center">
+          {/* Back to Login */}
+          <div className="mt-6 text-center pt-4 border-t border-slate-100">
             <Link
               to="/auth"
-              className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
             >
-              ← Back to Login
+              <FaArrowLeft className="text-[10px]" />
+              <span>Back to Sign In</span>
             </Link>
           </div>
-
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   FaEyeSlash,
   FaCheckCircle,
   FaExclamationCircle,
+  FaSpinner,
 } from "react-icons/fa";
 
 import { changePassword } from "../../services/authService";
@@ -54,7 +55,7 @@ function ProfilePassword() {
       } else {
         setError(
           error.response?.data?.message ||
-            "Unable to verify your password."
+          "Unable to verify your password."
         );
       }
     } finally {
@@ -106,7 +107,7 @@ function ProfilePassword() {
     } catch (error) {
       setError(
         error.response?.data?.message ||
-          "Unable to change your password."
+        "Unable to change your password."
       );
     } finally {
       setLoading(false);
@@ -114,134 +115,122 @@ function ProfilePassword() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div className="w-full">
       {/* Heading */}
-      <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-          SECURITY
-        </p>
+      <div className="mb-6 sm:mb-8">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-[10px] font-bold tracking-wider text-blue-700 uppercase mb-2">
+          Security
+        </div>
 
-        <h1 className="mt-2 text-3xl font-bold text-gray-900">
-          Reset Password
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          Password & Security
         </h1>
 
-        <p className="mt-2 text-sm text-gray-500">
-          Change your account password securely.
+        <p className="mt-1 text-xs sm:text-sm text-slate-500">
+          Update and manage your account password securely.
         </p>
       </div>
 
       {/* Card */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-        {/* Step indicator */}
-        <div className="mb-8 flex items-center gap-3">
-          <div
-            className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${
-              step >= 1
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-500"
-            }`}
-          >
-            1
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs max-w-2xl">
+        {/* Step Indicator */}
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span
+              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${step >= 1
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "bg-slate-100 text-slate-400"
+                }`}
+            >
+              1
+            </span>
+            <span className={`text-xs font-semibold ${step === 1 ? "text-slate-900" : "text-slate-500"}`}>
+              Verify Current
+            </span>
           </div>
 
-          <div className="h-px flex-1 bg-gray-200" />
+          <div className="h-0.5 flex-1 bg-slate-200 mx-4" />
 
-          <div
-            className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${
-              step >= 2
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-500"
-            }`}
-          >
-            2
+          <div className="flex items-center gap-2">
+            <span
+              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${step >= 2
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "bg-slate-100 text-slate-400"
+                }`}
+            >
+              2
+            </span>
+            <span className={`text-xs font-semibold ${step === 2 ? "text-slate-900" : "text-slate-500"}`}>
+              Set New Password
+            </span>
           </div>
         </div>
 
-        {/* Error */}
+        {/* Error Alert */}
         {error && (
-          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4">
-            <div className="flex items-start gap-3">
-              <FaExclamationCircle className="mt-0.5 shrink-0 text-red-500" />
-
-              <div className="flex-1">
-                <p className="text-sm font-medium text-red-700">
-                  {error}
-                </p>
-
-                {step === 1 &&
-                  error === "Current password is incorrect." && (
-                    <button
-                      type="button"
-                      onClick={() => navigate("/forgot-password")}
-                      className="mt-2 text-sm font-semibold text-red-700 underline hover:text-red-800"
-                    >
-                      Forgot password?
-                    </button>
-                  )}
-              </div>
+          <div className="mb-5 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50/90 p-3 text-xs text-red-700">
+            <FaExclamationCircle className="mt-0.5 shrink-0 text-red-500 text-sm" />
+            <div className="flex-1">
+              <p className="font-medium leading-relaxed">{error}</p>
+              {step === 1 && error === "Current password is incorrect." && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="mt-1.5 font-bold text-red-700 underline hover:text-red-900 inline-block"
+                >
+                  Forgot password?
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {/* Success */}
+        {/* Success Alert */}
         {success && (
-          <div className="mb-5 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
-            <FaCheckCircle className="text-green-600" />
-
-            <p className="text-sm font-medium text-green-700">
-              {success}
-            </p>
+          <div className="mb-5 flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/90 p-3 text-xs text-emerald-800">
+            <FaCheckCircle className="shrink-0 text-emerald-600 text-sm" />
+            <p className="font-medium">{success}</p>
           </div>
         )}
 
-        {/* STEP 1 */}
+        {/* STEP 1: VERIFY CURRENT PASSWORD */}
         {step === 1 && (
-          <form onSubmit={handleVerifyPassword}>
-            <div className="mb-6">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                  <FaLock />
-                </div>
-
-                <div>
-                  <h2 className="font-semibold text-gray-900">
-                    Verify your current password
-                  </h2>
-
-                  <p className="text-sm text-gray-500">
-                    Enter your current password to continue.
-                  </p>
-                </div>
+          <form onSubmit={handleVerifyPassword} className="space-y-5">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Current Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Forgot password?
+                </button>
               </div>
 
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Current Password
-              </label>
-
               <div className="relative">
+                <FaLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400" />
                 <input
                   type={showCurrentPassword ? "text" : "password"}
                   value={currentPassword}
-                  onChange={(e) =>
-                    setCurrentPassword(e.target.value)
-                  }
-                  placeholder="Enter current password"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 pr-11 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter your current password"
+                  autoFocus
+                  className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
                 />
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowCurrentPassword(
-                      !showCurrentPassword
-                    )
-                  }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 focus:outline-none transition-colors"
+                  aria-label={showCurrentPassword ? "Hide password" : "Show password"}
                 >
                   {showCurrentPassword ? (
-                    <FaEyeSlash />
+                    <FaEyeSlash className="text-xs" />
                   ) : (
-                    <FaEye />
+                    <FaEye className="text-xs" />
                   )}
                 </button>
               </div>
@@ -250,105 +239,88 @@ function ProfilePassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 px-4 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
-              {loading ? "Verifying..." : "Verify Password"}
+              {loading ? (
+                <>
+                  <FaSpinner className="animate-spin text-sm" />
+                  <span>Verifying current password...</span>
+                </>
+              ) : (
+                <span>Continue to Step 2 &rarr;</span>
+              )}
             </button>
           </form>
         )}
 
-        {/* STEP 2 */}
+        {/* STEP 2: ENTER NEW PASSWORD */}
         {step === 2 && (
-          <form onSubmit={handleChangePassword}>
-            <div className="mb-6">
-              <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600">
-                  <FaCheckCircle />
-                </div>
-
-                <div>
-                  <h2 className="font-semibold text-gray-900">
-                    Password verified
-                  </h2>
-
-                  <p className="text-sm text-gray-500">
-                    Create your new password below.
-                  </p>
-                </div>
-              </div>
-
-              {/* New Password */}
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 New Password
               </label>
 
               <div className="relative">
+                <FaLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400" />
                 <input
                   type={showNewPassword ? "text" : "password"}
                   value={newPassword}
-                  onChange={(e) =>
-                    setNewPassword(e.target.value)
-                  }
-                  placeholder="Enter new password"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 pr-11 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoFocus
+                  className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
                 />
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowNewPassword(!showNewPassword)
-                  }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 focus:outline-none transition-colors"
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
                 >
                   {showNewPassword ? (
-                    <FaEyeSlash />
+                    <FaEyeSlash className="text-xs" />
                   ) : (
-                    <FaEye />
+                    <FaEye className="text-xs" />
                   )}
                 </button>
               </div>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Minimum 6 characters.
+              </p>
+            </div>
 
-              {/* Confirm Password */}
-              <label className="mb-2 mt-5 block text-sm font-medium text-gray-700">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Confirm New Password
               </label>
 
               <div className="relative">
+                <FaLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400" />
                 <input
-                  type={
-                    showConfirmPassword ? "text" : "password"
-                  }
+                  type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
-                  onChange={(e) =>
-                    setConfirmPassword(e.target.value)
-                  }
-                  placeholder="Confirm new password"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 pr-11 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
                 />
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowConfirmPassword(
-                      !showConfirmPassword
-                    )
-                  }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 focus:outline-none transition-colors"
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
                   {showConfirmPassword ? (
-                    <FaEyeSlash />
+                    <FaEyeSlash className="text-xs" />
                   ) : (
-                    <FaEye />
+                    <FaEye className="text-xs" />
                   )}
                 </button>
               </div>
-
-              <p className="mt-3 text-xs text-gray-400">
-                Password must contain at least 6 characters.
-              </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -356,20 +328,25 @@ function ProfilePassword() {
                   setError("");
                   setSuccess("");
                 }}
-                className="flex items-center justify-center gap-2 rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-2.5 px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
               >
-                <FaArrowLeft />
-                Back
+                <FaArrowLeft className="text-[10px]" />
+                <span>Back</span>
               </button>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 px-4 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
-                {loading
-                  ? "Updating..."
-                  : "Update Password"}
+                {loading ? (
+                  <>
+                    <FaSpinner className="animate-spin text-sm" />
+                    <span>Updating password...</span>
+                  </>
+                ) : (
+                  <span>Update Password</span>
+                )}
               </button>
             </div>
           </form>

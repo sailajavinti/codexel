@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaSpinner } from "react-icons/fa";
 
 import ProfileSidebar from "./ProfileSidebar";
 import ProfileOverview from "./ProfileOverview";
@@ -54,14 +55,18 @@ function Profile() {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-gray-500">
-        Loading profile...
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
+        <div className="flex flex-col items-center gap-3">
+          <FaSpinner className="animate-spin text-3xl text-blue-600" />
+          <span className="text-sm font-medium">Loading profile...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f7f9fc] font-sans text-gray-900 max-md:flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col lg:flex-row">
+      {/* Sidebar & Mobile Navigation */}
       <ProfileSidebar
         user={user}
         activeSection={activeSection}
@@ -69,16 +74,19 @@ function Profile() {
         onLogout={handleLogout}
       />
 
-      <main className="min-w-0 flex-1 px-10 pb-[70px] pt-[45px] max-md:px-4 max-md:py-8">
-        {activeSection === "profile" && (
-          <ProfileOverview
-            user={user}
-            onUpdateProfile={handleUpdateProfile}
-          />
-        )}
+      {/* Main Content Area */}
+      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+        <div className="max-w-5xl mx-auto">
+          {activeSection === "profile" && (
+            <ProfileOverview
+              user={user}
+              onUpdateProfile={handleUpdateProfile}
+            />
+          )}
 
-        {activeSection === "history" && <ProfileHistory />}
-        {activeSection === "password" && <ProfilePassword />}
+          {activeSection === "history" && <ProfileHistory />}
+          {activeSection === "password" && <ProfilePassword />}
+        </div>
       </main>
     </div>
   );

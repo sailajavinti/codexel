@@ -3,82 +3,125 @@ import {
   FaMousePointer,
   FaCode,
   FaCloudUploadAlt,
+  FaMobileAlt,
+  FaSlidersH,
+  FaDownload,
 } from "react-icons/fa";
 
 const features = [
   {
-    icon: <FaMousePointer className="text-2xl sm:text-[28px]" />,
-    title: "Drag & Drop Builder",
+    icon: <FaMousePointer className="text-xl sm:text-2xl" />,
+    title: "Visual Drag & Drop Engine",
     description:
-      "Design beautiful websites visually without writing repetitive code.",
+      "Assemble responsive websites with pre-styled modular UI components. Drag, reorder, and position elements with immediate canvas feedback.",
+    badge: "11+ Modular Blocks",
   },
   {
-    icon: <FaCode className="text-2xl sm:text-[28px]" />,
-    title: "Clean Code Export",
+    icon: <FaCode className="text-xl sm:text-2xl" />,
+    title: "Multi-Format Clean Code Export",
     description:
-      "Export production-ready HTML, CSS, React and Tailwind instantly.",
+      "Export human-readable React 19 JSX, semantic HTML5, and utility Tailwind CSS code instantly. Zero boilerplate and zero messy generated markup.",
+    badge: "React 19 & Tailwind",
   },
   {
-    icon: <FaCloudUploadAlt className="text-2xl sm:text-[28px]" />,
-    title: "Cloud Projects",
+    icon: <FaMobileAlt className="text-xl sm:text-2xl" />,
+    title: "Live Responsive Viewports",
     description:
-      "Save, manage and continue your projects anytime from anywhere.",
+      "Test responsive layouts dynamically. Toggle between Desktop (1200px), Tablet (768px), and Mobile (375px) device canvases directly in the studio.",
+    badge: "Mobile-First Design",
+  },
+  {
+    icon: <FaSlidersH className="text-xl sm:text-2xl" />,
+    title: "Precision Property Inspector",
+    description:
+      "Customize typography, color palettes, spacing margins, border radiuses, and layout alignments with granular visual controls.",
+    badge: "Granular Styling",
+  },
+  {
+    icon: <FaCloudUploadAlt className="text-xl sm:text-2xl" />,
+    title: "Cloud Project Management",
+    description:
+      "Save, manage, rename, and restore projects seamlessly in the cloud. Access your design workspace and draft history from anywhere.",
+    badge: "Cloud Storage",
+  },
+  {
+    icon: <FaDownload className="text-xl sm:text-2xl" />,
+    title: "Zero-Lockin ZIP Export",
+    description:
+      "Download your entire generated website project packaged as a ready-to-run ZIP archive. Deploy to Vercel, Netlify, or GitHub Pages with ease.",
+    badge: "Standalone Bundle",
   },
 ];
 
 function Features() {
   return (
-    <section className="bg-slate-50 py-12 sm:py-16 lg:py-24">
+    <section className="bg-slate-50/70 border-b border-slate-200/80 py-16 sm:py-20 lg:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10 sm:mb-14 lg:mb-16"
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 lg:mb-20"
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900">
-            Everything You Need
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold uppercase tracking-wider mb-3 shadow-2xs">
+            Capabilities
+          </div>
+
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+            Engineered for modern visual web development
           </h2>
 
-          <p className="mx-auto mt-3 sm:mt-4 max-w-2xl text-base sm:text-lg leading-7 sm:leading-8 text-gray-600">
-            CodeXel provides all the tools required to design modern,
-            responsive websites and generate clean code effortlessly.
+          <p className="mt-4 text-base sm:text-lg leading-relaxed text-slate-600">
+            CodeXel delivers the visual intuition of a design tool combined with the
+            code precision and flexibility required by professional front-end developers.
           </p>
         </motion.div>
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* 6-Pillar Features Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 lg:gap-8">
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{
-                duration: 0.5,
-                delay: index * 0.1,
+                duration: 0.4,
+                delay: index * 0.08,
               }}
-              whileHover={{
-                y: -6,
-              }}
-              className={`group rounded-2xl sm:rounded-3xl border border-gray-200 bg-white p-6 sm:p-7 shadow-sm transition-all duration-300 hover:shadow-xl ${
-                index === 2 ? "sm:col-span-2 lg:col-span-1" : ""
-              }`}
+              whileHover={{ y: -3 }}
+              className="group flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200"
             >
-              <div className="flex h-12 w-12 sm:h-14 sm:w-16 items-center justify-center rounded-xl sm:rounded-2xl bg-blue-100 text-blue-600 transition duration-300 group-hover:bg-blue-600 group-hover:text-white">
-                {feature.icon}
+              <div>
+                {/* Icon & Badge Header */}
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100/80 shadow-2xs group-hover:bg-blue-600 group-hover:text-white transition-colors duration-200">
+                    {feature.icon}
+                  </div>
+
+                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600">
+                    {feature.badge}
+                  </span>
+                </div>
+
+                {/* Title */}
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                  {feature.title}
+                </h3>
+
+                {/* Description */}
+                <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-slate-600">
+                  {feature.description}
+                </p>
               </div>
 
-              <h3 className="mt-4 sm:mt-5 text-xl sm:text-2xl font-semibold text-slate-900">
-                {feature.title}
-              </h3>
-
-              <p className="mt-2.5 sm:mt-3 text-sm sm:text-base leading-6 sm:leading-7 text-gray-600">
-                {feature.description}
-              </p>
+              {/* Bottom Subtle Status */}
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-blue-600 group-hover:translate-x-0.5 transition-transform duration-150">
+                <span>Explore capability &rarr;</span>
+              </div>
             </motion.div>
           ))}
         </div>
