@@ -35,11 +35,6 @@ function AboutHero() {
             transition={{ duration: 0.5 }}
             className="lg:col-span-6 flex flex-col items-center text-center lg:items-start lg:text-left"
           >
-            {/* Eyebrow Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50/80 text-blue-700 text-xs font-semibold mb-6 shadow-2xs">
-              <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-              <span>About CodeXel • Our Story</span>
-            </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.12] tracking-tight text-slate-900">
               Transforming ideas into{" "}
@@ -49,7 +44,7 @@ function AboutHero() {
             </h1>
 
             <p className="mt-5 text-base sm:text-lg leading-relaxed text-slate-600 max-w-xl">
-              CodeXel is an AI-powered visual website builder that bridges the gap
+              CodeXel is website builder that bridges the gap
               between design and development. We empower developers, designers,
               students, and businesses to create responsive websites with
               drag-and-drop simplicity and production-ready code generation.

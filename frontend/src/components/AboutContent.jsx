@@ -8,9 +8,7 @@ import {
   FaRocket,
   FaArrowRight,
   FaServer,
-  FaDatabase,
   FaBrain,
-  FaShieldAlt,
   FaCheckCircle,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -47,13 +45,6 @@ const pillars = [
     description:
       "Generate clean, readable React 19, standard HTML5, CSS3, and utility Tailwind code.",
     badge: "Production Ready",
-  },
-  {
-    icon: <FaRobot className="text-xl sm:text-2xl" />,
-    title: "AI Powered",
-    description:
-      "Accelerate layout creation and section styling using intelligent automated assistance.",
-    badge: "Intelligent Speed",
   },
   {
     icon: <FaRocket className="text-xl sm:text-2xl" />,
@@ -100,9 +91,6 @@ function AboutContent() {
             transition={{ duration: 0.5 }}
             className="max-w-3xl mx-auto text-center mb-12 sm:mb-16"
           >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-xs font-semibold uppercase tracking-wider mb-3 shadow-2xs">
-              The Origin
-            </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
               Why We Built CodeXel
@@ -190,9 +178,6 @@ function AboutContent() {
             transition={{ duration: 0.5 }}
             className="text-center max-w-3xl mx-auto mb-12 sm:mb-16"
           >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold uppercase tracking-wider mb-3 shadow-2xs">
-              Pillars
-            </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
               Everything You Need To Build Faster
@@ -203,8 +188,8 @@ function AboutContent() {
             </p>
           </motion.div>
 
-          {/* 4 Pillar Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
+          {/* 3 Pillar Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
             {pillars.map((item, index) => (
               <motion.div
                 key={index}
@@ -241,68 +226,7 @@ function AboutContent() {
         </div>
       </section>
 
-      {/* ================= SECTION 3: BUILT WITH MODERN TECHNOLOGIES ================= */}
-      <section className="py-16 sm:py-20 lg:py-24 border-b border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center max-w-3xl mx-auto mb-12 sm:mb-16"
-          >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-xs font-semibold uppercase tracking-wider mb-3 shadow-2xs">
-              Tech Stack
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
-              Built With Modern Technologies
-            </h2>
-
-            <p className="mt-4 text-base sm:text-lg leading-relaxed text-slate-600">
-              CodeXel is powered by modern tools focused on performance, scalability, and developer experience.
-            </p>
-          </motion.div>
-
-          {/* Categorized Tech Stack Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
-            {techCategories.map((group, gIdx) => (
-              <motion.div
-                key={gIdx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: gIdx * 0.1 }}
-                className="rounded-xl border border-slate-200/90 bg-white p-6 shadow-xs hover:border-slate-300 transition-colors"
-              >
-                <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100">
-                  <div className="p-1.5 rounded-md bg-slate-100">
-                    {group.icon}
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900 tracking-tight uppercase">
-                    {group.category}
-                  </h3>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {group.items.map((tech) => (
-                    <span
-                      key={tech}
-                      className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs font-mono font-semibold text-slate-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors cursor-default"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ================= SECTION 4: WHAT DRIVES CODEXEL (VALUES) ================= */}
+      {/* ================= SECTION 3: WHAT DRIVES CODEXEL (VALUES) ================= */}
       <section className="py-16 sm:py-20 lg:py-24 bg-slate-50/60 border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -313,9 +237,6 @@ function AboutContent() {
             transition={{ duration: 0.5 }}
             className="text-center max-w-3xl mx-auto mb-12 sm:mb-16"
           >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold uppercase tracking-wider mb-3 shadow-2xs">
-              Guiding Principles
-            </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
               What Drives CodeXel
@@ -359,48 +280,6 @@ function AboutContent() {
             ))}
           </div>
 
-        </div>
-      </section>
-
-      {/* ================= SECTION 5: PRE-FOOTER ABOUT CTA ================= */}
-      <section className="bg-slate-900 text-white py-16 sm:py-20 relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none opacity-40"
-          aria-hidden="true"
-        />
-
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              Experience the future of front-end development
-            </h2>
-
-            <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
-              Start creating responsive layouts visually and download clean, production-ready React and Tailwind code.
-            </p>
-
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
-              <Link
-                to="/build"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-blue-500 active:scale-[0.98] transition-all"
-              >
-                <span>Launch Studio</span>
-                <FaArrowRight className="text-xs" />
-              </Link>
-
-              <Link
-                to="/"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-700 hover:text-white active:scale-[0.98] transition-all"
-              >
-                <span>Return to Home</span>
-              </Link>
-            </div>
-          </motion.div>
         </div>
       </section>
 

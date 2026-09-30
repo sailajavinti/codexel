@@ -4,14 +4,13 @@ import {
   FaArrowRight,
   FaCode,
   FaLaptopCode,
-  FaCheck,
   FaLayerGroup,
   FaSlidersH,
   FaDesktop,
   FaTabletAlt,
   FaMobileAlt,
 } from "react-icons/fa";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Hero() {
   const navigate = useNavigate();
@@ -37,16 +36,6 @@ function Hero() {
 
           {/* ================= LEFT COLUMN: VALUE PROPOSITION ================= */}
           <div className="lg:col-span-6 text-center lg:text-left flex flex-col items-center lg:items-start">
-            {/* Eyebrow Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50/80 text-blue-700 text-xs font-semibold mb-6 shadow-2xs"
-            >
-              <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-              <span>Next-Gen Visual Web Builder & Code Generator</span>
-            </motion.div>
 
             {/* Main Headline */}
             <motion.h1
@@ -85,37 +74,9 @@ function Hero() {
                 onClick={() => navigate("/build")}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 cursor-pointer"
               >
-                <span>Start Building Free</span>
+                <span>Start Building</span>
                 <FaArrowRight className="text-xs transition-transform group-hover:translate-x-0.5" />
               </button>
-
-              <Link
-                to="/about"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              >
-                <span>How It Works</span>
-              </Link>
-            </motion.div>
-
-            {/* Developer Trust & Capability Badges */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-8 pt-6 border-t border-slate-200/80 w-full flex flex-wrap items-center justify-center lg:justify-start gap-y-2 gap-x-5 text-xs text-slate-500 font-medium"
-            >
-              <span className="flex items-center gap-1.5">
-                <FaCheck className="text-blue-600 text-[11px]" /> React 19 JSX
-              </span>
-              <span className="flex items-center gap-1.5">
-                <FaCheck className="text-blue-600 text-[11px]" /> Tailwind CSS v4
-              </span>
-              <span className="flex items-center gap-1.5">
-                <FaCheck className="text-blue-600 text-[11px]" /> Clean Semantic HTML
-              </span>
-              <span className="flex items-center gap-1.5">
-                <FaCheck className="text-blue-600 text-[11px]" /> Zero Lock-in ZIP
-              </span>
             </motion.div>
           </div>
 

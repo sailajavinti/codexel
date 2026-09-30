@@ -143,7 +143,7 @@ function SignupForm({ setIsLogin }) {
             />
             <input
               type="text"
-              placeholder="Alex Rivera"
+              placeholder="developer"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);

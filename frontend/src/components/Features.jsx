@@ -66,9 +66,6 @@ function Features() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 lg:mb-20"
         >
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold uppercase tracking-wider mb-3 shadow-2xs">
-            Capabilities
-          </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
             Engineered for modern visual web development
@@ -116,11 +113,6 @@ function Features() {
                 <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-slate-600">
                   {feature.description}
                 </p>
-              </div>
-
-              {/* Bottom Subtle Status */}
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-blue-600 group-hover:translate-x-0.5 transition-transform duration-150">
-                <span>Explore capability &rarr;</span>
               </div>
             </motion.div>
           ))}
