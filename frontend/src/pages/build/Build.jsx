@@ -24,6 +24,9 @@ const DEFAULT_PAGE = {
 
 const MAX_HISTORY_STEPS = 30;
 
+const GLOBAL_LAYOUT_TYPES = ["navbar", "footer"];
+const isGlobalLayoutType = (type) => GLOBAL_LAYOUT_TYPES.includes(type);
+
 function Build() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -199,10 +202,18 @@ function Build() {
 
   const handleAddPage = () => {
     const pageNum = pages.length + 1;
+    // Automatically inherit active global layout components (navbar, footer)
+    const existingNavbar = pages.flatMap((p) => p.canvasData || []).find((c) => c.type === "navbar");
+    const existingFooter = pages.flatMap((p) => p.canvasData || []).find((c) => c.type === "footer");
+
+    const initialCanvas = [];
+    if (existingNavbar) initialCanvas.push(JSON.parse(JSON.stringify(existingNavbar)));
+    if (existingFooter) initialCanvas.push(JSON.parse(JSON.stringify(existingFooter)));
+
     const newPage = {
       id: `page-${Date.now()}`,
       name: `Page ${pageNum}`,
-      canvasData: [],
+      canvasData: initialCanvas,
     };
     const nextPages = [...pages, newPage];
     setPages(nextPages);
@@ -261,11 +272,67 @@ function Build() {
     const type = compInfo.type || compInfo.id;
     const newComponent = createDefaultComponent(type);
 
+    if (isGlobalLayoutType(type)) {
+      setPages((prevPages) => {
+        const nextPages = prevPages.map((page) => {
+          const currentCanvas = page.canvasData || [];
+          const filtered = currentCanvas.filter((c) => c.type !== type);
+          let updatedCanvas;
+          if (type === "navbar") {
+            // Navbar is placed at the top (index 0) across all pages
+            updatedCanvas = [JSON.parse(JSON.stringify(newComponent)), ...filtered];
+          } else {
+            // Footer is placed at the bottom across all pages
+            updatedCanvas = [...filtered, JSON.parse(JSON.stringify(newComponent))];
+          }
+          return { ...page, canvasData: updatedCanvas };
+        });
+        commitToHistory(nextPages);
+        return nextPages;
+      });
+      setIsDirty(true);
+      setSelectedComponent(newComponent.id);
+      return;
+    }
+
     setComponentsForActivePage((prev) => [...prev, newComponent]);
     setSelectedComponent(newComponent.id);
   };
 
   const updateComponent = (id, updates) => {
+    const activeCanvas = activePage.canvasData || [];
+    const targetComp = activeCanvas.find((c) => (c.id || c._id) === id);
+    const targetType = targetComp?.type || updates?.type;
+
+    if (isGlobalLayoutType(targetType)) {
+      setPages((prevPages) => {
+        const nextPages = prevPages.map((page) => {
+          const currentCanvas = page.canvasData || [];
+          const hasGlobal = currentCanvas.some((c) => c.type === targetType);
+          let updatedCanvas;
+          if (hasGlobal) {
+            updatedCanvas = currentCanvas.map((comp) =>
+              comp.type === targetType ? { ...comp, ...updates } : comp
+            );
+          } else {
+            const baseComp = targetComp
+              ? { ...JSON.parse(JSON.stringify(targetComp)), ...updates }
+              : { ...createDefaultComponent(targetType), ...updates };
+            if (targetType === "navbar") {
+              updatedCanvas = [baseComp, ...currentCanvas];
+            } else {
+              updatedCanvas = [...currentCanvas, baseComp];
+            }
+          }
+          return { ...page, canvasData: updatedCanvas };
+        });
+        commitToHistory(nextPages);
+        return nextPages;
+      });
+      setIsDirty(true);
+      return;
+    }
+
     setComponentsForActivePage((prev) =>
       prev.map((comp) => ((comp.id || comp._id) === id ? { ...comp, ...updates } : comp))
     );
@@ -273,6 +340,30 @@ function Build() {
 
   const deleteComponent = (id) => {
     if (!id) return;
+    const activeCanvas = activePage.canvasData || [];
+    const targetComp = activeCanvas.find((c) => (c.id || c._id) === id);
+    const targetType = targetComp?.type;
+
+    if (isGlobalLayoutType(targetType)) {
+      setPages((prevPages) => {
+        const nextPages = prevPages.map((page) => {
+          const currentCanvas = page.canvasData || [];
+          return {
+            ...page,
+            canvasData: currentCanvas.filter((comp) => comp.type !== targetType && (comp.id || comp._id) !== id),
+          };
+        });
+        commitToHistory(nextPages);
+        return nextPages;
+      });
+      setIsDirty(true);
+      if (selectedComponent === id) {
+        setSelectedComponent(null);
+        setOpenPanel(null);
+      }
+      return;
+    }
+
     setComponentsForActivePage((prev) => prev.filter((comp) => (comp.id || comp._id) !== id));
     if (selectedComponent === id) {
       setSelectedComponent(null);
@@ -282,13 +373,19 @@ function Build() {
 
   const duplicateComponent = (id) => {
     if (!id) return;
+    const activeCanvas = activePage.canvasData || [];
+    const targetComp = activeCanvas.find((c) => (c.id || c._id) === id);
+    if (targetComp && isGlobalLayoutType(targetComp.type)) {
+      // Global layout components (Navbar, Footer) cannot be duplicated on the canvas
+      return;
+    }
     setComponentsForActivePage((prev) => {
       const targetIndex = prev.findIndex((c) => (c.id || c._id) === id);
       if (targetIndex === -1) return prev;
-      const targetComp = prev[targetIndex];
+      const target = prev[targetIndex];
       const clonedComp = {
-        ...JSON.parse(JSON.stringify(targetComp)),
-        id: `${targetComp.type || "comp"}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        ...JSON.parse(JSON.stringify(target)),
+        id: `${target.type || "comp"}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         _id: undefined,
       };
       const updated = [...prev];
