@@ -10,6 +10,19 @@ const HOVER_OPTIONS = [
   { label: "Soft Dim", value: "dim" },
 ];
 
+const findComponentById = (components, id) => {
+  for (const component of components || []) {
+    if (String(component.id || component._id) === String(id)) {
+      return component;
+    }
+
+    const found = findComponentById(component.children, id);
+    if (found) return found;
+  }
+
+  return null;
+};
+
 function PropertiesPanel({
   components = [],
   selectedComponent,
@@ -18,7 +31,7 @@ function PropertiesPanel({
   onDuplicateComponent,
   pages = [],
 }) {
-  const selected = components.find((c) => (c.id || c._id) === selectedComponent);
+  const selected = findComponentById(components, selectedComponent);
 
   const updateProperty = (prop, val) => {
     if (!selected || !onUpdateComponent) return;
@@ -73,11 +86,10 @@ function PropertiesPanel({
                     key={w}
                     type="button"
                     onClick={() => updateProperty("width", w === "Auto" ? "auto" : w)}
-                    className={`py-1.5 text-xs font-semibold rounded border transition ${
-                      isCurrent
+                    className={`py-1.5 text-xs font-semibold rounded border transition ${isCurrent
                         ? "border-blue-600 bg-blue-50 text-blue-600 shadow-xs"
                         : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     {w}
                   </button>

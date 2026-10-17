@@ -53,8 +53,8 @@ function Canvas({
       padding: isButton
         ? undefined
         : component.padding !== undefined && component.padding !== ""
-        ? `${component.padding}px`
-        : undefined,
+          ? `${component.padding}px`
+          : undefined,
       margin: component.margin !== undefined && component.margin !== "" ? `${component.margin}px` : 0,
       borderRadius: isButton ? undefined : `${component.borderRadius ?? 0}px`,
       borderWidth: isButton ? undefined : component.borderWidth ? `${component.borderWidth}px` : undefined,
@@ -131,9 +131,8 @@ function Canvas({
 
   return (
     <main
-      className={`relative flex-1 overflow-y-auto p-6 transition-all duration-300 ${
-        isPreviewMode ? "bg-slate-200/70" : "bg-slate-100"
-      }`}
+      className={`relative flex-1 overflow-y-auto p-6 transition-all duration-300 ${isPreviewMode ? "bg-slate-200/70" : "bg-slate-100"
+        }`}
       onDragOver={(e) => {
         if (!isPreviewMode) e.preventDefault();
       }}
@@ -155,9 +154,8 @@ function Canvas({
     >
       <div
         ref={containerRef}
-        className={`mx-auto min-h-full transition-all duration-300 shadow-sm border border-gray-200 bg-white ${
-          VIEWPORT_WIDTHS[viewportMode] || "max-w-5xl"
-        } ${isPreviewMode ? "shadow-2xl rounded-lg overflow-hidden my-4" : ""}`}
+        className={`mx-auto min-h-full transition-all duration-300 shadow-sm border border-gray-200 bg-white ${VIEWPORT_WIDTHS[viewportMode] || "max-w-5xl"
+          } ${isPreviewMode ? "shadow-2xl rounded-lg overflow-hidden my-4" : ""}`}
       >
         {components.length === 0 ? (
           <div className="flex min-h-[500px] items-center justify-center p-8 text-center">
@@ -191,13 +189,10 @@ function Canvas({
                     flexShrink: 0,
                     zIndex: isSelected ? 30 : 1,
                   }}
-                  className={`group relative transition-all ${
-                    isBeingDragged ? "opacity-30 scale-[0.98]" : "opacity-100"
-                  } ${
-                    isDropTarget && dropIndicator?.position === "before" ? "border-l-4 border-l-blue-600" : ""
-                  } ${
-                    isDropTarget && dropIndicator?.position === "after" ? "border-r-4 border-r-blue-600" : ""
-                  }`}
+                  className={`group relative transition-all ${isBeingDragged ? "opacity-30 scale-[0.98]" : "opacity-100"
+                    } ${isDropTarget && dropIndicator?.position === "before" ? "border-l-4 border-l-blue-600" : ""
+                    } ${isDropTarget && dropIndicator?.position === "after" ? "border-r-4 border-r-blue-600" : ""
+                    }`}
                   onClick={(e) => {
                     if (isPreviewMode) return;
                     e.stopPropagation();
@@ -283,6 +278,8 @@ function Canvas({
                       isPreviewMode,
                       onNavigatePage,
                       onUpdateComponent,
+                      selectedComponent,
+                      setSelectedComponent,
                     })}
                   </div>
 

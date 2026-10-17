@@ -75,6 +75,7 @@ function BuildHeader({
   currentProject,
   onSelectProject,
   onNewProject,
+  onImportCode,
   pages = [],
   components = [],
   onProjectSaved,
@@ -401,23 +402,38 @@ function BuildHeader({
 
     return (
       <div className="absolute left-0 top-full z-[70] mt-2 w-72 max-w-[calc(100vw-1rem)] rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
-        <div className="mb-1 flex items-center justify-between border-b border-gray-100 px-2 pb-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-            Projects
-          </span>
+        <div className="mb-1 border-b border-gray-100 px-2 pb-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+              Projects
+            </span>
+
+            <button
+              type="button"
+              onClick={() => {
+                onNewProject();
+                setIsOpenMenuVisible(false);
+              }}
+              className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+            >
+              <FaPlus className="text-[10px]" />
+              New
+            </button>
+          </div>
 
           <button
             type="button"
             onClick={() => {
-              onNewProject();
-              setIsOpenMenuVisible(
-                false
-              );
+              setIsOpenMenuVisible(false);
+
+              if (onImportCode) {
+                onImportCode();
+              }
             }}
-            className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+            className="mt-2 flex w-full items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-2 text-left text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
           >
-            <FaPlus className="text-[10px]" />
-            New
+            <FaCode className="text-[11px]" />
+            Import Existing Code
           </button>
         </div>
 
@@ -564,33 +580,33 @@ function BuildHeader({
             {/* Status */}
             {status ===
               "saving" && (
-              <span className="hidden items-center gap-1 text-xs text-gray-400 lg:flex">
-                <FaSpinner className="animate-spin text-[10px]" />
-                Saving...
-              </span>
-            )}
+                <span className="hidden items-center gap-1 text-xs text-gray-400 lg:flex">
+                  <FaSpinner className="animate-spin text-[10px]" />
+                  Saving...
+                </span>
+              )}
 
             {status ===
               "saved" && (
-              <span className="hidden items-center gap-1 text-xs font-medium text-emerald-600 lg:flex">
-                <FaCheck className="text-[10px]" />
-                Saved
-              </span>
-            )}
+                <span className="hidden items-center gap-1 text-xs font-medium text-emerald-600 lg:flex">
+                  <FaCheck className="text-[10px]" />
+                  Saved
+                </span>
+              )}
 
             {status ===
               "error" && (
-              <span
-                className="hidden max-w-[130px] truncate text-xs font-medium text-red-500 lg:inline"
-                title={
-                  statusMessage
-                }
-              >
-                {
-                  statusMessage
-                }
-              </span>
-            )}
+                <span
+                  className="hidden max-w-[130px] truncate text-xs font-medium text-red-500 lg:inline"
+                  title={
+                    statusMessage
+                  }
+                >
+                  {
+                    statusMessage
+                  }
+                </span>
+              )}
           </div>
         </div>
 

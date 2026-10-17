@@ -4,6 +4,7 @@ import BuildHeader from "./BuildHeader";
 import Canvas from "./Canvas";
 import ComponentsPanel from "./ComponentsPanel";
 import PropertiesPanel from "./PropertiesPanel";
+import ImportCodeModal from "./ImportCodeModal";
 import CodePreview from "./CodePreview";
 import api from "../../api/axios";
 import { createDefaultComponent } from "./components/constants";
@@ -27,6 +28,19 @@ const MAX_HISTORY_STEPS = 30;
 const GLOBAL_LAYOUT_TYPES = ["navbar", "footer"];
 const isGlobalLayoutType = (type) => GLOBAL_LAYOUT_TYPES.includes(type);
 
+const findComponentById = (components, id) => {
+  for (const component of components || []) {
+    if (String(component.id || component._id) === String(id)) {
+      return component;
+    }
+
+    const found = findComponentById(component.children, id);
+    if (found) return found;
+  }
+
+  return null;
+};
+
 function Build() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -40,6 +54,7 @@ function Build() {
   const [isDirty, setIsDirty] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showCodePreview, setShowCodePreview] = useState(false);
+  const [showImportCode, setShowImportCode] = useState(false);
   const [pageToDelete, setPageToDelete] = useState(null);
 
   const [viewportMode, setViewportMode] = useState("desktop");
@@ -268,6 +283,16 @@ function Build() {
     setIsDirty(true);
   };
 
+  const handleImportCode = (importedComponents) => {
+    if (!importedComponents || importedComponents.length === 0) {
+      return;
+    }
+
+    setComponentsForActivePage(importedComponents);
+    setSelectedComponent(null);
+    setOpenPanel(null);
+  };
+
   const addComponent = (compInfo) => {
     const type = compInfo.type || compInfo.id;
     const newComponent = createDefaultComponent(type);
@@ -299,101 +324,211 @@ function Build() {
     setSelectedComponent(newComponent.id);
   };
 
+
+  const updateNestedComponent = (components, id, updates) => {
+    return components.map((component) => {
+      if (String(component.id || component._id) === String(id)) {
+        return { ...component, ...updates };
+      }
+
+      if (Array.isArray(component.children)) {
+        return {
+          ...component,
+          children: updateNestedComponent(component.children, id, updates),
+        };
+      }
+
+      return component;
+    });
+  };
+
   const updateComponent = (id, updates) => {
     const activeCanvas = activePage.canvasData || [];
-    const targetComp = activeCanvas.find((c) => (c.id || c._id) === id);
+    const targetComp = findComponentById(activeCanvas, id);
     const targetType = targetComp?.type || updates?.type;
 
+    // Preserve existing global Navbar and Footer behavior.
     if (isGlobalLayoutType(targetType)) {
       setPages((prevPages) => {
         const nextPages = prevPages.map((page) => {
           const currentCanvas = page.canvasData || [];
-          const hasGlobal = currentCanvas.some((c) => c.type === targetType);
+          const hasGlobal = currentCanvas.some(
+            (component) => component.type === targetType
+          );
+
           let updatedCanvas;
+
           if (hasGlobal) {
-            updatedCanvas = currentCanvas.map((comp) =>
-              comp.type === targetType ? { ...comp, ...updates } : comp
+            updatedCanvas = currentCanvas.map((component) =>
+              component.type === targetType
+                ? { ...component, ...updates }
+                : component
             );
           } else {
-            const baseComp = targetComp
+            const baseComponent = targetComp
               ? { ...JSON.parse(JSON.stringify(targetComp)), ...updates }
               : { ...createDefaultComponent(targetType), ...updates };
-            if (targetType === "navbar") {
-              updatedCanvas = [baseComp, ...currentCanvas];
-            } else {
-              updatedCanvas = [...currentCanvas, baseComp];
-            }
+
+            updatedCanvas =
+              targetType === "navbar"
+                ? [baseComponent, ...currentCanvas]
+                : [...currentCanvas, baseComponent];
           }
+
           return { ...page, canvasData: updatedCanvas };
         });
+
         commitToHistory(nextPages);
         return nextPages;
       });
+
       setIsDirty(true);
       return;
     }
 
-    setComponentsForActivePage((prev) =>
-      prev.map((comp) => ((comp.id || comp._id) === id ? { ...comp, ...updates } : comp))
+    setComponentsForActivePage((previous) =>
+      updateNestedComponent(previous, id, updates)
     );
+  };
+
+
+  const deleteNestedComponent = (components, id) => {
+    return components
+      .filter(
+        (component) =>
+          String(component.id || component._id) !== String(id)
+      )
+      .map((component) => {
+        if (Array.isArray(component.children)) {
+          return {
+            ...component,
+            children: deleteNestedComponent(component.children, id),
+          };
+        }
+
+        return component;
+      });
   };
 
   const deleteComponent = (id) => {
     if (!id) return;
-    const activeCanvas = activePage.canvasData || [];
-    const targetComp = activeCanvas.find((c) => (c.id || c._id) === id);
-    const targetType = targetComp?.type;
 
+    const activeCanvas = activePage.canvasData || [];
+
+    // Find the component, including nested children.
+    const targetComp = findComponentById(activeCanvas, id);
+    if (!targetComp) return;
+
+    const targetType = targetComp.type;
+
+    // Preserve existing global Navbar/Footer deletion behavior.
     if (isGlobalLayoutType(targetType)) {
       setPages((prevPages) => {
-        const nextPages = prevPages.map((page) => {
-          const currentCanvas = page.canvasData || [];
-          return {
-            ...page,
-            canvasData: currentCanvas.filter((comp) => comp.type !== targetType && (comp.id || comp._id) !== id),
-          };
-        });
+        const nextPages = prevPages.map((page) => ({
+          ...page,
+          canvasData: (page.canvasData || []).filter(
+            (component) =>
+              component.type !== targetType &&
+              String(component.id || component._id) !== String(id)
+          ),
+        }));
+
         commitToHistory(nextPages);
         return nextPages;
       });
+
       setIsDirty(true);
-      if (selectedComponent === id) {
+
+      if (String(selectedComponent) === String(id)) {
         setSelectedComponent(null);
         setOpenPanel(null);
       }
+
       return;
     }
 
-    setComponentsForActivePage((prev) => prev.filter((comp) => (comp.id || comp._id) !== id));
-    if (selectedComponent === id) {
+    // Delete the component wherever it appears in the component tree.
+    setComponentsForActivePage((prev) =>
+      deleteNestedComponent(prev, id)
+    );
+
+    if (String(selectedComponent) === String(id)) {
       setSelectedComponent(null);
       setOpenPanel(null);
     }
   };
 
+
+
+  const duplicateNestedComponent = (components, id) => {
+    const result = [];
+    let duplicatedId = null;
+
+    for (const component of components || []) {
+      if (String(component.id || component._id) === String(id)) {
+        const clone = JSON.parse(JSON.stringify(component));
+
+        const createNewIds = (item) => {
+          item.id = `${item.type || "comp"}-${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 8)}`;
+          item._id = undefined;
+
+          if (Array.isArray(item.children)) {
+            item.children.forEach(createNewIds);
+          }
+        };
+
+        createNewIds(clone);
+        duplicatedId = clone.id;
+
+        result.push(component, clone);
+      } else {
+        let updatedComponent = component;
+
+        if (Array.isArray(component.children)) {
+          const nestedResult = duplicateNestedComponent(
+            component.children,
+            id
+          );
+
+          if (nestedResult.duplicatedId) {
+            updatedComponent = {
+              ...component,
+              children: nestedResult.components,
+            };
+            duplicatedId = nestedResult.duplicatedId;
+          }
+        }
+
+        result.push(updatedComponent);
+      }
+    }
+
+    return { components: result, duplicatedId };
+  };
+
   const duplicateComponent = (id) => {
     if (!id) return;
+
     const activeCanvas = activePage.canvasData || [];
-    const targetComp = activeCanvas.find((c) => (c.id || c._id) === id);
-    if (targetComp && isGlobalLayoutType(targetComp.type)) {
-      // Global layout components (Navbar, Footer) cannot be duplicated on the canvas
+    const targetComp = findComponentById(activeCanvas, id);
+
+    if (!targetComp || isGlobalLayoutType(targetComp.type)) {
       return;
     }
+
     setComponentsForActivePage((prev) => {
-      const targetIndex = prev.findIndex((c) => (c.id || c._id) === id);
-      if (targetIndex === -1) return prev;
-      const target = prev[targetIndex];
-      const clonedComp = {
-        ...JSON.parse(JSON.stringify(target)),
-        id: `${target.type || "comp"}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        _id: undefined,
-      };
-      const updated = [...prev];
-      updated.splice(targetIndex + 1, 0, clonedComp);
-      setSelectedComponent(clonedComp.id);
-      return updated;
+      const result = duplicateNestedComponent(prev, id);
+
+      if (result.duplicatedId) {
+        setSelectedComponent(result.duplicatedId);
+      }
+
+      return result.components;
     });
   };
+
 
   const reorderComponents = (startIndex, endIndex) => {
     if (startIndex === endIndex) return;
@@ -405,12 +540,14 @@ function Build() {
     });
   };
 
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
       <BuildHeader
         currentProject={currentProject}
         onSelectProject={handleSelectProject}
         onNewProject={handleNewProject}
+        onImportCode={() => setShowImportCode(true)}
         pages={pages}
         components={components}
         onBackClick={() => {
@@ -460,9 +597,8 @@ function Build() {
                       setSelectedComponent(null);
                     }
                   }}
-                  className={`group flex shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-                    isActive ? "bg-blue-50 text-blue-600 shadow-xs" : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                  className={`group flex shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${isActive ? "bg-blue-50 text-blue-600 shadow-xs" : "text-gray-600 hover:bg-gray-100"
+                    }`}
                 >
                   {isActive && isEditing ? (
                     <input
@@ -594,18 +730,16 @@ function Build() {
           <button
             type="button"
             onClick={() => setOpenPanel((p) => (p === "components" ? null : "components"))}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-              openPanel === "components" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${openPanel === "components" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
+              }`}
           >
             <FaThLarge /> Components
           </button>
           <button
             type="button"
             onClick={() => setOpenPanel((p) => (p === "properties" ? null : "properties"))}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-              openPanel === "properties" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${openPanel === "properties" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
+              }`}
           >
             <FaSlidersH /> Properties
           </button>
@@ -618,6 +752,12 @@ function Build() {
         onClose={() => setShowCodePreview(false)}
         activePage={activePage}
         pages={pages}
+      />
+
+      <ImportCodeModal
+        isOpen={showImportCode}
+        onClose={() => setShowImportCode(false)}
+        onImport={handleImportCode}
       />
 
       {/* Page Deletion Confirmation Modal */}

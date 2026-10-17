@@ -138,19 +138,17 @@ function generateComponentJSX(comp, pages = [], stack = "react") {
     case "navbar": {
       const navLinks = comp.navLinks || [];
       return `      {/* Navbar */}
-      <nav className="${widthClass} ${zClass} flex items-center justify-between px-8 py-4 ${
-        !comp.backgroundColor ? "bg-white border-b border-gray-100" : ""
-      } ${hoverClass}" ${buildStyles()}>
+      <nav className="${widthClass} ${zClass} flex items-center justify-between px-8 py-4 ${!comp.backgroundColor ? "bg-white border-b border-gray-100" : ""
+        } ${hoverClass}" ${buildStyles()}>
         <span className="font-bold tracking-tight whitespace-pre-line" style={{ color: '${comp.brandColor || "#0f172a"}' }}>
           ${comp.brand || "Brand"}
         </span>
         <div className="flex flex-wrap gap-6 items-center opacity-90" style={{ color: '${comp.navLinkColor || "#475569"}' }}>
 ${navLinks.map((l) => `          <a href="${resolveLink(l.targetPageId, l.link, pages, stack)}" className="hover:opacity-80">${l.label}</a>`).join("\n")}
         </div>
-        ${
-          comp.showNavCta
-            ? `<a href="${resolveLink(comp.navCtaPageId, comp.navCtaLink, pages, stack)}" style={{ backgroundColor: '${comp.navCtaBg || "#2563eb"}', color: '${comp.navCtaColor || "#ffffff"}' }} className="px-4 py-2 rounded-lg text-xs font-semibold shadow-xs hover:opacity-90 transition">${comp.navCtaText || "Get Started"}</a>`
-            : ""
+        ${comp.showNavCta
+          ? `<a href="${resolveLink(comp.navCtaPageId, comp.navCtaLink, pages, stack)}" style={{ backgroundColor: '${comp.navCtaBg || "#2563eb"}', color: '${comp.navCtaColor || "#ffffff"}' }} className="px-4 py-2 rounded-lg text-xs font-semibold shadow-xs hover:opacity-90 transition">${comp.navCtaText || "Get Started"}</a>`
+          : ""
         }
       </nav>`;
     }
@@ -164,16 +162,14 @@ ${navLinks.map((l) => `          <a href="${resolveLink(l.targetPageId, l.link, 
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight whitespace-pre-line leading-tight" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.heading || "Hero Heading")} }} />
           <p className="mt-4 max-w-2xl text-lg opacity-90 leading-relaxed whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.description || "Hero description text.")} }} />
           <div className="mt-8 flex flex-wrap gap-3 items-center justify-center">
-            ${
-              comp.showHeroButton !== false
-                ? `<a href="${resolveLink(comp.heroButtonPageId, comp.heroButtonLink, pages, stack)}" style={{ backgroundColor: '${comp.heroButtonBg || "#ffffff"}', color: '${comp.heroButtonTextColor || "#2563eb"}' }} className="px-6 py-3 rounded-md font-semibold shadow-xs hover:opacity-95 transition text-sm">${comp.buttonText || "Get Started"}</a>`
-                : ""
-            }
-            ${
-              comp.showSecondaryButton !== false
-                ? `<a href="${resolveLink(comp.secondaryButtonPageId, comp.secondaryButtonLink, pages, stack)}" className="px-6 py-3 rounded-md font-semibold border border-white/40 bg-white/10 text-white backdrop-blur-xs hover:bg-white/20 transition text-sm">${comp.secondaryButtonText || "Learn More"}</a>`
-                : ""
-            }
+            ${comp.showHeroButton !== false
+          ? `<a href="${resolveLink(comp.heroButtonPageId, comp.heroButtonLink, pages, stack)}" style={{ backgroundColor: '${comp.heroButtonBg || "#ffffff"}', color: '${comp.heroButtonTextColor || "#2563eb"}' }} className="px-6 py-3 rounded-md font-semibold shadow-xs hover:opacity-95 transition text-sm">${comp.buttonText || "Get Started"}</a>`
+          : ""
+        }
+            ${comp.showSecondaryButton !== false
+          ? `<a href="${resolveLink(comp.secondaryButtonPageId, comp.secondaryButtonLink, pages, stack)}" className="px-6 py-3 rounded-md font-semibold border border-white/40 bg-white/10 text-white backdrop-blur-xs hover:bg-white/20 transition text-sm">${comp.secondaryButtonText || "Learn More"}</a>`
+          : ""
+        }
           </div>
         </div>
       </section>`;
@@ -192,12 +188,15 @@ ${navLinks.map((l) => `          <a href="${resolveLink(l.targetPageId, l.link, 
         ${comp.subtitle ? `<p className="mt-2 opacity-80 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.subtitle)} }} />` : ""}
       </div>`;
 
+
     case "section":
       return `      {/* Section */}
       <section className="${widthClass} ${zClass} p-10 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildStyles()}>
         ${comp.heading ? `<h2 className="text-2xl font-bold mb-3 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.heading)} }} />` : ""}
-        <p className="opacity-90 leading-relaxed whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.content || "")} }} />
+        ${comp.content ? `<p className="opacity-90 leading-relaxed whitespace-pre-line" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.content)} }} />` : ""}
+        ${(comp.children || []).map((child) => generateComponentJSX(child, pages, stack)).join("\n")}
       </section>`;
+
 
     case "image":
       return `      {/* Image Block */}
@@ -309,9 +308,8 @@ ${list.map((item) => `            <details className="group border border-gray-2
             <h3 className="text-2xl font-bold tracking-tight text-gray-900">${comp.authTitle || "Welcome Back"}</h3>
             ${comp.authSubtitle ? `<p className="mt-1 text-xs text-gray-500 whitespace-pre-line">${comp.authSubtitle}</p>` : ""}
           </div>
-          ${
-            comp.showSocialLogin
-              ? `          <div className="grid grid-cols-2 gap-2.5 mb-5">
+          ${comp.showSocialLogin
+          ? `          <div className="grid grid-cols-2 gap-2.5 mb-5">
             <button type="button" className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
               Google
             </button>
@@ -319,21 +317,20 @@ ${list.map((item) => `            <details className="group border border-gray-2
               GitHub
             </button>
           </div>`
-              : ""
-          }
+          : ""
+        }
           <form className="space-y-3.5">
 ${fields.map((f) => `            <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">${f.label} ${f.required ? "*" : ""}</label>
               <input type="${f.type || "text"}" placeholder="${f.placeholder || ""}" ${f.required ? "required" : ""} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white" />
             </div>`).join("\n")}
-            ${
-              comp.showRememberMe || comp.showForgotPassword
-                ? `            <div className="flex items-center justify-between text-xs pt-1">
+            ${comp.showRememberMe || comp.showForgotPassword
+          ? `            <div className="flex items-center justify-between text-xs pt-1">
               ${comp.showRememberMe ? `<label className="flex items-center gap-1.5 text-gray-600 cursor-pointer"><input type="checkbox" className="rounded accent-blue-600" /> Remember me</label>` : `<span />`}
               ${comp.showForgotPassword ? `<a href="#" className="text-blue-600 hover:underline">Forgot password?</a>` : ""}
             </div>`
-                : ""
-            }
+          : ""
+        }
             <button type="submit" className="w-full py-2.5 rounded-lg bg-blue-600 font-semibold text-xs text-white shadow-xs hover:bg-blue-700 transition mt-2">
               ${comp.submitButtonText || "Continue"}
             </button>
@@ -348,11 +345,11 @@ ${fields.map((f) => `            <div>
       <form className="${widthClass} ${zClass} p-8 space-y-4 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildStyles()}>
         ${comp.formTitle ? `<h3 className="text-xl font-bold whitespace-pre-line">${comp.formTitle}</h3>` : ""}
 ${fields.map((f) => f.type === "textarea"
-    ? `        <div>
+        ? `        <div>
           <label className="block text-xs font-medium mb-1">${f.label} ${f.required ? "*" : ""}</label>
           <textarea rows={3} placeholder="${f.placeholder || ""}" ${f.required ? "required" : ""} className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white" />
         </div>`
-    : `        <div>
+        : `        <div>
           <label className="block text-xs font-medium mb-1">${f.label} ${f.required ? "*" : ""}</label>
           <input type="${f.type || "text"}" placeholder="${f.placeholder || ""}" ${f.required ? "required" : ""} className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white" />
         </div>`).join("\n")}
@@ -493,12 +490,15 @@ ${navLinks.map((l) => `        <a href="${resolveLink(l.targetPageId, l.link, pa
       ${comp.subtitle ? `<p class="mt-2 opacity-80 whitespace-pre-line">${comp.subtitle}</p>` : ""}
     </div>`;
 
+
     case "section":
       return `    <!-- Section -->
       <section class="${widthClass} relative p-10 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildHtmlStyles()}>
-      ${comp.heading ? `<h2 class="text-2xl font-bold mb-3 whitespace-pre-line">${comp.heading}</h2>` : ""}
-      <p class="opacity-90 leading-relaxed whitespace-pre-line">${comp.content || ""}</p>
-    </section>`;
+        ${comp.heading ? `<h2 class="text-2xl font-bold mb-3 whitespace-pre-line">${comp.heading}</h2>` : ""}
+        ${comp.content ? `<p class="opacity-90 leading-relaxed whitespace-pre-line">${comp.content}</p>` : ""}
+        ${(comp.children || []).map((child) => generateComponentHTML(child, pages)).join("\n")}
+      </section>`;
+
 
     case "image":
       return `    <!-- Image Block -->
@@ -601,9 +601,8 @@ ${list.map((item) => `          <details class="group border border-gray-200 rou
           <h3 class="text-2xl font-bold tracking-tight text-gray-900">${comp.authTitle || "Welcome Back"}</h3>
           ${comp.authSubtitle ? `<p className="mt-1 text-xs text-gray-500 whitespace-pre-line">${comp.authSubtitle}</p>` : ""}
         </div>
-        ${
-          comp.showSocialLogin
-            ? `        <div class="grid grid-cols-2 gap-2.5 mb-5">
+        ${comp.showSocialLogin
+          ? `        <div class="grid grid-cols-2 gap-2.5 mb-5">
           <button type="button" class="flex items-center justify-center gap-2 rounded-lg border border-gray-200 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
             Google
           </button>
@@ -611,21 +610,20 @@ ${list.map((item) => `          <details class="group border border-gray-200 rou
             GitHub
           </button>
         </div>`
-            : ""
+          : ""
         }
         <form onsubmit="event.preventDefault();" class="space-y-3.5">
 ${fields.map((f) => `          <div>
             <label class="block text-xs font-medium text-gray-700 mb-1">${f.label} ${f.required ? "*" : ""}</label>
             <input type="${f.type || "text"}" placeholder="${f.placeholder || ""}" ${f.required ? "required" : ""} class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white" />
           </div>`).join("\n")}
-          ${
-            comp.showRememberMe || comp.showForgotPassword
-              ? `          <div class="flex items-center justify-between text-xs pt-1">
+          ${comp.showRememberMe || comp.showForgotPassword
+          ? `          <div class="flex items-center justify-between text-xs pt-1">
             ${comp.showRememberMe ? `<label className="flex items-center gap-1.5 text-gray-600 cursor-pointer"><input type="checkbox" className="rounded accent-blue-600" /> Remember me</label>` : `<span />`}
             ${comp.showForgotPassword ? `<a href="#" className="text-blue-600 hover:underline">Forgot password?</a>` : ""}
           </div>`
-              : ""
-          }
+          : ""
+        }
           <button type="submit" class="w-full py-2.5 rounded-lg bg-blue-600 font-semibold text-xs text-white shadow-xs hover:bg-blue-700 transition mt-2">
             ${comp.submitButtonText || "Continue"}
           </button>
@@ -640,11 +638,11 @@ ${fields.map((f) => `          <div>
     <form onsubmit="event.preventDefault();" class="${widthClass} relative p-8 space-y-4 ${!comp.backgroundColor ? "bg-white" : ""} ${hoverClass}" ${buildHtmlStyles()}>
       ${comp.formTitle ? `<h3 class="text-xl font-bold whitespace-pre-line">${comp.formTitle}</h3>` : ""}
 ${fields.map((f) => f.type === "textarea"
-    ? `      <div>
+        ? `      <div>
         <label class="block text-xs font-medium mb-1">${f.label} ${f.required ? "*" : ""}</label>
         <textarea rows={3} placeholder="${f.placeholder || ""}" ${f.required ? "required" : ""} class="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white"></textarea>
       </div>`
-    : `      <div>
+        : `      <div>
         <label class="block text-xs font-medium mb-1">${f.label} ${f.required ? "*" : ""}</label>
         <input type="${f.type || "text"}" placeholder="${f.placeholder || ""}" ${f.required ? "required" : ""} class="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-white" />
       </div>`).join("\n")}
@@ -1092,9 +1090,9 @@ ${hasSharedComponents ? `- \`src/components/\`: Reusable global layout component
 
 ## Pages & Routes
 ${validPages.map((p) => {
-  const route = isHomePage(p, validPages) ? "/" : `/${formatRoutePath(p.name)}`;
-  return `- \`${route}\` -> \`${formatComponentName(p.name)}\``;
-}).join("\n")}
+    const route = isHomePage(p, validPages) ? "/" : `/${formatRoutePath(p.name)}`;
+    return `- \`${route}\` -> \`${formatComponentName(p.name)}\``;
+  }).join("\n")}
 
 ## Quick Start
 1. Install dependencies:
@@ -1124,8 +1122,8 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
     Array.isArray(pages) && pages.length > 0
       ? pages.filter(Boolean)
       : activePage
-      ? [activePage]
-      : [{ id: "page-home", name: "Home", canvasData: [] }];
+        ? [activePage]
+        : [{ id: "page-home", name: "Home", canvasData: [] }];
 
   // Global layout components extracted across the project
   const { navbar: globalNavbar, footer: globalFooter } = getGlobalLayoutComponents(validPages);
@@ -1165,8 +1163,8 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
         selectedStack === "html"
           ? (isHomePage(currentPageToView, validPages) ? "index.html" : `${formatRoutePath(currentPageToView.name)}.html`)
           : selectedStack === "tsx"
-          ? `${formatComponentName(currentPageToView.name)}.tsx`
-          : `${formatComponentName(currentPageToView.name)}.jsx`;
+            ? `${formatComponentName(currentPageToView.name)}.tsx`
+            : `${formatComponentName(currentPageToView.name)}.jsx`;
 
       const mimeType = selectedStack === "html" ? "text/html;charset=utf-8" : "text/plain;charset=utf-8";
       const blob = new Blob([currentCode], { type: mimeType });
@@ -1319,36 +1317,32 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
             <button
               type="button"
               onClick={() => setSelectedStack("react")}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
-                selectedStack === "react" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
-              }`}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition ${selectedStack === "react" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                }`}
             >
               React (.jsx)
             </button>
             <button
               type="button"
               onClick={() => setSelectedStack("tsx")}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
-                selectedStack === "tsx" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
-              }`}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition ${selectedStack === "tsx" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                }`}
             >
               TSX (.tsx)
             </button>
             <button
               type="button"
               onClick={() => setSelectedStack("html")}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
-                selectedStack === "html" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
-              }`}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition ${selectedStack === "html" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                }`}
             >
               HTML (.html)
             </button>
             <button
               type="button"
               onClick={() => setSelectedStack("css-modules")}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
-                selectedStack === "css-modules" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
-              }`}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition ${selectedStack === "css-modules" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                }`}
             >
               CSS Modules
             </button>
@@ -1372,11 +1366,10 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
                   key={pageKey}
                   type="button"
                   onClick={() => setSelectedFileId(pageKey)}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                    isSelected
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white"
-                  }`}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition ${isSelected
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white"
+                    }`}
                 >
                   <FaFileCode className="text-[10px]" />
                   <span>{getPageTabName(page, validPages, selectedStack)}</span>
@@ -1393,11 +1386,10 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
                   <button
                     type="button"
                     onClick={() => setSelectedFileId("component-navbar")}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                      selectedFileId === "component-navbar"
-                        ? "bg-blue-600 text-white shadow-xs"
-                        : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white"
-                    }`}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition ${selectedFileId === "component-navbar"
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white"
+                      }`}
                   >
                     <FaFileCode className="text-[10px]" />
                     <span>
@@ -1409,11 +1401,10 @@ function CodePreview({ isOpen, onClose, activePage, pages = [] }) {
                   <button
                     type="button"
                     onClick={() => setSelectedFileId("component-footer")}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                      selectedFileId === "component-footer"
-                        ? "bg-blue-600 text-white shadow-xs"
-                        : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white"
-                    }`}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition ${selectedFileId === "component-footer"
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white"
+                      }`}
                   >
                     <FaFileCode className="text-[10px]" />
                     <span>

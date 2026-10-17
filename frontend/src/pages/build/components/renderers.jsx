@@ -34,9 +34,8 @@ export function FaqAccordionItem({ item, customFontSize }) {
           {item.question}
         </span>
         <FaChevronDown
-          className={`text-xs text-gray-400 transition-transform duration-200 shrink-0 ml-2 ${
-            isOpen ? "rotate-180 text-blue-600" : ""
-          }`}
+          className={`text-xs text-gray-400 transition-transform duration-200 shrink-0 ml-2 ${isOpen ? "rotate-180 text-blue-600" : ""
+            }`}
         />
       </button>
       {isOpen && (
@@ -56,6 +55,8 @@ export function renderComponentOnCanvas({
   hoverClass,
   isPreviewMode,
   onNavigatePage,
+  selectedComponent,
+  setSelectedComponent,
 }) {
   const handleNav = (e, pageId) => {
     e.preventDefault();
@@ -71,9 +72,8 @@ export function renderComponentOnCanvas({
       return (
         <nav
           style={style}
-          className={`flex flex-wrap h-full w-full items-center justify-between px-6 md:px-8 py-4 gap-4 ${
-            !component.backgroundColor ? "bg-white border-b border-gray-100" : ""
-          } ${hoverClass}`}
+          className={`flex flex-wrap h-full w-full items-center justify-between px-6 md:px-8 py-4 gap-4 ${!component.backgroundColor ? "bg-white border-b border-gray-100" : ""
+            } ${hoverClass}`}
         >
           <div
             style={{
@@ -94,11 +94,10 @@ export function renderComponentOnCanvas({
               <span
                 key={link.id || idx}
                 onClick={(e) => handleNav(e, link.targetPageId)}
-                className={`transition ${
-                  link.targetPageId
-                    ? "cursor-pointer hover:underline hover:text-blue-600 font-semibold"
-                    : ""
-                }`}
+                className={`transition ${link.targetPageId
+                  ? "cursor-pointer hover:underline hover:text-blue-600 font-semibold"
+                  : ""
+                  }`}
                 title={link.targetPageId ? "Click to open page" : ""}
               >
                 {link.label || `Link ${idx + 1}`}
@@ -130,11 +129,10 @@ export function renderComponentOnCanvas({
       return (
         <section
           style={style}
-          className={`flex flex-col justify-center h-full w-full p-6 md:p-10 ${
-            !component.backgroundColor
-              ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-              : ""
-          } ${hoverClass}`}
+          className={`flex flex-col justify-center h-full w-full p-6 md:p-10 ${!component.backgroundColor
+            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+            : ""
+            } ${hoverClass}`}
         >
           <div className="flex flex-col w-full max-w-3xl mx-auto text-center items-center">
             <h1
@@ -188,12 +186,15 @@ export function renderComponentOnCanvas({
       return (
         <section
           style={style}
-          className={`h-full w-full p-6 md:p-8 ${!component.backgroundColor ? "bg-white" : ""} ${hoverClass}`}
+          className={`h-full w-full p-6 md:p-8 ${!component.backgroundColor ? "bg-white" : ""
+            } ${hoverClass}`}
         >
           {component.heading && (
             <h2
               style={{
-                fontSize: customFontSize ? `${Math.round(customFontSize * 1.5)}px` : undefined,
+                fontSize: customFontSize
+                  ? `${Math.round(customFontSize * 1.5)}px`
+                  : undefined,
                 fontWeight: customWeight || "700",
               }}
               className="mb-3 text-xl md:text-2xl whitespace-pre-line"
@@ -201,15 +202,98 @@ export function renderComponentOnCanvas({
               {component.heading}
             </h2>
           )}
-          <p
-            style={{
-              fontSize: customFontSize ? `${customFontSize}px` : undefined,
-              fontWeight: customWeight || "normal",
-            }}
-            className="opacity-90 leading-relaxed whitespace-pre-line text-sm md:text-base"
-          >
-            {component.content}
-          </p>
+
+          {component.content && (
+            <p
+              style={{
+                fontSize: customFontSize
+                  ? `${customFontSize}px`
+                  : undefined,
+                fontWeight: customWeight || "normal",
+              }}
+              className="mb-3 whitespace-pre-line opacity-90 leading-relaxed text-sm md:text-base"
+            >
+              {component.content}
+            </p>
+          )}
+
+          {Array.isArray(component.children) &&
+            component.children.map((child) => {
+              const childStyle = {
+                backgroundColor: child.type === "button"
+                  ? undefined
+                  : child.backgroundColor || undefined,
+                color: child.textColor || undefined,
+                fontSize: child.fontSize
+                  ? `${child.fontSize}px`
+                  : undefined,
+                fontWeight: child.fontWeight || undefined,
+                textAlign: child.textAlign || undefined,
+                padding:
+                  child.type !== "button" &&
+                    child.padding !== undefined &&
+                    child.padding !== ""
+                    ? `${child.padding}px`
+                    : undefined,
+                margin:
+                  child.margin !== undefined && child.margin !== ""
+                    ? `${child.margin}px`
+                    : 0,
+                borderRadius:
+                  child.type === "button"
+                    ? undefined
+                    : `${child.borderRadius ?? 0}px`,
+                borderWidth:
+                  child.type !== "button" && child.borderWidth
+                    ? `${child.borderWidth}px`
+                    : undefined,
+                borderStyle:
+                  child.type !== "button"
+                    ? child.borderStyle ||
+                    (child.borderWidth ? "solid" : undefined)
+                    : undefined,
+                borderColor: child.borderColor || undefined,
+                minHeight: child.minHeight
+                  ? `${child.minHeight}px`
+                  : undefined,
+                opacity:
+                  child.opacity !== undefined && child.opacity !== ""
+                    ? child.opacity / 100
+                    : undefined,
+              };
+
+              return (
+                <div
+                  key={child.id}
+                  onClick={(event) => {
+                    if (isPreviewMode) return;
+
+                    event.stopPropagation();
+                    setSelectedComponent?.(child.id || child._id);
+                  }}
+                  className={`relative w-full ${!isPreviewMode &&
+                    String(selectedComponent) === String(child.id || child._id)
+                    ? "outline outline-2 outline-blue-500 outline-offset-1"
+                    : ""
+                    }`}
+                >
+                  {renderComponentOnCanvas({
+                    component: child,
+                    style: childStyle,
+                    customFontSize: child.fontSize
+                      ? Number(child.fontSize)
+                      : null,
+                    customWeight: child.fontWeight,
+                    hoverClass:
+                      HOVER_EFFECT_MAP[child.hoverEffect || "none"] || "",
+                    isPreviewMode,
+                    onNavigatePage,
+                    selectedComponent,
+                    setSelectedComponent,
+                  })}
+                </div>
+              );
+            })}
         </section>
       );
 
@@ -360,9 +444,8 @@ export function renderComponentOnCanvas({
         <div className="flex w-full justify-center items-center py-8 px-4">
           <div
             style={style}
-            className={`p-6 md:p-8 w-full max-w-md ${
-              !component.backgroundColor ? "bg-white border border-gray-100 shadow-xl rounded-2xl" : ""
-            } ${hoverClass}`}
+            className={`p-6 md:p-8 w-full max-w-md ${!component.backgroundColor ? "bg-white border border-gray-100 shadow-xl rounded-2xl" : ""
+              } ${hoverClass}`}
           >
             <div className="text-center mb-6">
               <h3 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">{component.authTitle}</h3>
@@ -475,9 +558,8 @@ export function renderComponentOnCanvas({
       return (
         <footer
           style={style}
-          className={`px-6 md:px-8 py-10 h-full w-full ${
-            !component.backgroundColor ? "bg-slate-950 text-slate-400" : ""
-          } ${hoverClass}`}
+          className={`px-6 md:px-8 py-10 h-full w-full ${!component.backgroundColor ? "bg-slate-950 text-slate-400" : ""
+            } ${hoverClass}`}
         >
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
             <div className="md:col-span-1">

@@ -148,6 +148,14 @@ export const createDefaultComponent = (type) => {
         ],
       };
 
+    case "section":
+      return {
+        ...base,
+        heading: "",
+        content: "",
+        children: [],
+      };
+
     case "footer":
       return {
         ...base,
