@@ -21,6 +21,10 @@ const projectSchema = new mongoose.Schema(
       type: Array,
       default: [],
     },
+    theme: {
+      type: Object,
+      default: {},
+    },
   },
   { timestamps: true }
 );

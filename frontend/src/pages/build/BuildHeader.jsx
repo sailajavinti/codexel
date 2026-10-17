@@ -71,6 +71,93 @@ function ViewportControls({
   );
 }
 
+function ProjectDropdown({
+  isOpen,
+  onNewProject,
+  onImportCode,
+  loadingProjects,
+  projectsList,
+  onSelectProject,
+  currentProjectId,
+  onClose,
+}) {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div className="absolute left-0 top-full z-[70] mt-2 w-72 max-w-[calc(100vw-1rem)] rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
+      <div className="mb-1 border-b border-gray-100 px-2 pb-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            Projects
+          </span>
+
+          <button
+            type="button"
+            onClick={() => {
+              onNewProject();
+              onClose();
+            }}
+            className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+          >
+            <FaPlus className="text-[10px]" />
+            New
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            if (onImportCode) {
+              onImportCode();
+            }
+          }}
+          className="mt-2 flex w-full items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-2 text-left text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+        >
+          <FaCode className="text-[11px]" />
+          Import Existing Code
+        </button>
+      </div>
+
+      {loadingProjects ? (
+        <div className="flex items-center justify-center py-6 text-gray-400">
+          <FaSpinner className="animate-spin text-sm" />
+        </div>
+      ) : projectsList.length === 0 ? (
+        <div className="py-4 text-center text-xs text-gray-500">
+          No previous projects found.
+        </div>
+      ) : (
+        <div className="max-h-60 divide-y divide-gray-50 overflow-y-auto">
+          {projectsList.map((project) => (
+            <button
+              key={project._id}
+              type="button"
+              onClick={() => {
+                onSelectProject(project);
+                onClose();
+              }}
+              className={`flex w-full flex-col gap-0.5 rounded-lg px-2.5 py-2 text-left transition hover:bg-blue-50 ${project._id === currentProjectId ? "bg-blue-50/70" : ""
+                }`}
+            >
+              <span className="truncate text-xs font-semibold text-gray-800">
+                {project.title}
+              </span>
+
+              <span className="flex items-center gap-1 text-[10px] text-gray-400">
+                <FaClock className="text-[9px]" />
+                {new Date(project.updatedAt).toLocaleDateString()}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BuildHeader({
   currentProject,
   onSelectProject,
@@ -86,39 +173,29 @@ function BuildHeader({
   onChangeViewport,
   isPreviewMode = false,
   onTogglePreviewMode,
+  canExport = false,
+  isDirty = false,
+  theme,
 }) {
-  const [projectName, setProjectName] =
-    useState("Untitled Project");
+  const [prevProject, setPrevProject] = useState(currentProject);
+  const [projectName, setProjectName] = useState(
+    currentProject?.title || "Untitled Project"
+  );
 
-  const [status, setStatus] =
-    useState("idle");
+  if (currentProject !== prevProject) {
+    setPrevProject(currentProject);
+    setProjectName(currentProject?.title || "Untitled Project");
+  }
 
-  const [statusMessage, setStatusMessage] =
-    useState("");
-
-  const [isOpenMenuVisible, setIsOpenMenuVisible] =
-    useState(false);
-
-  const [projectsList, setProjectsList] =
-    useState([]);
-
-  const [loadingProjects, setLoadingProjects] =
-    useState(false);
+  const [status, setStatus] = useState("idle");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [isOpenMenuVisible, setIsOpenMenuVisible] = useState(false);
+  const [projectsList, setProjectsList] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
 
   const headerRef = useRef(null);
   const desktopInputRef = useRef(null);
   const mobileInputRef = useRef(null);
-
-  // ------------------------------------------------------------
-  // Sync project name
-  // ------------------------------------------------------------
-
-  useEffect(() => {
-    setProjectName(
-      currentProject?.title ||
-      "Untitled Project"
-    );
-  }, [currentProject]);
 
   // ------------------------------------------------------------
   // Close project menu outside header
@@ -348,6 +425,9 @@ function BuildHeader({
 
             pages:
               pages,
+
+            theme:
+              theme || {},
           }
         );
 
@@ -389,108 +469,6 @@ function BuildHeader({
         3000
       );
     }
-  };
-
-  // ------------------------------------------------------------
-  // Project dropdown
-  // ------------------------------------------------------------
-
-  const ProjectDropdown = () => {
-    if (!isOpenMenuVisible) {
-      return null;
-    }
-
-    return (
-      <div className="absolute left-0 top-full z-[70] mt-2 w-72 max-w-[calc(100vw-1rem)] rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
-        <div className="mb-1 border-b border-gray-100 px-2 pb-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-              Projects
-            </span>
-
-            <button
-              type="button"
-              onClick={() => {
-                onNewProject();
-                setIsOpenMenuVisible(false);
-              }}
-              className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
-            >
-              <FaPlus className="text-[10px]" />
-              New
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpenMenuVisible(false);
-
-              if (onImportCode) {
-                onImportCode();
-              }
-            }}
-            className="mt-2 flex w-full items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-2 text-left text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
-          >
-            <FaCode className="text-[11px]" />
-            Import Existing Code
-          </button>
-        </div>
-
-        {loadingProjects ? (
-          <div className="flex items-center justify-center py-6 text-gray-400">
-            <FaSpinner className="animate-spin text-sm" />
-          </div>
-        ) : projectsList.length ===
-          0 ? (
-          <div className="py-4 text-center text-xs text-gray-500">
-            No previous projects
-            found.
-          </div>
-        ) : (
-          <div className="max-h-60 divide-y divide-gray-50 overflow-y-auto">
-            {projectsList.map(
-              (project) => (
-                <button
-                  key={
-                    project._id
-                  }
-                  type="button"
-                  onClick={() => {
-                    onSelectProject(
-                      project
-                    );
-
-                    setIsOpenMenuVisible(
-                      false
-                    );
-                  }}
-                  className={`flex w-full flex-col gap-0.5 rounded-lg px-2.5 py-2 text-left transition hover:bg-blue-50 ${project._id ===
-                    currentProject?._id
-                    ? "bg-blue-50/70"
-                    : ""
-                    }`}
-                >
-                  <span className="truncate text-xs font-semibold text-gray-800">
-                    {
-                      project.title
-                    }
-                  </span>
-
-                  <span className="flex items-center gap-1 text-[10px] text-gray-400">
-                    <FaClock className="text-[9px]" />
-
-                    {new Date(
-                      project.updatedAt
-                    ).toLocaleDateString()}
-                  </span>
-                </button>
-              )
-            )}
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -539,13 +517,22 @@ function BuildHeader({
               <FaChevronDown className="text-[9px] text-gray-400" />
             </button>
 
-            <ProjectDropdown />
+            <ProjectDropdown
+              isOpen={isOpenMenuVisible}
+              onNewProject={onNewProject}
+              onImportCode={onImportCode}
+              loadingProjects={loadingProjects}
+              projectsList={projectsList}
+              onSelectProject={onSelectProject}
+              currentProjectId={currentProject?._id}
+              onClose={() => setIsOpenMenuVisible(false)}
+            />
           </div>
         </div>
 
         {/* MIDDLE */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-4">
-          <div className="hidden lg:block">
+          <div className="hidden lg:flex items-center gap-2">
             <ViewportControls
               viewportMode={viewportMode}
               onChangeViewport={onChangeViewport}
@@ -664,11 +651,20 @@ function BuildHeader({
           {/* EXPORT */}
           <button
             type="button"
-            onClick={
-              onExportClick
+            disabled={!canExport}
+            onClick={canExport ? onExportClick : undefined}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold shadow-sm transition lg:px-4 ${
+              canExport
+                ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
+            title={
+              !currentProject?._id
+                ? "Please save your project before exporting code."
+                : isDirty
+                ? "Please save your changes before exporting code."
+                : "Export Code"
             }
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 lg:px-4"
-            title="Export Code"
           >
             <FaCode className="lg:hidden" />
 
@@ -767,11 +763,20 @@ function BuildHeader({
 
           <button
             type="button"
-            onClick={
-              onExportClick
+            disabled={!canExport}
+            onClick={canExport ? onExportClick : undefined}
+            title={
+              !currentProject?._id
+                ? "Please save your project before exporting code."
+                : isDirty
+                ? "Please save your changes before exporting code."
+                : "Export Code"
             }
-            title="Export Code"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm transition hover:bg-blue-700"
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-sm transition ${
+              canExport
+                ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
           >
             <FaCode className="text-xs" />
           </button>
@@ -785,22 +790,25 @@ function BuildHeader({
           <div className="relative">
             <button
               type="button"
-              onClick={
-                handleToggleProjects
-              }
+              onClick={handleToggleProjects}
               title="Open Project"
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
             >
               <FaFolderOpen className="text-blue-600" />
-
-              <span>
-                Projects
-              </span>
-
+              <span>Projects</span>
               <FaChevronDown className="text-[8px] text-gray-400" />
             </button>
 
-            <ProjectDropdown />
+            <ProjectDropdown
+              isOpen={isOpenMenuVisible}
+              onNewProject={onNewProject}
+              onImportCode={onImportCode}
+              loadingProjects={loadingProjects}
+              projectsList={projectsList}
+              onSelectProject={onSelectProject}
+              currentProjectId={currentProject?._id}
+              onClose={() => setIsOpenMenuVisible(false)}
+            />
           </div>
         </div>
       </div>

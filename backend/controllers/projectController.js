@@ -15,7 +15,7 @@ export const saveProject = async (req, res) => {
     }
 
     const userId = new mongoose.Types.ObjectId(rawUserId);
-    const { id, title, canvasData, pages } = req.body;
+    const { id, title, canvasData, pages, theme } = req.body;
 
     let project;
 
@@ -24,6 +24,7 @@ export const saveProject = async (req, res) => {
         title,
         ...(canvasData !== undefined && { canvasData }),
         ...(pages !== undefined && { pages }),
+        ...(theme !== undefined && { theme }),
       };
 
       project = await Project.findOneAndUpdate(
@@ -41,6 +42,7 @@ export const saveProject = async (req, res) => {
         title: title || "Untitled Project",
         canvasData: canvasData || [],
         pages: pages || [],
+        theme: theme || {},
       });
     }
 

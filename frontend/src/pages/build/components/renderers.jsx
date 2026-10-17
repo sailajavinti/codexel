@@ -1,21 +1,15 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   FaCheck,
   FaTimes,
   FaStar,
   FaChevronDown,
+  FaImage,
   FaGoogle,
   FaGithub,
-  FaImage,
 } from "react-icons/fa";
+import { HOVER_EFFECT_MAP } from "./constants";
 
-export const HOVER_EFFECT_MAP = {
-  none: "",
-  lift: "transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg",
-  scale: "transition-transform duration-200 hover:scale-[1.02]",
-  glow: "transition-all duration-200 hover:ring-2 hover:ring-blue-500/50 hover:shadow-lg",
-  dim: "transition-opacity duration-200 hover:opacity-85",
-};
 
 export function FaqAccordionItem({ item, customFontSize }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -69,11 +63,12 @@ export function renderComponentOnCanvas({
   switch (component.type) {
     case "navbar": {
       const navLinks = component.navLinks || [];
+      const hasBg = Boolean(component.backgroundColor || component.inlineStyles?.backgroundColor);
       return (
         <nav
-          style={style}
-          className={`flex flex-wrap h-full w-full items-center justify-between px-6 md:px-8 py-4 gap-4 ${!component.backgroundColor ? "bg-white border-b border-gray-100" : ""
-            } ${hoverClass}`}
+          style={{ ...style, ...component.inlineStyles }}
+          className={`flex flex-wrap h-full w-full items-center justify-between px-6 md:px-8 py-4 gap-4 ${!hasBg ? "bg-white border-b border-gray-100" : ""
+            } ${hoverClass} ${component.customClasses || ""}`}
         >
           <div
             style={{
@@ -125,28 +120,34 @@ export function renderComponentOnCanvas({
     case "hero": {
       const showPrimary = component.showHeroButton !== false;
       const showSecondary = component.showSecondaryButton !== false;
+      const heroBg = component.backgroundColor || component.inlineStyles?.backgroundColor;
+      const isCustomBg = Boolean(heroBg);
 
       return (
         <section
-          style={style}
-          className={`flex flex-col justify-center h-full w-full p-6 md:p-10 ${!component.backgroundColor
+          style={{ ...style, ...component.inlineStyles, ...(heroBg ? { backgroundColor: heroBg } : {}) }}
+          className={`flex flex-col justify-center h-full w-full p-6 md:p-12 ${!isCustomBg
             ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
             : ""
-            } ${hoverClass}`}
+            } ${hoverClass} ${component.customClasses || ""}`}
         >
           <div className="flex flex-col w-full max-w-3xl mx-auto text-center items-center">
             <h1
               style={{
                 fontSize: customFontSize ? `${Math.round(customFontSize * 2)}px` : undefined,
                 fontWeight: customWeight || "800",
+                color: component.heroHeadingColor || undefined,
               }}
-              className="text-3xl md:text-5xl tracking-tight whitespace-pre-line leading-tight"
+              className="text-3xl md:text-5xl font-extrabold tracking-tight whitespace-pre-line leading-tight"
             >
               {component.heading}
             </h1>
             <p
-              style={{ fontSize: customFontSize ? `${customFontSize}px` : undefined }}
-              className="mt-4 max-w-2xl opacity-90 leading-relaxed whitespace-pre-line text-sm md:text-base"
+              style={{
+                fontSize: customFontSize ? `${customFontSize}px` : undefined,
+                color: component.heroDescColor || undefined,
+              }}
+              className="mt-4 max-w-2xl opacity-90 leading-relaxed whitespace-pre-line text-sm md:text-base text-lg"
             >
               {component.description}
             </p>
@@ -160,8 +161,9 @@ export function renderComponentOnCanvas({
                     style={{
                       backgroundColor: component.heroButtonBg || "#ffffff",
                       color: component.heroButtonTextColor || "#2563eb",
+                      ...component.heroButtonInlineStyles,
                     }}
-                    className="rounded-lg px-6 py-3 text-sm font-semibold shadow-xs hover:opacity-90 transition"
+                    className={`rounded-lg px-6 py-3 text-sm font-semibold shadow-xs hover:opacity-90 transition ${component.heroButtonClasses || ""}`}
                   >
                     {component.buttonText || "Get Started"}
                   </button>
@@ -170,7 +172,13 @@ export function renderComponentOnCanvas({
                   <button
                     type="button"
                     onClick={(e) => handleNav(e, component.secondaryButtonPageId)}
-                    className="rounded-lg border border-white/40 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-xs hover:bg-white/20 transition"
+                    style={{
+                      backgroundColor: component.secondaryButtonBg || undefined,
+                      color: component.secondaryButtonTextColor || undefined,
+                      borderColor: component.secondaryButtonBorderColor || undefined,
+                      ...component.secondaryButtonInlineStyles,
+                    }}
+                    className={`rounded-lg border border-white/40 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-xs hover:bg-white/20 transition ${component.secondaryButtonClasses || ""}`}
                   >
                     {component.secondaryButtonText || "Learn More"}
                   </button>
@@ -182,12 +190,14 @@ export function renderComponentOnCanvas({
       );
     }
 
-    case "section":
+    case "section": {
+      const isFlex = component.customClasses?.includes("flex") || style?.display === "flex" || component.inlineStyles?.display === "flex";
+      const hasBg = Boolean(component.backgroundColor || component.inlineStyles?.backgroundColor || component.customClasses?.match(/(?:^|\s)bg-/));
+
       return (
         <section
-          style={style}
-          className={`h-full w-full p-6 md:p-8 ${!component.backgroundColor ? "bg-white" : ""
-            } ${hoverClass}`}
+          style={{ ...style, ...component.inlineStyles }}
+          className={`h-full w-full ${!hasBg ? "bg-white" : ""} ${component.customClasses !== undefined ? component.customClasses : "p-6 md:p-8"} ${hoverClass}`}
         >
           {component.heading && (
             <h2
@@ -196,6 +206,7 @@ export function renderComponentOnCanvas({
                   ? `${Math.round(customFontSize * 1.5)}px`
                   : undefined,
                 fontWeight: customWeight || "700",
+                color: component.textColor || undefined,
               }}
               className="mb-3 text-xl md:text-2xl whitespace-pre-line"
             >
@@ -210,6 +221,7 @@ export function renderComponentOnCanvas({
                   ? `${customFontSize}px`
                   : undefined,
                 fontWeight: customWeight || "normal",
+                color: component.textColor || undefined,
               }}
               className="mb-3 whitespace-pre-line opacity-90 leading-relaxed text-sm md:text-base"
             >
@@ -260,7 +272,10 @@ export function renderComponentOnCanvas({
                   child.opacity !== undefined && child.opacity !== ""
                     ? child.opacity / 100
                     : undefined,
+                ...(child.inlineStyles || {}),
               };
+
+              const isChildAuto = child.width === "auto" || child.type === "button";
 
               return (
                 <div
@@ -271,7 +286,7 @@ export function renderComponentOnCanvas({
                     event.stopPropagation();
                     setSelectedComponent?.(child.id || child._id);
                   }}
-                  className={`relative w-full ${!isPreviewMode &&
+                  className={`relative ${isChildAuto || isFlex ? "w-auto shrink-0" : "w-full"} ${!isPreviewMode &&
                     String(selectedComponent) === String(child.id || child._id)
                     ? "outline outline-2 outline-blue-500 outline-offset-1"
                     : ""
@@ -296,6 +311,7 @@ export function renderComponentOnCanvas({
             })}
         </section>
       );
+    }
 
     case "features": {
       const features = component.featuresList || [];
@@ -593,46 +609,84 @@ export function renderComponentOnCanvas({
       );
     }
 
-    case "paragraph":
+    case "paragraph": {
+      const hasBg = Boolean(component.backgroundColor || component.inlineStyles?.backgroundColor);
       return (
-        <div style={style} className={`p-6 h-full w-full ${!component.backgroundColor ? "bg-white" : ""} ${hoverClass}`}>
-          <p className="whitespace-pre-line leading-relaxed text-sm md:text-base">{component.content}</p>
+        <div
+          style={{ ...style, ...component.inlineStyles }}
+          className={`${hasBg ? "" : "bg-transparent"} ${component.customClasses !== undefined ? component.customClasses : "p-6"} h-full w-full ${hoverClass}`}
+        >
+          <p
+            style={{
+              color: component.textColor || undefined,
+              fontSize: customFontSize ? `${customFontSize}px` : undefined,
+              fontWeight: customWeight || undefined,
+              textAlign: component.textAlign || undefined,
+            }}
+            className="whitespace-pre-line leading-relaxed text-sm md:text-base"
+          >
+            {component.content}
+          </p>
         </div>
       );
+    }
 
-    case "heading":
+    case "heading": {
+      const hasBg = Boolean(component.backgroundColor || component.inlineStyles?.backgroundColor);
       return (
-        <div style={style} className={`p-6 h-full w-full ${!component.backgroundColor ? "bg-white" : ""} ${hoverClass}`}>
-          <h2 className="text-xl md:text-2xl font-bold whitespace-pre-line">{component.title}</h2>
+        <div
+          style={{ ...style, ...component.inlineStyles }}
+          className={`${hasBg ? "" : "bg-transparent"} ${component.customClasses !== undefined ? component.customClasses : "p-6"} h-full w-full ${hoverClass}`}
+        >
+          <h2
+            style={{
+              color: component.textColor || undefined,
+              fontSize: customFontSize ? `${customFontSize}px` : undefined,
+              fontWeight: customWeight || undefined,
+              textAlign: component.textAlign || undefined,
+            }}
+            className="text-xl md:text-2xl font-bold whitespace-pre-line"
+          >
+            {component.title}
+          </h2>
           {component.subtitle && <p className="mt-2 opacity-80 whitespace-pre-line text-xs md:text-sm">{component.subtitle}</p>}
         </div>
       );
+    }
 
-    case "button":
+    case "button": {
+      const btnBg = component.btnBgColor || component.backgroundColor;
+      const btnColor = component.btnTextColor || component.textColor;
+      const buttonCustomClasses = component.customClasses || "";
       return (
-        <div className={`p-2 flex justify-${component.btnAlign || "left"} w-full h-full`}>
+        <div className={`p-2 flex justify-${component.btnAlign || "left"} ${component.width === "auto" ? "w-auto" : "w-full"} h-full`}>
           <button
             type="button"
             onClick={(e) => handleNav(e, component.targetPageId)}
             style={{
-              backgroundColor: component.btnBgColor || "#2563eb",
-              color: component.btnTextColor || "#ffffff",
-              paddingLeft: `${component.btnPaddingX ?? 20}px`,
-              paddingRight: `${component.btnPaddingX ?? 20}px`,
-              paddingTop: `${component.btnPaddingY ?? 10}px`,
-              paddingBottom: `${component.btnPaddingY ?? 10}px`,
-              borderRadius: `${component.borderRadius ?? 6}px`,
+              backgroundColor: btnBg || undefined,
+              color: btnColor || undefined,
+              paddingLeft: component.btnPaddingX !== undefined ? `${component.btnPaddingX}px` : undefined,
+              paddingRight: component.btnPaddingX !== undefined ? `${component.btnPaddingX}px` : undefined,
+              paddingTop: component.btnPaddingY !== undefined ? `${component.btnPaddingY}px` : undefined,
+              paddingBottom: component.btnPaddingY !== undefined ? `${component.btnPaddingY}px` : undefined,
+              borderRadius: component.borderRadius !== undefined ? `${component.borderRadius}px` : undefined,
+              borderWidth: component.borderWidth ? `${component.borderWidth}px` : undefined,
+              borderColor: component.borderColor || undefined,
+              borderStyle: component.borderStyle || (component.borderWidth ? "solid" : undefined),
+              ...component.inlineStyles,
             }}
-            className={`font-semibold shadow-xs hover:opacity-90 transition text-sm ${hoverClass}`}
+            className={`font-semibold shadow-xs hover:opacity-90 transition text-sm ${hoverClass} ${buttonCustomClasses}`}
           >
             {component.text || "Click Me"}
           </button>
         </div>
       );
+    }
 
     case "image":
       return (
-        <div style={{ ...style, overflow: "hidden" }} className={`h-full w-full ${hoverClass}`}>
+        <div style={{ ...style, ...component.inlineStyles, overflow: "hidden" }} className={`h-full w-full ${hoverClass} ${component.customClasses || ""}`}>
           {component.src ? (
             <img
               src={component.src}
@@ -654,12 +708,13 @@ export function renderComponentOnCanvas({
 
     case "divider":
       return (
-        <div style={style} className="py-2 px-6 h-full w-full flex items-center">
+        <div style={{ ...style, ...component.inlineStyles }} className={`py-2 px-6 h-full w-full flex items-center ${component.customClasses || ""}`}>
           <hr
             className="w-full"
             style={{
-              borderColor: component.dividerColor || "#e2e8f0",
-              borderWidth: `${component.dividerThickness || 1}px`,
+              borderColor: component.dividerColor || component.borderColor || "#e2e8f0",
+              borderWidth: `${component.dividerThickness || component.borderWidth || 1}px`,
+              borderStyle: component.borderStyle || "solid",
             }}
           />
         </div>

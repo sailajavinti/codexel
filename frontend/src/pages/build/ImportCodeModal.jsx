@@ -1,30 +1,23 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Editor from "@monaco-editor/react";
 import { FaCode, FaTimes } from "react-icons/fa";
 import { parseHTMLToComponents } from "./code-import/codeParser";
 
-const ImportCodeModal = ({ isOpen, onClose, onImport }) => {
-  const [code, setCode] = useState(`<!-- Paste your HTML code here -->
-
-<div class="p-6">
-  <h1 class="text-3xl font-bold">
-    Hello CodeXel
-  </h1>
-
-  <p class="mt-2 text-gray-600">
-    Edit this code visually in CodeXel.
-  </p>
-
-  <button class="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg">
-    Get Started
-  </button>
-</div>`);
+const ImportCodeModal = ({ isOpen, onClose, onImport, code = "", setCode }) => {
+  const [internalCode, setInternalCode] = useState("");
+  const currentCode = setCode ? code : internalCode;
+  const updateCode = setCode || setInternalCode;
 
   const handleImport = () => {
-    const components = parseHTMLToComponents(code);
+    if (!currentCode || !currentCode.trim()) {
+      alert("Please paste HTML or React JSX/TSX code before importing.");
+      return;
+    }
+
+    const components = parseHTMLToComponents(currentCode);
 
     if (components.length === 0) {
-      alert("No supported HTML components were found.");
+      alert("No supported HTML or React components were found.");
       return;
     }
 
@@ -53,7 +46,7 @@ const ImportCodeModal = ({ isOpen, onClose, onImport }) => {
               </h2>
 
               <p className="text-sm text-gray-500">
-                Paste HTML code and import it into the CodeXel canvas.
+                Paste HTML or React JSX/TSX code and import it into the CodeXel canvas.
               </p>
             </div>
           </div>
@@ -68,12 +61,17 @@ const ImportCodeModal = ({ isOpen, onClose, onImport }) => {
         </div>
 
         {/* Editor */}
-        <div className="min-h-0 flex-1 bg-[#1e1e1e]">
+        <div className="relative min-h-0 flex-1 bg-[#1e1e1e]">
+          {!currentCode && (
+            <div className="pointer-events-none absolute left-6 top-6 z-10 font-mono text-sm text-gray-500 select-none">
+              Paste your HTML or React code here...
+            </div>
+          )}
           <Editor
             height="100%"
             defaultLanguage="html"
-            value={code}
-            onChange={(value) => setCode(value || "")}
+            value={currentCode}
+            onChange={(value) => updateCode(value || "")}
             theme="vs-dark"
             options={{
               minimap: {
@@ -93,7 +91,7 @@ const ImportCodeModal = ({ isOpen, onClose, onImport }) => {
         {/* Footer */}
         <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-gray-500">
-            V1 supports HTML elements and basic Tailwind classes.
+            Supports HTML elements, React JSX/TSX components, and Tailwind classes.
           </p>
 
           <div className="flex justify-end gap-3">

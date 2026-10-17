@@ -1,4 +1,3 @@
-import React from "react";
 import { FaCopy, FaTrash, FaPlus, FaTimes, FaArrowUp, FaArrowDown } from "react-icons/fa";
 
 const WIDTH_OPTIONS = ["Auto", "25%", "33.33%", "50%", "66.67%", "75%", "100%"];

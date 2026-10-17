@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { FaTrash, FaGripVertical, FaCopy } from "react-icons/fa";
-import { renderComponentOnCanvas, HOVER_EFFECT_MAP } from "./components/renderers";
+import { renderComponentOnCanvas } from "./components/renderers";
+import { HOVER_EFFECT_MAP, SHADOW_MAP, resolveResponsiveProp } from "./components/constants";
 
 const SNAP_WIDTHS = [
   { label: "25%", value: 25 },
@@ -10,14 +11,6 @@ const SNAP_WIDTHS = [
   { label: "75%", value: 75 },
   { label: "100%", value: 100 },
 ];
-
-const SHADOW_MAP = {
-  none: "none",
-  sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-  md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-  xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
-};
 
 const VIEWPORT_WIDTHS = {
   desktop: "max-w-5xl",
@@ -37,6 +30,7 @@ function Canvas({
   onNavigatePage,
   viewportMode = "desktop",
   isPreviewMode = false,
+  theme,
 }) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dropIndicator, setDropIndicator] = useState(null);
@@ -44,25 +38,42 @@ function Canvas({
 
   const getComponentStyle = (component) => {
     const isButton = component.type === "button";
+    const bg = resolveResponsiveProp(component, "backgroundColor", viewportMode);
+    const tc = resolveResponsiveProp(component, "textColor", viewportMode);
+    const fs = resolveResponsiveProp(component, "fontSize", viewportMode);
+    const fw = resolveResponsiveProp(component, "fontWeight", viewportMode);
+    const ta = resolveResponsiveProp(component, "textAlign", viewportMode);
+    const pad = resolveResponsiveProp(component, "padding", viewportMode);
+    const mar = resolveResponsiveProp(component, "margin", viewportMode);
+    const br = resolveResponsiveProp(component, "borderRadius", viewportMode);
+    const bw = resolveResponsiveProp(component, "borderWidth", viewportMode);
+    const bs = resolveResponsiveProp(component, "borderStyle", viewportMode);
+    const bc = resolveResponsiveProp(component, "borderColor", viewportMode);
+    const bShadow = resolveResponsiveProp(component, "boxShadow", viewportMode);
+    const mh = resolveResponsiveProp(component, "minHeight", viewportMode);
+    const op = resolveResponsiveProp(component, "opacity", viewportMode);
+
     return {
-      backgroundColor: isButton ? undefined : component.backgroundColor || undefined,
-      color: component.textColor || undefined,
-      fontSize: component.fontSize ? `${component.fontSize}px` : undefined,
-      fontWeight: component.fontWeight || undefined,
-      textAlign: component.textAlign || undefined,
+      fontFamily: theme?.fontFamily || undefined,
+      backgroundColor: isButton ? undefined : bg || undefined,
+      color: tc || undefined,
+      fontSize: fs ? `${fs}px` : undefined,
+      fontWeight: fw || undefined,
+      textAlign: ta || undefined,
       padding: isButton
         ? undefined
-        : component.padding !== undefined && component.padding !== ""
-          ? `${component.padding}px`
+        : pad !== undefined && pad !== ""
+          ? `${pad}px`
           : undefined,
-      margin: component.margin !== undefined && component.margin !== "" ? `${component.margin}px` : 0,
-      borderRadius: isButton ? undefined : `${component.borderRadius ?? 0}px`,
-      borderWidth: isButton ? undefined : component.borderWidth ? `${component.borderWidth}px` : undefined,
-      borderStyle: isButton ? undefined : component.borderStyle || (component.borderWidth ? "solid" : undefined),
-      borderColor: isButton ? undefined : component.borderColor || undefined,
-      boxShadow: isButton ? undefined : component.boxShadow ? SHADOW_MAP[component.boxShadow] : undefined,
-      minHeight: component.minHeight ? `${component.minHeight}px` : undefined,
-      opacity: component.opacity !== undefined && component.opacity !== "" ? component.opacity / 100 : undefined,
+      margin: mar !== undefined && mar !== "" ? `${mar}px` : 0,
+      borderRadius: isButton ? undefined : `${br ?? 0}px`,
+      borderWidth: isButton ? undefined : bw ? `${bw}px` : undefined,
+      borderStyle: isButton ? undefined : bs || (bw ? "solid" : undefined),
+      borderColor: isButton ? undefined : bc || undefined,
+      boxShadow: isButton ? undefined : bShadow ? SHADOW_MAP[bShadow] : undefined,
+      minHeight: mh ? `${mh}px` : undefined,
+      opacity: op !== undefined && op !== "" ? op / 100 : undefined,
+      ...(component.inlineStyles || {}),
     };
   };
 
@@ -154,7 +165,12 @@ function Canvas({
     >
       <div
         ref={containerRef}
-        className={`mx-auto min-h-full transition-all duration-300 shadow-sm border border-gray-200 bg-white ${VIEWPORT_WIDTHS[viewportMode] || "max-w-5xl"
+        style={{
+          fontFamily: theme?.fontFamily || "Inter, system-ui, sans-serif",
+          backgroundColor: theme?.backgroundColor || (theme?.mode === "dark" ? "#0f172a" : "#ffffff"),
+          color: theme?.textColor || (theme?.mode === "dark" ? "#f8fafc" : "#0f172a"),
+        }}
+        className={`mx-auto min-h-full transition-all duration-300 shadow-sm border border-gray-200 ${VIEWPORT_WIDTHS[viewportMode] || "max-w-5xl"
           } ${isPreviewMode ? "shadow-2xl rounded-lg overflow-hidden my-4" : ""}`}
       >
         {components.length === 0 ? (

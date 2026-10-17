@@ -25,6 +25,11 @@ export const createDefaultComponent = (type) => {
     borderRadius: type === "button" ? 6 : 0,
     margin: 0,
     hoverEffect: "none",
+    isShared: type === "navbar" || type === "footer",
+    responsiveStyles: {
+      tablet: {},
+      mobile: {},
+    },
   };
 
   switch (type) {
@@ -247,4 +252,48 @@ export const createDefaultComponent = (type) => {
         content: "Add your text here.",
       };
   }
+};
+
+export const HOVER_EFFECT_MAP = {
+  none: "",
+  lift: "transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg",
+  scale: "transition-transform duration-200 hover:scale-[1.02]",
+  glow: "transition-all duration-200 hover:ring-2 hover:ring-blue-500/50 hover:shadow-lg",
+  dim: "transition-opacity duration-200 hover:opacity-85",
+};
+
+export const SHADOW_MAP = {
+  none: "none",
+  sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+  md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+  xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+};
+
+export const DEFAULT_THEME = {
+  mode: "light",
+  fontFamily: "Inter, system-ui, sans-serif",
+  primaryColor: "#2563eb",
+  accentColor: "#4f46e5",
+  backgroundColor: "#ffffff",
+  textColor: "#0f172a",
+  surfaceColor: "#f8fafc",
+  borderRadius: 8,
+};
+
+export const resolveResponsiveProp = (component, propName, viewportMode = "desktop") => {
+  if (!component) return undefined;
+  if (viewportMode === "mobile") {
+    const mobileVal = component.responsiveStyles?.mobile?.[propName];
+    if (mobileVal !== undefined && mobileVal !== "") return mobileVal;
+    const tabletVal = component.responsiveStyles?.tablet?.[propName];
+    if (tabletVal !== undefined && tabletVal !== "") return tabletVal;
+    return component[propName];
+  }
+  if (viewportMode === "tablet") {
+    const tabletVal = component.responsiveStyles?.tablet?.[propName];
+    if (tabletVal !== undefined && tabletVal !== "") return tabletVal;
+    return component[propName];
+  }
+  return component[propName];
 };

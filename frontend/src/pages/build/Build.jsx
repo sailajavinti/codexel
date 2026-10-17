@@ -7,7 +7,8 @@ import PropertiesPanel from "./PropertiesPanel";
 import ImportCodeModal from "./ImportCodeModal";
 import CodePreview from "./CodePreview";
 import api from "../../api/axios";
-import { createDefaultComponent } from "./components/constants";
+import { createDefaultComponent, DEFAULT_THEME } from "./components/constants";
+import ThemeModal from "./ThemeModal";
 import {
   FaExclamationTriangle,
   FaPlus,
@@ -15,6 +16,7 @@ import {
   FaThLarge,
   FaSlidersH,
   FaTrash,
+  FaCopy,
 } from "react-icons/fa";
 
 const DEFAULT_PAGE = {
@@ -27,6 +29,10 @@ const MAX_HISTORY_STEPS = 30;
 
 const GLOBAL_LAYOUT_TYPES = ["navbar", "footer"];
 const isGlobalLayoutType = (type) => GLOBAL_LAYOUT_TYPES.includes(type);
+
+function createUniqueId(prefix = "page") {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+}
 
 const findComponentById = (components, id) => {
   for (const component of components || []) {
@@ -47,7 +53,6 @@ function Build() {
 
   const [currentProject, setCurrentProject] = useState(null);
   const [pages, setPages] = useState([DEFAULT_PAGE]);
-  const [savedPages, setSavedPages] = useState([]);
   const [activePageId, setActivePageId] = useState("page-home");
   const [editingPageId, setEditingPageId] = useState(null);
   const [selectedComponent, setSelectedComponent] = useState(null);
@@ -55,6 +60,9 @@ function Build() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showCodePreview, setShowCodePreview] = useState(false);
   const [showImportCode, setShowImportCode] = useState(false);
+  const [importCodeText, setImportCodeText] = useState("");
+  const [showThemeModal, setShowThemeModal] = useState(false);
+  const [theme, setTheme] = useState(DEFAULT_THEME);
   const [pageToDelete, setPageToDelete] = useState(null);
 
   const [viewportMode, setViewportMode] = useState("desktop");
@@ -67,58 +75,6 @@ function Build() {
 
   const activePage = pages.find((p) => p.id === activePageId) || pages[0] || DEFAULT_PAGE;
   const components = activePage.canvasData || [];
-
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      const isAuthenticated = Boolean(localStorage.getItem("token"));
-      if (isDirty && isAuthenticated) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [isDirty]);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      const tag = document.activeElement?.tagName?.toLowerCase();
-      if (tag === "input" || tag === "textarea") return;
-
-      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-      const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
-
-      if (cmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === "z") {
-        e.preventDefault();
-        undo();
-        return;
-      }
-      if (
-        (cmdOrCtrl && e.key.toLowerCase() === "y") ||
-        (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === "z")
-      ) {
-        e.preventDefault();
-        redo();
-        return;
-      }
-      if (cmdOrCtrl && e.key.toLowerCase() === "d" && selectedComponent) {
-        e.preventDefault();
-        duplicateComponent(selectedComponent);
-        return;
-      }
-      if (selectedComponent && (e.key === "Delete" || e.key === "Backspace")) {
-        e.preventDefault();
-        deleteComponent(selectedComponent);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedComponent, historyIndex, history]);
-
-  useEffect(() => {
-    const projectId = searchParams.get("id");
-    if (projectId) loadProjectById(projectId);
-  }, [searchParams]);
 
   const commitToHistory = (newPages) => {
     if (isUndoRedoAction.current) {
@@ -171,23 +127,19 @@ function Build() {
     ];
   };
 
-  const loadProjectById = async (id) => {
-    try {
-      const res = await api.get("/projects/history");
-      const found = res.data.find((p) => p._id === id);
-      if (found) handleSelectProject(found);
-    } catch (err) {
-      console.error("Failed to load project:", err);
-    }
-  };
-
   const handleSelectProject = (project) => {
     setCurrentProject(project);
     const parsedPages = parseProjectPages(project);
     setPages(parsedPages);
-    setSavedPages(parsedPages);
     setHistory([JSON.parse(JSON.stringify(parsedPages))]);
     setHistoryIndex(0);
+    setImportCodeText("");
+
+    if (project.theme && Object.keys(project.theme).length > 0) {
+      setTheme(project.theme);
+    } else {
+      setTheme(DEFAULT_THEME);
+    }
 
     setActivePageId(parsedPages[0]?.id || "page-home");
     setEditingPageId(null);
@@ -200,12 +152,14 @@ function Build() {
     }
   };
 
+
   const handleNewProject = () => {
     setCurrentProject(null);
     setPages([DEFAULT_PAGE]);
-    setSavedPages([]);
     setHistory([JSON.parse(JSON.stringify([DEFAULT_PAGE]))]);
     setHistoryIndex(0);
+    setTheme(DEFAULT_THEME);
+    setImportCodeText("");
 
     setActivePageId("page-home");
     setEditingPageId(null);
@@ -218,15 +172,15 @@ function Build() {
   const handleAddPage = () => {
     const pageNum = pages.length + 1;
     // Automatically inherit active global layout components (navbar, footer)
-    const existingNavbar = pages.flatMap((p) => p.canvasData || []).find((c) => c.type === "navbar");
-    const existingFooter = pages.flatMap((p) => p.canvasData || []).find((c) => c.type === "footer");
+    const existingNavbar = pages.flatMap((p) => p.canvasData || []).find((c) => c.type === "navbar" && c.isShared !== false);
+    const existingFooter = pages.flatMap((p) => p.canvasData || []).find((c) => c.type === "footer" && c.isShared !== false);
 
     const initialCanvas = [];
     if (existingNavbar) initialCanvas.push(JSON.parse(JSON.stringify(existingNavbar)));
     if (existingFooter) initialCanvas.push(JSON.parse(JSON.stringify(existingFooter)));
 
     const newPage = {
-      id: `page-${Date.now()}`,
+      id: createUniqueId("page"),
       name: `Page ${pageNum}`,
       canvasData: initialCanvas,
     };
@@ -239,6 +193,73 @@ function Build() {
     setSelectedComponent(null);
     setIsDirty(true);
   };
+
+  const handleDuplicatePage = (pageToDuplicate) => {
+    if (!pageToDuplicate) return;
+    const clonedCanvas = JSON.parse(JSON.stringify(pageToDuplicate.canvasData || []));
+
+    const assignNewIds = (item) => {
+      if (item.isShared === false || !isGlobalLayoutType(item.type)) {
+        item.id = createUniqueId(item.type || "comp");
+        item._id = undefined;
+      }
+      if (Array.isArray(item.children)) {
+        item.children.forEach(assignNewIds);
+      }
+    };
+    clonedCanvas.forEach(assignNewIds);
+
+    const newPage = {
+      id: createUniqueId("page"),
+      name: `${pageToDuplicate.name} (Copy)`,
+      canvasData: clonedCanvas,
+    };
+    const nextPages = [...pages, newPage];
+    setPages(nextPages);
+    commitToHistory(nextPages);
+
+    setActivePageId(newPage.id);
+    setEditingPageId(null);
+    setSelectedComponent(null);
+    setIsDirty(true);
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      const isAuthenticated = Boolean(localStorage.getItem("token"));
+      if (isDirty && isAuthenticated) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
+
+
+  useEffect(() => {
+    const projectId = searchParams.get("id");
+    if (!projectId) return;
+
+    let isMounted = true;
+    api
+      .get("/projects/history")
+      .then((res) => {
+        if (!isMounted) return;
+        const found = res.data.find((p) => p._id === projectId);
+        if (found) {
+          handleSelectProject(found);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load project:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [searchParams]);
 
   const confirmDeletePage = () => {
     if (!pageToDelete) return;
@@ -540,6 +561,54 @@ function Build() {
     });
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+      if (cmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if (
+        (cmdOrCtrl && e.key.toLowerCase() === "y") ||
+        (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === "z")
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      if (cmdOrCtrl && e.key.toLowerCase() === "d" && selectedComponent) {
+        e.preventDefault();
+        duplicateComponent(selectedComponent);
+        return;
+      }
+      if (selectedComponent && (e.key === "Delete" || e.key === "Backspace")) {
+        e.preventDefault();
+        deleteComponent(selectedComponent);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedComponent, historyIndex, history]);
+
+  const canExport = Boolean(currentProject?._id) && !isDirty;
+
+  const handleExportClick = () => {
+    if (!canExport) {
+      if (!currentProject?._id) {
+        alert("Please save your project before exporting code.");
+      } else if (isDirty) {
+        alert("Please save your changes before exporting code.");
+      }
+      return;
+    }
+    setShowCodePreview(true);
+  };
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
@@ -555,9 +624,9 @@ function Build() {
           else navigate("/", { replace: true });
         }}
         onMarkDirty={() => setIsDirty(true)}
-        onExportClick={() => {
-          setShowCodePreview(true);
-        }}
+        onExportClick={handleExportClick}
+        canExport={canExport}
+        isDirty={isDirty}
         viewportMode={viewportMode}
         onChangeViewport={setViewportMode}
         isPreviewMode={isPreviewMode}
@@ -565,12 +634,13 @@ function Build() {
           setOpenPanel(null);
           setIsPreviewMode((prev) => !prev);
         }}
+        theme={theme}
         onProjectSaved={(savedDoc) => {
           setCurrentProject(savedDoc);
           const parsed = parseProjectPages(savedDoc);
           setPages(parsed);
-          setSavedPages(parsed);
           setIsDirty(false);
+          setImportCodeText("");
           setHistory([JSON.parse(JSON.stringify(parsed))]);
           setHistoryIndex(0);
           if (searchParams.get("id") !== savedDoc._id) {
@@ -628,6 +698,18 @@ function Build() {
                     </span>
                   )}
 
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDuplicatePage(page);
+                    }}
+                    className="text-gray-400 hover:text-blue-600 transition"
+                    title="Duplicate page"
+                  >
+                    <FaCopy className="text-[10px]" />
+                  </button>
+
                   {pages.length > 1 && (
                     <button
                       type="button"
@@ -683,6 +765,7 @@ function Build() {
           }}
           viewportMode={viewportMode}
           isPreviewMode={isPreviewMode}
+          theme={theme}
         />
 
         {!isPreviewMode && (
@@ -694,6 +777,8 @@ function Build() {
               onDeleteComponent={deleteComponent}
               onDuplicateComponent={duplicateComponent}
               pages={pages}
+              theme={theme}
+              viewportMode={viewportMode}
             />
           </div>
         )}
@@ -719,6 +804,8 @@ function Build() {
               onDeleteComponent={deleteComponent}
               onDuplicateComponent={duplicateComponent}
               pages={pages}
+              theme={theme}
+              viewportMode={viewportMode}
             />
           </div>
         )}
@@ -752,12 +839,25 @@ function Build() {
         onClose={() => setShowCodePreview(false)}
         activePage={activePage}
         pages={pages}
+        theme={theme}
+      />
+
+      <ThemeModal
+        isOpen={showThemeModal}
+        onClose={() => setShowThemeModal(false)}
+        theme={theme}
+        onUpdateTheme={(newTheme) => {
+          setTheme(newTheme);
+          setIsDirty(true);
+        }}
       />
 
       <ImportCodeModal
         isOpen={showImportCode}
         onClose={() => setShowImportCode(false)}
         onImport={handleImportCode}
+        code={importCodeText}
+        setCode={setImportCodeText}
       />
 
       {/* Page Deletion Confirmation Modal */}

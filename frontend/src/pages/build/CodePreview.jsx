@@ -112,6 +112,15 @@ function generateComponentJSX(comp, pages = [], stack = "react") {
   const zClass = hasShadow ? "relative z-10" : "relative";
 
   const buildStyles = (extraStyles = {}) => {
+    const rawInlineJSX = {};
+    if (comp.inlineStyles && typeof comp.inlineStyles === "object") {
+      for (const [k, v] of Object.entries(comp.inlineStyles)) {
+        if (v === undefined || v === null || v === "") continue;
+        const formattedVal = typeof v === "number" ? v : `'${v}'`;
+        rawInlineJSX[k] = formattedVal;
+      }
+    }
+
     const combined = {
       ...(comp.backgroundColor && { backgroundColor: `'${comp.backgroundColor}'` }),
       ...(comp.textColor && { color: `'${comp.textColor}'` }),
@@ -127,6 +136,7 @@ function generateComponentJSX(comp, pages = [], stack = "react") {
       ...(hasShadow && { boxShadow: `'${SHADOW_MAP[comp.boxShadow]}'` }),
       ...(comp.minHeight && { minHeight: `'${comp.minHeight}px'` }),
       ...(comp.opacity !== undefined && comp.opacity !== "" && comp.opacity !== 100 && { opacity: comp.opacity / 100 }),
+      ...rawInlineJSX,
       ...extraStyles,
     };
 
@@ -427,6 +437,16 @@ function generateComponentHTML(comp, pages = []) {
   const hoverClass = HOVER_CLASS_MAP[comp.hoverEffect || "none"] || "";
 
   const buildHtmlStyles = (extraStyles = {}) => {
+    const rawInlineStyles = {};
+    if (comp.inlineStyles && typeof comp.inlineStyles === "object") {
+      for (const [k, v] of Object.entries(comp.inlineStyles)) {
+        if (v === undefined || v === null || v === "") continue;
+        const kebab = k.replace(/([A-Z])/g, "-$1").toLowerCase();
+        const formattedVal = typeof v === "number" && !["opacity", "zIndex", "fontWeight"].includes(k) ? `${v}px` : v;
+        rawInlineStyles[kebab] = formattedVal;
+      }
+    }
+
     const combined = {
       ...(comp.backgroundColor && { "background-color": comp.backgroundColor }),
       ...(comp.textColor && { color: comp.textColor }),
@@ -442,6 +462,7 @@ function generateComponentHTML(comp, pages = []) {
       ...(comp.boxShadow && comp.boxShadow !== "none" && { "box-shadow": SHADOW_MAP[comp.boxShadow] }),
       ...(comp.minHeight && { "min-height": `${comp.minHeight}px` }),
       ...(comp.opacity !== undefined && comp.opacity !== "" && comp.opacity !== 100 && { opacity: comp.opacity / 100 }),
+      ...rawInlineStyles,
       ...extraStyles,
     };
 
