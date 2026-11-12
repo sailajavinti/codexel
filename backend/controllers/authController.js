@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
+import sendEmail from "../services/emailService.js";
 import User from "../models/User.js";
 import validator from "validator";
 import dns from "dns/promises";
@@ -91,78 +91,12 @@ const signup = async (req, res) => {
     const verificationUrl =
       `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
-    // 11. Create email transporter
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    // 12. Send verification email
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    // 11. Send verification email using Google Apps Script
+    await sendEmail({
+      action: "verification",
       to: user.email,
-      subject: "CodeXel - Verify Your Email",
-
-      html: `
-        <div style="
-          font-family: Arial, sans-serif;
-          max-width: 600px;
-          margin: auto;
-          padding: 20px;
-        ">
-
-          <h2 style="color: #2563eb;">
-            Welcome to CodeXel!
-          </h2>
-
-          <p>
-            Hello ${user.name},
-          </p>
-
-          <p>
-            Your CodeXel account has been created successfully.
-          </p>
-
-          <p>
-            Please verify your email address by clicking the button below:
-          </p>
-
-          <a
-            href="${verificationUrl}"
-            style="
-              display: inline-block;
-              padding: 12px 20px;
-              background-color: #2563eb;
-              color: white;
-              text-decoration: none;
-              border-radius: 6px;
-              font-weight: bold;
-            "
-          >
-            Verify Email
-          </a>
-
-          <p style="margin-top: 20px;">
-            This verification link will expire in
-            <strong>5 minutes</strong>.
-          </p>
-
-          <p>
-            If you did not create this account, you can safely ignore
-            this email.
-          </p>
-
-          <p>
-            Thanks,<br />
-            CodeXel Team
-          </p>
-
-        </div>
-      `,
+      name: user.name,
+      link: verificationUrl,
     });
 
     // 13. Don't generate JWT yet
@@ -385,32 +319,11 @@ const forgotPassword = async (req, res) => {
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    await sendEmail({
+      action: "passwordReset",
       to: user.email,
-      subject: "CodeXel - Password Reset",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
-          <h2 style="color: #2563eb;">Reset Your Password</h2>
-          <p>Hello ${user.name},</p>
-          <p>We received a request to reset your CodeXel password.</p>
-          <p>Click the button below to create a new password:</p>
-          <a href="${resetUrl}" style="display: inline-block; padding: 12px 20px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
-            Reset Password
-          </a>
-          <p style="margin-top: 20px;">This link will expire in <strong>5 minutes</strong>.</p>
-          <p>If you did not request a password reset, you can safely ignore this email.</p>
-          <p>Thanks,<br />CodeXel Team</p>
-        </div>
-      `,
+      name: user.name,
+      link: resetUrl,
     });
 
     res.status(200).json({
@@ -517,51 +430,11 @@ const resendVerificationEmail = async (req, res) => {
     const verificationUrl =
       `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"CodeXel" <${process.env.EMAIL_USER}>`,
+    await sendEmail({
+      action: "resendVerification",
       to: user.email,
-      subject: "Verify your CodeXel email",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
-          <h2>Verify your CodeXel account</h2>
-
-          <p>Hello ${user.name},</p>
-
-          <p>
-            Click the button below to verify your email address.
-          </p>
-
-          <a
-            href="${verificationUrl}"
-            style="
-              display: inline-block;
-              padding: 12px 20px;
-              background-color: #2563eb;
-              color: white;
-              text-decoration: none;
-              border-radius: 8px;
-            "
-          >
-            Verify Email
-          </a>
-
-          <p style="margin-top: 20px;">
-            This verification link expires in 5 minutes.
-          </p>
-
-          <p>
-            If you did not create this account, you can ignore this email.
-          </p>
-        </div>
-      `,
+      name: user.name,
+      link: verificationUrl,
     });
 
     return res.status(200).json({
